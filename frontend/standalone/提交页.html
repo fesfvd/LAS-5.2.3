@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提交作品 — LAS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b8860b',crimson:'#8b0000',jade:'#2d6a4f',muted:'#8a8578'},fontFamily:{serif:['Noto Serif SC','Georgia','serif'],sans:['Noto Sans SC','Helvetica','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--crimson:#8b0000;--muted:#8a8578;--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+.serif{font-family:'Noto Serif SC',Georgia,serif;letter-spacing:.03em}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:0}
+
+.nav-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);z-index:50}
+.nav-brand{font-weight:700;font-size:1.1rem;color:var(--gold);text-decoration:none;font-family:'Noto Serif SC',Georgia,serif}
+
+.btn{padding:12px 32px;border:1px solid var(--gold);color:var(--gold);font-size:.85rem;letter-spacing:3px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);background:transparent;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.btn:hover{background:var(--gold);color:var(--paper);transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,134,11,.15)}
+.btn-primary{background:var(--gold);color:var(--paper);font-weight:500}
+.btn-primary:hover{background:transparent;color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+.input{width:100%;padding:14px 0;border:none;border-bottom:1px solid var(--rule-strong);background:transparent;color:var(--ink);font-size:1rem;font-family:'Noto Sans SC',sans-serif;transition:border-color .3s;outline:none}
+.input:focus{border-bottom-color:var(--gold)}
+.input::placeholder{color:var(--muted);opacity:.6}
+textarea.input{resize:vertical;min-height:200px;border:1px solid var(--rule-strong);padding:14px 16px;margin-top:8px}
+textarea.input:focus{border-color:var(--gold);box-shadow:0 0 0 1px rgba(184,134,11,.1)}
+
+.field-group{margin-bottom:32px;position:relative}
+.field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+
+.mode-switch{display:flex;gap:16px;margin-bottom:32px}
+.mode-btn{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:1px;padding:8px 20px;border:1px solid var(--rule-strong);background:transparent;color:var(--muted);cursor:pointer;transition:all .3s}
+.mode-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.05)}
+.mode-btn:hover:not(.active){border-color:var(--muted)}
+
+.ancestor-toggle{display:flex;align-items:center;gap:12px;padding:16px 0;border-top:1px solid var(--rule);cursor:pointer;user-select:none}
+.ancestor-toggle input{display:none}
+.toggle-track{width:36px;height:18px;border:1px solid var(--muted);border-radius:9px;position:relative;transition:all .3s}
+.toggle-dot{width:12px;height:12px;background:var(--muted);border-radius:50%;position:absolute;top:2px;left:2px;transition:all .3s}
+.ancestor-toggle input:checked ~ .toggle-track{border-color:var(--gold)}
+.ancestor-toggle input:checked ~ .toggle-track .toggle-dot{transform:translateX(18px);background:var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .6s cubic-bezier(.4,0,.2,1) both}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}
+</style>
+</head>
+<body>
+
+<nav class="nav-top">
+  <a class="nav-brand" href="/">LAS</a>
+  <span class="mono text-xs text-muted">v5.2.3</span>
+</nav>
+
+<main class="max-w-2xl mx-auto px-6" style="padding-top:100px;padding-bottom:120px">
+  
+  <section class="fade-up d1">
+    <p class="mono text-xs text-muted tracking-[4px] mb-3 uppercase">Submission Protocol</p>
+    <h1 class="serif text-5xl font-black leading-[1.1] mb-4">提交作品</h1>
+    <p class="text-muted text-sm mb-12" style="max-width:420px">作品初始文学价值为零。每一分都须通过证据和与基准作品的严格比较获得。</p>
+  </section>
+
+  <form id="workForm" class="fade-up d2">
+    
+    <div class="field-group">
+      <label class="field-label">Work Title</label>
+      <input class="input" name="title" placeholder="作品名称" required maxlength="200">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Author (Optional)</label>
+      <input class="input" name="author" placeholder="作者（经典模式可由系统自动识别）" maxlength="100">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Analysis Mode</label>
+      <div class="mode-switch">
+        <button type="button" class="mode-btn active" data-mode="original">Original</button>
+        <button type="button" class="mode-btn" data-mode="classic">Classic</button>
+      </div>
+      <input type="hidden" name="mode" id="modeInput" value="original">
+    </div>
+
+    <div class="field-group" id="contentArea">
+      <label class="field-label">Full Text</label>
+      <textarea class="input" name="content" placeholder="粘贴或输入作品全文以供逐维度审查..." required></textarea>
+      <p class="mono text-xs text-muted mt-2" style="font-size:10px;opacity:.7">// 原创模式要求提供完整正文，拒绝可读性致幻</p>
+    </div>
+
+    <label class="ancestor-toggle">
+      <input type="checkbox" name="ancestor_dialogue" value="true">
+      <div class="toggle-track"><div class="toggle-dot"></div></div>
+      <div>
+        <span class="mono text-xs text-gold tracking-wider">先贤灵境</span>
+        <span class="text-xs text-muted ml-2">邀请文学先贤共读对谈</span>
+      </div>
+    </label>
+
+    <div class="mt-16">
+      <p id="uploadError" class="mono text-xs mb-4" style="color:var(--crimson);display:none"></p>
+      <button type="submit" class="btn btn-primary">Initiate Analysis &rarr;</button>
+    </div>
+
+  </form>
+</main>
+
+<script>
+const modeInput = document.getElementById('modeInput');
+const modeBtns = document.querySelectorAll('.mode-btn');
+const contentArea = document.getElementById('contentArea');
+
+modeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode = btn.dataset.mode;
+    modeInput.value = mode;
+    
+    const ta = contentArea.querySelector('textarea');
+    const hint = contentArea.querySelector('p');
+    if (mode === 'classic') {
+      ta.removeAttribute('required');
+      ta.style.minHeight = '80px';
+      ta.placeholder = '经典模式：正文可留空。LLM 将基于知识库中的全文记忆进行分析。';
+      hint.textContent = '// 经典模式无需正文，仅凭作品名即可锚定谱系';
+    } else {
+      ta.setAttribute('required', '');
+      ta.style.minHeight = '200px';
+      ta.placeholder = '粘贴或输入作品全文以供逐维度审查...';
+      hint.textContent = '// 原创模式要求提供完整正文，拒绝可读性致幻';
+    }
+  });
+});
+
+const form = document.getElementById('workForm');
+const errEl = document.getElementById('uploadError');
+form.onsubmit = (e) => {
+  e.preventDefault();
+  const fd = new FormData(form);
+  const data = Object.fromEntries(fd.entries());
+  if (data.mode === 'original' && !data.content.trim()) {
+    errEl.textContent = '> ERROR: 原创模式需要提供作品正文';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  const btn = form.querySelector('button');
+  btn.disabled = true;
+  btn.innerHTML = 'Processing...';
+  
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = 'Initiate Analysis &rarr;';
+    alert('独立预览页拦截：提交功能已禁用。\n实际运行时将跳转至分析终端。');
+  }, 1500);
+};
+</script>
+</body>
+</html>

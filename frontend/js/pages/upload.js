@@ -2,49 +2,79 @@ App.register('/upload', () => {
   document.title = '提交作品 — LAS';
   const root = document.getElementById('spaApp');
   root.innerHTML = `
-    <main class="max-w-3xl mx-auto px-6" style="padding-top:80px;padding-bottom:80px">
+    <main class="max-w-2xl mx-auto px-6" style="padding-top:100px;padding-bottom:120px">
+
       <section class="fade-up d1">
-        <p class="mono text-xs text-muted tracking-[4px] mb-2 uppercase">Submit Your Work</p>
-        <h1 class="serif text-4xl md:text-5xl font-black leading-[1.1] mb-6">提交作品</h1>
-        <form id="workForm" class="card" style="background:rgba(255,255,255,.5)">
-          <input class="input mb-3" name="title" placeholder="作品名称" required maxlength="200">
-          <input class="input mb-3" name="author" placeholder="作者（选填，经典模式可由系统自动识别）" maxlength="100">
-          <div class="flex items-center gap-4 mb-3" style="flex-wrap:wrap">
-            <select name="mode" id="modeSelect" class="input" style="width:auto;min-width:120px">
-              <option value="original">原创模式</option>
-              <option value="classic">经典模式</option>
-            </select>
-            <label class="flex items-center gap-2 cursor-pointer" style="user-select:none">
-              <input type="checkbox" name="ancestor_dialogue" value="true" style="accent-color:var(--gold);width:16px;height:16px">
-              <span class="text-sm text-muted">启用「先贤灵境」</span>
-              <span class="text-xs text-muted/60" style="font-size:11px">邀请文学先贤共读对谈</span>
-            </label>
-          </div>
-          <div id="contentArea">
-            <textarea class="input mb-2" name="content" placeholder="粘贴或输入作品全文..." required style="min-height:200px"></textarea>
-            <p class="text-xs text-muted mb-3" id="contentHint">原创模式下需要提供完整作品正文以供逐维度分析。</p>
-          </div>
-          <p id="uploadError" class="text-xs" style="color:var(--crimson);margin-bottom:12px;display:none"></p>
-          <button type="submit" class="btn btn-primary">开始分析 &rarr;</button>
-        </form>
+        <p class="mono text-xs text-muted tracking-[4px] mb-3 uppercase">Submission Protocol</p>
+        <h1 class="serif text-5xl font-black leading-[1.1] mb-4">提交作品</h1>
+        <p class="text-muted text-sm mb-12" style="max-width:420px">作品初始文学价值为零。每一分都须通过证据和与基准作品的严格比较获得。</p>
       </section>
+
+      <form id="workForm" class="fade-up d2">
+
+        <div class="mb-8">
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Work Title</label>
+          <input class="input-underline" name="title" placeholder="作品名称" required maxlength="200">
+        </div>
+
+        <div class="mb-8">
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Author (Optional)</label>
+          <input class="input-underline" name="author" placeholder="作者（经典模式可由系统自动识别）" maxlength="100">
+        </div>
+
+        <div class="mb-8">
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Analysis Mode</label>
+          <div class="flex gap-4">
+            <button type="button" class="mode-btn active" data-mode="original">Original</button>
+            <button type="button" class="mode-btn" data-mode="classic">Classic</button>
+          </div>
+          <input type="hidden" name="mode" id="modeInput" value="original">
+        </div>
+
+        <div class="mb-8" id="contentArea">
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Full Text</label>
+          <textarea class="input-underline textarea" name="content" placeholder="粘贴或输入作品全文以供逐维度审查..." required></textarea>
+          <p class="mono text-xs text-muted mt-2" style="font-size:10px;opacity:.7">// 原创模式要求提供完整正文，拒绝可读性致幻</p>
+        </div>
+
+        <label class="ancestor-toggle">
+          <input type="checkbox" name="ancestor_dialogue" value="true">
+          <div class="toggle-track"><div class="toggle-dot"></div></div>
+          <div>
+            <span class="mono text-xs text-gold tracking-wider">先贤灵境</span>
+            <span class="text-xs text-muted ml-2">邀请文学先贤共读对谈</span>
+          </div>
+        </label>
+
+        <div class="mt-16">
+          <p id="uploadError" class="mono text-xs mb-4" style="color:var(--crimson);display:none"></p>
+          <button type="submit" class="btn btn-primary">Initiate Analysis &rarr;</button>
+        </div>
+
+      </form>
     </main>`;
 
-  // Toggle content requirement based on mode
-  const modeSelect = document.getElementById('modeSelect');
-  const contentArea = document.getElementById('contentArea');
-  const contentHint = document.getElementById('contentHint');
-  modeSelect.addEventListener('change', () => {
-    const isClassic = modeSelect.value === 'classic';
-    if (isClassic) {
-      contentArea.innerHTML = `
-        <textarea class="input mb-2" name="content" placeholder="经典模式：可留空。LLM 将基于训练知识库中的全文记忆进行分析。" style="min-height:80px"></textarea>
-        <p class="text-xs text-muted mb-3" id="contentHint">经典模式无需提供正文——仅凭作品名即可分析。也可粘贴部分文本辅助定位版本。</p>`;
-    } else {
-      contentArea.innerHTML = `
-        <textarea class="input mb-2" name="content" placeholder="粘贴或输入作品全文..." required style="min-height:200px"></textarea>
-        <p class="text-xs text-muted mb-3" id="contentHint">原创模式下需要提供完整作品正文以供逐维度分析。</p>`;
-    }
+  const modeInput = document.getElementById('modeInput');
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      modeInput.value = mode;
+      const ta = document.querySelector('textarea[name="content"]');
+      const hint = document.querySelector('#contentArea .mono');
+      if (mode === 'classic') {
+        ta.removeAttribute('required');
+        ta.style.minHeight = '80px';
+        ta.placeholder = '经典模式：正文可留空。LLM 将基于知识库中的全文记忆进行分析。';
+        if (hint) hint.textContent = '// 经典模式无需正文，仅凭作品名即可锚定谱系';
+      } else {
+        ta.setAttribute('required', '');
+        ta.style.minHeight = '200px';
+        ta.placeholder = '粘贴或输入作品全文以供逐维度审查...';
+        if (hint) hint.textContent = '// 原创模式要求提供完整正文，拒绝可读性致幻';
+      }
+    });
   });
 
   bindUploadHandler();
@@ -61,22 +91,22 @@ function bindUploadHandler() {
     data.ancestor_dialogue = form.querySelector('[name="ancestor_dialogue"]').checked;
     delete data[''];
     if (data.mode === 'original' && !data.content.trim()) {
-      errEl.textContent = '原创模式需要提供作品正文';
+      errEl.textContent = '> ERROR: 原创模式需要提供作品正文';
       errEl.style.display = 'block';
       return;
     }
     errEl.style.display = 'none';
     const btn = form.querySelector('button');
     btn.disabled = true;
-    btn.textContent = '提交中...';
+    btn.innerHTML = 'Processing...';
     try {
       const work = await API.createWork(data);
       App.navigate('#/analyze/' + work.id);
     } catch (err) {
-      errEl.textContent = err.message;
+      errEl.textContent = '> ERROR: ' + err.message;
       errEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = '开始分析 →';
+      btn.innerHTML = 'Initiate Analysis &rarr;';
     }
   };
 }

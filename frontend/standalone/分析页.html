@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正在分析 — LAS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b8860b',crimson:'#8b0000',jade:'#2d6a4f',muted:'#8a8578'},fontFamily:{serif:['Noto Serif SC','Georgia','serif'],sans:['Noto Sans SC','Helvetica','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--muted:#8a8578;--rule:rgba(26,26,26,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+.serif{font-family:'Noto Serif SC',Georgia,serif;letter-spacing:.03em}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:0}
+
+.nav-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);z-index:50}
+.nav-brand{font-weight:700;font-size:1.1rem;color:var(--gold);text-decoration:none;font-family:'Noto Serif SC',Georgia,serif}
+
+.log-container{max-width:680px;margin:0 auto;padding:80px 24px}
+.log-line{display:flex;align-items:flex-start;gap:16px;margin-bottom:12px;opacity:0;transform:translateY(8px);transition:all .4s cubic-bezier(.4,0,.2,1)}
+.log-line.show{opacity:1;transform:translateY(0)}
+.log-step{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);min-width:24px;text-align:right;padding-top:5px}
+.log-msg{font-size:14px;color:var(--ink)}
+.log-msg.muted{color:var(--muted)}
+.log-msg.axiom{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);letter-spacing:0.5px;padding:4px 0}
+
+.divider{height:1px;background:var(--rule);margin:32px 0}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.blink{animation:pulse 1.2s infinite}
+</style>
+</head>
+<body>
+
+<nav class="nav-top">
+  <a class="nav-brand" href="/">LAS</a>
+  <span class="mono text-xs text-muted">v5.2.3</span>
+</nav>
+
+<main class="log-container">
+  <p class="mono text-xs text-muted tracking-[4px] mb-3 uppercase">Analysis Workflow</p>
+  <h1 class="serif text-4xl font-black leading-[1.1] mb-2">正在分析</h1>
+  <p class="text-muted text-sm mb-12">系统正在执行不可更改的审查协议，拒绝可读性致幻。</p>
+  
+  <div class="divider"></div>
+  
+  <div id="logBox">
+    <!-- 日志将由 JS 注入 -->
+  </div>
+  
+  <div class="divider"></div>
+  
+  <div id="statusBar" class="mt-8" style="display:none">
+    <p class="mono text-xs text-gold tracking-wider"><span class="blink">●</span> 正在生成多维洞见...</p>
+  </div>
+</main>
+
+<script>
+const logs = [
+  { step: '01', msg: '接收作品文本，清洗格式噪声', type: '' },
+  { step: '--', msg: 'AXIOM A: 严苛立场与严肃文学谱系归零审查已激活', type: 'axiom' },
+  { step: '02', msg: '识别体裁属性，匹配权重策略', type: '' },
+  { step: '03', msg: '建立坐标系：锚定十五级评分标尺', type: '' },
+  { step: '--', msg: 'AXIOM C: 举证责任倒置。作品初始文学价值归零', type: 'axiom' },
+  { step: '04', msg: '解析 A层 · 语言与形式', type: '' },
+  { step: '05', msg: '解析 B层 · 叙事与内容', type: '' },
+  { step: '--', msg: 'AXIOM B: 拒绝可读性致幻免疫。通顺不赋分', type: 'axiom' },
+  { step: '06', msg: '解析 C层 · 思想与意义', type: '' },
+  { step: '07', msg: '解析 D层 · 审美与影响', type: '' },
+  { step: '08', msg: '十六维标尺逐项比对基准作品序列', type: '' },
+  { step: '--', msg: 'AXIOM D: 拉开差距是职责。逃离均值陷阱', type: 'axiom' },
+  { step: '09', msg: '校验维度间均衡性，抵抗全面平庸', type: '' },
+  { step: '10', msg: '核算最终权重，生成评估报告', type: '' },
+];
+
+const logBox = document.getElementById('logBox');
+const statusBar = document.getElementById('statusBar');
+
+function runLogs() {
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= logs.length) {
+      clearInterval(interval);
+      setTimeout(() => {
+        statusBar.style.display = 'block';
+        // 实际场景这里跳转结果页
+        // setTimeout(() => window.location.href = '/result', 2000);
+      }, 800);
+      return;
+    }
+    
+    const log = logs[i];
+    const div = document.createElement('div');
+    div.className = 'log-line';
+    div.innerHTML = `
+      <span class="log-step">${log.step}</span>
+      <span class="log-msg ${log.type}">${log.msg}</span>
+    `;
+    logBox.appendChild(div);
+    
+    // 触发重排以启动动画
+    setTimeout(() => div.classList.add('show'), 50);
+    
+    i++;
+  }, 650);
+}
+
+// 启动序列
+setTimeout(runLogs, 500);
+</script>
+</body>
+</html>
