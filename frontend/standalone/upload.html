@@ -106,15 +106,22 @@ const modeSelect = document.getElementById('modeSelect');
 const contentArea = document.getElementById('contentArea');
 modeSelect.addEventListener('change', () => {
   const isClassic = modeSelect.value === 'classic';
-  if (isClassic) {
-    contentArea.innerHTML = `
-      <textarea class="input mb-2" name="content" placeholder="经典模式：可留空。LLM 将基于训练知识库中的全文记忆进行分析。" style="min-height:80px"><\/textarea>
-      <p class="text-xs text-muted mb-3">经典模式无需提供正文——仅凭作品名即可分析。也可粘贴部分文本辅助定位版本。</p>`;
-  } else {
-    contentArea.innerHTML = `
-      <textarea class="input mb-2" name="content" placeholder="粘贴或输入作品全文..." required style="min-height:200px"><\/textarea>
-      <p class="text-xs text-muted mb-3">原创模式下需要提供完整作品正文以供逐维度分析。</p>`;
-  }
+  contentArea.innerHTML = '';
+  const ta = document.createElement('textarea');
+  ta.className = 'input mb-2';
+  ta.name = 'content';
+  ta.style.minHeight = isClassic ? '80px' : '200px';
+  ta.placeholder = isClassic
+    ? '经典模式：可留空。LLM 将基于训练知识库中的全文记忆进行分析。'
+    : '粘贴或输入作品全文...';
+  if (!isClassic) ta.required = true;
+  const hint = document.createElement('p');
+  hint.className = 'text-xs text-muted mb-3';
+  hint.textContent = isClassic
+    ? '经典模式无需提供正文——仅凭作品名即可分析。也可粘贴部分文本辅助定位版本。'
+    : '原创模式下需要提供完整作品正文以供逐维度分析。';
+  contentArea.appendChild(ta);
+  contentArea.appendChild(hint);
 });
 
 // 表单提交演示
