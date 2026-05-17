@@ -1,0 +1,28 @@
+# 环境变量（含密钥）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+venv/
+
+# 数据库
+data/
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
+
+# 大体积归档/参考文件
+01_已归档作品/
+参考文件/
+
+# 系统文件
+Thumbs.db
+.DS_Store

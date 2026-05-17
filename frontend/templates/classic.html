@@ -1,0 +1,361 @@
+<div class="sticky-bar" id="stickyBar">
+<div class="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="serif font-bold text-sm">{{WORK_TITLE}}</span>
+<span class="text-xs text-muted">{{WORK_AUTHOR}}</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="mono text-sm font-bold text-crimson">{{WCS_SCORE}}<span class="text-xs text-muted font-normal">/150</span></span>
+<span class="text-xs px-2 py-0.5 rounded bg-crimson/8 text-crimson font-medium">{{WORK_LEVEL}}</span>
+<button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="text-muted hover:text-crimson transition text-xs ml-1"><i class="fas fa-arrow-up"></i></button>
+</div>
+</div>
+</div>
+
+<div class="side-nav fixed right-5 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 items-center" id="sideNav">
+<div class="nav-pip active" data-target="hero"></div>
+<div class="nav-pip" data-target="assessmentSummary"></div>
+<div class="nav-pip" data-target="table"></div>
+<div class="nav-pip" data-target="coreBenchmarks"></div>
+<div class="nav-pip" data-target="deepAnalysis"></div>
+<div class="nav-pip" data-target="professional"></div>
+<div class="nav-pip" data-target="conclusion"></div>
+<div class="nav-pip" data-target="appendix"></div>
+</div>
+
+<div class="mob-nav hidden fixed bottom-0 left-0 right-0 z-50 bg-paper/95 backdrop-blur border-t" style="border-color:var(--rule)">
+<div class="flex justify-around py-2">
+<button onclick="scrollTo('hero')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-home"></i>概览</button>
+<button onclick="scrollTo('table')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-table"></i>详表</button>
+<button onclick="scrollTo('deepAnalysis')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-feather"></i>分析</button>
+<button onclick="scrollTo('appendix')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-scroll"></i>附录</button>
+</div>
+</div>
+
+<main class="max-w-5xl mx-auto px-6">
+
+<section id="hero" class="pt-10 pb-8 fade-up d1">
+<div class="flex items-center gap-2 mb-4">
+<span class="mono text-xs text-muted">{{LAS_ID}}</span>
+<span class="text-muted/40">·</span>
+<span class="text-xs text-muted">{{WORK_TYPE}}</span>
+</div>
+
+<h1 class="text-5xl md:text-6xl lg:text-7xl font-black serif leading-[1.05] mb-3 tracking-wide">{{WORK_TITLE}}</h1>
+<div class="flex items-center gap-3 mb-5">
+<span class="text-lg text-muted serif">{{WORK_AUTHOR}} 著</span>
+<span class="text-muted/30">|</span>
+<div class="flex flex-wrap gap-1.5">
+{{WORK_TAGS}}
+</div>
+</div>
+
+<hr class="rule-strong mb-6">
+
+<div class="grid md:grid-cols-12 gap-8" style="min-height:calc(100vh - 320px)">
+<div class="md:col-span-4 flex flex-col gap-5 fade-up d2">
+
+<div class="flex items-center gap-5">
+<div class="score-ring flex-shrink-0">
+<svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="progress" cx="50" cy="50" r="42" id="heroProgress"/></svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl font-bold text-crimson mono" id="heroValue">0</span>
+<span class="text-[10px] text-muted">/150</span>
+</div>
+</div>
+<div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full badge-glow text-white text-sm font-bold">
+<i class="fas fa-crown text-xs opacity-70"></i>{{WORK_LEVEL}}
+</div>
+<p class="text-xs text-muted mt-1.5">超过 {{WORK_PERCENTILE}}%</p>
+</div>
+</div>
+
+<div class="pl-4 border-l-2" style="border-color:var(--gold)">
+<p class="text-[11px] text-muted uppercase tracking-widest mb-1 font-medium">荣誉称号</p>
+<p class="text-xl serif text-gold font-bold leading-snug">"{{WORK_TITLE_HONOR}}"</p>
+</div>
+
+<div class="pl-4 border-l-2" style="border-color:var(--crimson)">
+<p class="text-[11px] text-muted uppercase tracking-widest mb-1 font-medium">一句锐评</p>
+<p class="text-base serif text-crimson font-semibold leading-relaxed" id="sharpComment">"{{WORK_SHARP_COMMENT}}"</p>
+</div>
+
+<div class="pl-4 border-l-2" style="border-color:var(--jade)">
+<p class="text-[11px] text-muted uppercase tracking-widest mb-1 font-medium">金句</p>
+<p class="text-sm serif text-ink/50 leading-relaxed" id="goldenQuote">"{{GOLDEN_QUOTE}}"</p>
+</div>
+
+<div>
+<p class="text-[11px] text-muted uppercase tracking-widest mb-2 font-medium">四层面</p>
+<div class="space-y-2" id="layerBars">
+<div class="flex items-center gap-2"><span class="text-xs text-crimson w-16 flex-shrink-0 font-medium">语言形式</span><div class="bar-track flex-1"><div class="bar-fill bg-crimson" data-width="{{LAYER1_PERCENT}}"></div></div><span class="mono text-xs text-crimson w-8 text-right font-bold">{{LAYER1_AVG}}</span></div>
+<div class="flex items-center gap-2"><span class="text-xs text-jade w-16 flex-shrink-0 font-medium">叙事内容</span><div class="bar-track flex-1"><div class="bar-fill bg-jade" data-width="{{LAYER2_PERCENT}}"></div></div><span class="mono text-xs text-jade w-8 text-right font-bold">{{LAYER2_AVG}}</span></div>
+<div class="flex items-center gap-2"><span class="text-xs text-gold w-16 flex-shrink-0 font-medium">思想意义</span><div class="bar-track flex-1"><div class="bar-fill bg-gold" data-width="{{LAYER3_PERCENT}}"></div></div><span class="mono text-xs text-gold w-8 text-right font-bold">{{LAYER3_AVG}}</span></div>
+<div class="flex items-center gap-2"><span class="text-xs text-ink/50 w-16 flex-shrink-0 font-medium">审美影响</span><div class="bar-track flex-1"><div class="bar-fill bg-ink/40" data-width="{{LAYER4_PERCENT}}"></div></div><span class="mono text-xs text-ink/50 w-8 text-right font-bold">{{LAYER4_AVG}}</span></div>
+</div>
+</div>
+
+</div>
+
+<div class="md:col-span-8 fade-up d3">
+<div class="h-full flex flex-col">
+<p class="text-[11px] text-muted uppercase tracking-widest mb-2 font-medium">十六维评分雷达图</p>
+<div class="flex-1 w-full">
+<canvas id="radarChart"></canvas>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+{{ASSESSMENT_SUMMARY}}
+
+<section id="table" class="py-10 reveal">
+<hr class="rule-strong mb-6">
+<h2 class="text-2xl font-bold serif mb-5">评分详表</h2>
+<div class="flex items-center gap-3 mb-4">
+<div class="relative">
+<i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-muted/40 text-xs"></i>
+<input type="text" id="tableSearch" placeholder="搜索维度..." class="pl-7 pr-3 py-1.5 text-xs rounded border focus:outline-none focus:border-crimson/30 w-32" style="border-color:var(--rule);background:transparent">
+</div>
+<select id="levelFilter" class="text-xs px-2 py-1.5 rounded border focus:outline-none focus:border-crimson/30" style="border-color:var(--rule);background:transparent">
+<option value="all">全部档位</option>
+<option value="文学之巅">文学之巅</option>
+<option value="永恒殿堂">永恒殿堂</option>
+<option value="不朽丰碑">不朽丰碑</option>
+<option value="典范之作">典范之作</option>
+<option value="上乘佳作">上乘佳作</option>
+<option value="准文学级">准文学级</option>
+<option value="中等之作">中等之作</option>
+<option value="合格文本">合格文本</option>
+<option value="严重瑕疵">严重瑕疵</option>
+</select>
+</div>
+<div class="overflow-x-auto -mx-2">
+<table class="w-full text-sm min-w-[680px]" role="table" aria-label="十六维评分比较表">
+<thead>
+<tr style="border-bottom:2px solid var(--rule-strong)">
+<th class="text-left py-2.5 px-3 text-muted text-xs font-semibold">维度</th>
+<th class="text-center py-2.5 px-2 text-muted text-xs font-semibold w-14">权重</th>
+<th class="text-center py-2.5 px-2 text-muted text-xs font-semibold w-14">分数</th>
+<th class="text-center py-2.5 px-2 text-muted text-xs font-semibold w-20">档位</th>
+<th class="text-left py-2.5 px-3 text-muted text-xs font-semibold">核心基准</th>
+<th class="w-8"></th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+</section>
+
+<section id="coreBenchmarks" class="py-10 reveal">
+<hr class="rule-strong mb-6">
+<h2 class="text-2xl font-bold serif mb-5">核心基准集</h2>
+<div class="grid md:grid-cols-2 gap-4">
+{{CORE_BENCHMARKS}}
+</div>
+</section>
+
+<section id="deepAnalysis" class="py-10 reveal">
+<hr class="rule-strong mb-6">
+<h2 class="text-2xl font-bold serif mb-5">深度文学分析</h2>
+<div class="space-y-2" id="accordion">
+{{DEEP_ANALYSIS_SECTIONS}}
+</div>
+</section>
+
+<section id="professional" class="py-10 reveal">
+<hr class="rule-strong mb-6">
+<h2 class="text-2xl font-bold serif mb-5">专业视角应用</h2>
+<div class="space-y-4">
+{{PROFESSIONAL_SECTIONS}}
+</div>
+</section>
+
+{{ANCESTOR_DIALOGUE_SECTION}}
+
+<section id="conclusion" class="py-10 reveal">
+<hr class="rule-strong mb-6">
+<h2 class="text-2xl font-bold serif mb-6">综合结论</h2>
+<div class="text-base text-ink/60 leading-[2] space-y-4 text-justify serif">
+{{CONCLUSION_CONTENT}}
+</div>
+</section>
+
+<section id="appendix" class="py-10 reveal">
+<hr class="rule-strong mb-6">
+<h2 class="text-2xl font-bold serif mb-5">附录：创作余话</h2>
+<div class="grid md:grid-cols-2 gap-5">
+{{APPENDIX_SECTIONS}}
+</div>
+</section>
+
+</main>
+
+<div class="max-w-5xl mx-auto px-6 py-8">
+<div class="text-center">
+<p class="text-[11px] text-muted uppercase tracking-widest mb-3">文学签文</p>
+<div class="flex items-center justify-center gap-3 mb-3">
+<span class="text-lg serif font-bold text-crimson">{{FORTUNE_LEVEL}}</span>
+<span class="text-gold/30">·</span>
+<span class="text-lg serif font-bold text-gold">{{FORTUNE_KEYWORD}}</span>
+</div>
+<p class="text-lg serif text-ink/60 font-medium tracking-wide mb-2">{{FORTUNE_TEXT}}</p>
+<p class="text-xs text-muted">—— {{FORTUNE_SOURCE}}</p>
+</div>
+</div>
+
+<footer style="border-top:1px solid var(--rule)" class="py-5">
+<div class="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-muted">
+<div class="flex items-center gap-2">
+<span class="mono">{{LAS_ID}}</span>
+<span class="text-muted/30">·</span>
+<span>LAS v5.2</span>
+<span class="text-muted/30">·</span>
+<span>{{CURRENT_DATE}}</span>
+			<span class="text-muted/30">·</span>
+			<span class="text-xs">{{TOKEN_USAGE}}</span>
+</div>
+<div class="flex items-center gap-2">
+<span>本报告为系统框架下的相对定位与分析参考</span>
+<span class="text-muted/30">·</span>
+<a href="https://qm.qq.com/q/lvpxj69QLm" target="_blank" class="text-crimson hover:underline">QQ群 1091165886</a>
+</div>
+</div>
+</footer>
+
+<button id="topBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-16 md:bottom-6 right-5 w-9 h-9 rounded-full flex items-center justify-center text-muted/30 hover:text-crimson transition opacity-0 pointer-events-none z-40" style="background:var(--paper);border:1px solid var(--rule)">
+<i class="fas fa-arrow-up text-xs"></i>
+</button>
+
+<script>
+var DIM={{DIM_DATA_JSON}};
+const LC=['#8b0000','#2d6a4f','#b8860b','#1a1a1a'];
+
+(function(){
+const q=document.getElementById('goldenQuote');
+if(!q)return;
+const t=q.textContent.trim(),l=t.length;
+let s='0.875rem',w='400';
+if(l<=15){s='1.25rem';w='600'}
+else if(l<=25){s='1.1rem';w='500'}
+else if(l<=40){s='1rem';w='500'}
+else if(l<=60){s='0.9rem';w='400'}
+else{s='0.8rem';w='400'}
+q.style.fontSize=s;q.style.fontWeight=w;
+})();
+
+(function(){
+const el=document.getElementById('sharpComment');
+if(!el)return;
+const t=el.textContent.trim(),l=t.length;
+let s='1rem',w='600';
+if(l<=20){s='1.35rem';w='700'}
+else if(l<=35){s='1.2rem';w='600'}
+else if(l<=50){s='1.1rem';w='600'}
+else if(l<=70){s='1rem';w='500'}
+else if(l<=100){s='0.9rem';w='500'}
+else{s='0.8rem';w='400'}
+el.style.fontSize=s;el.style.fontWeight=w;
+})();
+
+(function(){
+const p=document.getElementById('heroProgress'),v=document.getElementById('heroValue');
+const score={{WCS_SCORE}},c=2*Math.PI*42,o=c*(1-score/150);
+setTimeout(()=>{p.style.strokeDashoffset=o;const d=2000,s=performance.now();
+(function a(t){const p=Math.min((t-s)/d,1),e=1-Math.pow(1-p,4);v.textContent=(e*score).toFixed(2);if(p<1)requestAnimationFrame(a);})(performance.now());},400);
+})();
+
+let chart;
+const tgt=DIM.map(d=>d.score),cur=new Array(16).fill(0);
+(function(){
+const ctx=document.getElementById('radarChart').getContext('2d');
+const lvlPlugin={id:'lvl',beforeDatasetsDraw(ch){
+const{ctx:c,chartArea:{top,bottom,left,right},scales:{r}}=ch;
+const cx=(left+right)/2,cy=(top+bottom)/2,da=r.drawingArea;
+[150,125,105,95,75].forEach((v,i)=>{
+const rd=(v/150)*da;
+c.save();c.beginPath();c.arc(cx,cy,rd,0,2*Math.PI);
+c.strokeStyle=`rgba(139,0,0,${.4-i*.06})`;c.lineWidth=.8;c.setLineDash([3,4]);c.stroke();c.setLineDash([]);
+c.fillStyle='rgba(26,26,26,.3)';c.font='9px "Noto Sans SC"';c.textAlign='left';c.textBaseline='middle';
+c.fillText(v,cx+rd+4,cy);c.restore();
+});
+}};
+chart=new Chart(ctx,{type:'radar',
+data:{labels:DIM.map(d=>d.name),datasets:[{data:cur,fill:true,
+backgroundColor:'rgba(139,0,0,.06)',borderColor:'rgba(139,0,0,.5)',
+pointBackgroundColor:'rgba(139,0,0,.7)',pointBorderColor:'#faf8f3',
+pointBorderWidth:1.5,pointRadius:3.5,pointHoverRadius:6,borderWidth:1.5}]},
+options:{responsive:true,maintainAspectRatio:false,
+onClick:(e,el)=>{if(el.length)document.getElementById('table').scrollIntoView({behavior:'smooth'});},
+scales:{r:{min:0,max:150,ticks:{display:false},grid:{color:'rgba(26,26,26,.04)',circular:true},
+angleLines:{color:'rgba(26,26,26,.04)'},
+pointLabels:{font:{size:11,family:"'Noto Sans SC'",weight:'500'},color:'#1a1a1a'}}},
+plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(250,248,243,.95)',titleColor:'#8b0000',
+bodyColor:'#1a1a1a',borderColor:'rgba(139,0,0,.1)',borderWidth:1,padding:8,cornerRadius:4,
+titleFont:{family:"'Noto Serif SC'",weight:'600'},
+callbacks:{label:c=>`${DIM[c.dataIndex].name}: ${DIM[c.dataIndex].score}/150 · ${DIM[c.dataIndex].level}`}}},
+animation:{duration:0}},
+plugins:[lvlPlugin]});
+setTimeout(()=>{const d=2500,s=performance.now();
+(function a(t){const p=Math.min((t-s)/d,1),e=1-Math.pow(1-p,4);
+for(let i=0;i<16;i++)cur[i]=tgt[i]*e;chart.update('none');if(p<1)requestAnimationFrame(a);})(performance.now());},600);
+})();
+
+function buildTable(f='all',q=''){
+const tb=document.getElementById('tableBody');tb.innerHTML='';let n=0;
+DIM.forEach((d,i)=>{
+if(f!=='all'&&d.level!==f)return;if(q&&!d.name.includes(q))return;n++;
+const r=document.createElement('tr');r.style.cssText='border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s';
+r.onmouseenter=()=>r.style.background='rgba(139,0,0,.03)';
+r.onmouseleave=()=>r.style.background='';
+const lc=d.level==='文学之巅'?'color:#8b0000;background:rgba(139,0,0,.08)':d.level==='永恒殿堂'?'color:#b8860b;background:rgba(184,134,11,.08)':d.level==='不朽丰碑'?'color:#1a1a1a;background:rgba(26,26,26,.04)':d.level==='典范之作'?'color:#2d6a4f;background:rgba(45,106,79,.08)':d.level==='上乘佳作'?'color:#059669;background:rgba(5,150,105,.06)':'color:#8a8578;background:rgba(138,133,120,.06)';
+r.innerHTML=`<td class="py-2.5 px-3 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style="background:${LC[d.layer]}"></span>${d.name}</td>
+<td class="py-2.5 px-2 text-center mono text-muted text-xs">${d.weight}</td>
+<td class="py-2.5 px-2 text-center mono font-bold">${d.score}</td>
+<td class="py-2.5 px-2 text-center"><span class="text-[11px] px-2 py-0.5 rounded-full font-semibold" style="${lc}">${d.level}</span></td>
+<td class="py-2.5 px-3 text-muted text-xs">${d.benchmark}</td>
+<td class="py-2.5 px-2 text-center"><i class="fas fa-chevron-down text-muted/30 text-[10px] arr" id="arr${i}"></i></td>`;
+r.onclick=()=>toggleRow(i);tb.appendChild(r);
+const er=document.createElement('tr');er.id='er'+i;
+er.innerHTML=`<td colspan="6" class="p-0"><div class="expand-row" id="ex${i}"><div class="px-6 py-3 text-sm text-muted leading-relaxed space-y-1.5 serif" style="background:rgba(26,26,26,.015)">
+${d.gapLevel?`<p><strong class="text-ink/60">① 基准表现：</strong>${d.benchmarkPerf||'暂无'}</p><p><strong class="text-ink/60">② 证据引用：</strong>${d.evidence||'暂无'}</p><p><strong class="text-ink/60">③ 差距等级：</strong>${d.gapLevel}</p>${d.lowerRef?`<p><strong style="color:rgba(139,0,0,.5)">④ 反向锚定：</strong>${d.lowerRef}</p>`:''}<p><strong class="text-ink/60">⑤ 结论：</strong>${d.compare||'暂无'}</p>`
+:`<p><strong class="text-ink/60">关键证据：</strong>${d.evidence||'暂无'}</p><p><strong class="text-ink/60">基准比较：</strong>${d.compare||'暂无'}</p>${d.lowerRef?`<p><strong style="color:rgba(139,0,0,.5)">反向锚定：</strong>${d.lowerRef}</p>`:''}`}
+</div></div></td>`;tb.appendChild(er);
+});
+if(!n){const e=document.createElement('tr');e.innerHTML='<td colspan="6" class="py-8 text-center text-muted">无匹配结果</td>';tb.appendChild(e);}
+}
+function toggleRow(i){
+const ex=document.getElementById('ex'+i),ar=document.getElementById('arr'+i);
+const open=ex.classList.contains('open');
+document.querySelectorAll('.expand-row').forEach(e=>e.classList.remove('open'));
+document.querySelectorAll('.arr').forEach(a=>a.style.transform='');
+if(!open){ex.classList.add('open');ar.style.transform='rotate(180deg)';}
+}
+buildTable();
+document.getElementById('tableSearch').addEventListener('input',e=>buildTable(document.getElementById('levelFilter').value,e.target.value));
+document.getElementById('levelFilter').addEventListener('change',e=>buildTable(e.target.value,document.getElementById('tableSearch').value));
+
+function toggleAccordion(idx){
+const items=document.querySelectorAll('#accordion > div');
+const c=items[idx].querySelector('.accordion-content'),a=items[idx].querySelector('.accordion-icon');
+c.classList.toggle('open');a.classList.toggle('open');
+}
+
+const secs=['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix'];
+function scrollTo(id){document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
+document.querySelectorAll('.nav-pip').forEach(p=>p.addEventListener('click',()=>scrollTo(p.dataset.target)));
+const sObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)document.querySelectorAll('.nav-pip').forEach(p=>p.classList.toggle('active',p.dataset.target===e.target.id));});},{threshold:.15,rootMargin:'-10% 0px -60% 0px'});
+secs.forEach(id=>{const el=document.getElementById(id);if(el)sObs.observe(el);});
+const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el=>rObs.observe(el));
+const bObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.bar-fill').forEach(b=>b.style.width=b.dataset.width+'%');bObs.unobserve(e.target);}});},{threshold:.3});
+const lb=document.getElementById('layerBars');if(lb)bObs.observe(lb);
+const bar=document.getElementById('stickyBar'),hero=document.getElementById('hero');
+window.addEventListener('scroll',()=>{
+bar.classList.toggle('show',hero.getBoundingClientRect().bottom<0);
+const btn=document.getElementById('topBtn');
+btn.style.opacity=window.scrollY>600?'1':'0';btn.style.pointerEvents=window.scrollY>600?'auto':'none';
+},{passive:true});
+</script>

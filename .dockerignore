@@ -1,0 +1,16 @@
+.git/
+.gitignore
+.dockerignore
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+data/
+01_已归档作品/
+参考文件/
+SKILL/
+.claude/
+*.md
+Thumbs.db
+.DS_Store
