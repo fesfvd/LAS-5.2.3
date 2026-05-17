@@ -13,26 +13,26 @@ App.register('/upload', () => {
       <form id="workForm" class="fade-up d2">
 
         <div class="mb-8">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">作品名称</label>
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Work Title</label>
           <input class="input-underline" name="title" placeholder="作品名称" required maxlength="200">
         </div>
 
         <div class="mb-8">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">作者（选填）</label>
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Author <span class="text-muted/50" style="font-size:10px">选填</span></label>
           <input class="input-underline" name="author" placeholder="作者（经典模式可由系统自动识别）" maxlength="100">
         </div>
 
         <div class="mb-8">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">分析模式</label>
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Analysis Mode</label>
           <div class="flex gap-4">
-            <button type="button" class="mode-btn active" data-mode="original">原创模式</button>
-            <button type="button" class="mode-btn" data-mode="classic">经典模式</button>
+            <button type="button" class="mode-btn active" data-mode="original">原创</button>
+            <button type="button" class="mode-btn" data-mode="classic">经典</button>
           </div>
           <input type="hidden" name="mode" id="modeInput" value="original">
         </div>
 
         <div class="mb-8" id="contentArea">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">作品正文</label>
+          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Full Text</label>
           <textarea class="input-underline textarea" name="content" placeholder="粘贴或输入作品全文以供逐维度审查..." required></textarea>
           <p class="mono text-xs text-muted mt-2" style="font-size:10px;opacity:.7">// 原创模式要求提供完整正文，拒绝可读性致幻</p>
         </div>
@@ -48,7 +48,7 @@ App.register('/upload', () => {
 
         <div class="mt-16">
           <p id="uploadError" class="mono text-xs mb-4" style="color:var(--crimson);display:none"></p>
-          <button type="submit" class="btn btn-primary">开始分析 &rarr;</button>
+          <button type="submit" class="btn btn-primary">开始分析 <span class="text-muted/50" style="font-size:11px;letter-spacing:0">/ Analyze</span></button>
         </div>
 
       </form>
@@ -98,7 +98,7 @@ function bindUploadHandler() {
     errEl.style.display = 'none';
     const btn = form.querySelector('button');
     btn.disabled = true;
-    btn.innerHTML = '提交中...';
+    btn.innerHTML = 'Processing...';
     try {
       const work = await API.createWork(data);
       App.navigate('#/analyze/' + work.id);
@@ -106,7 +106,7 @@ function bindUploadHandler() {
       errEl.textContent = '> ERROR: ' + err.message;
       errEl.style.display = 'block';
       btn.disabled = false;
-      btn.innerHTML = '开始分析 &rarr;';
+      btn.textContent = '开始分析';
     }
   };
 }
