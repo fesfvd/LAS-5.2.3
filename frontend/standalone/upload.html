@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提交作品 — LAS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b8860b',crimson:'#8b0000',jade:'#2d6a4f',muted:'#8a8578'},fontFamily:{serif:['Noto Serif SC','Georgia','serif'],sans:['Noto Sans SC','Helvetica','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--crimson:#8b0000;--jade:#2d6a4f;--muted:#8a8578;--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+.serif{font-family:'Noto Serif SC',Georgia,serif;letter-spacing:.03em}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:0}
+
+/* nav */
+.nav-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);z-index:50}
+.nav-brand{font-weight:700;font-size:1.1rem;color:var(--gold);text-decoration:none;font-family:'Noto Serif SC',Georgia,serif}
+
+/* buttons */
+.btn{padding:10px 28px;border:1px solid var(--gold);color:var(--gold);font-size:.85rem;letter-spacing:2px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);background:transparent;font-family:inherit}
+.btn:hover{background:var(--gold);color:var(--paper);transform:translateY(-1px)}
+.btn-primary{background:var(--gold);color:var(--paper);font-weight:500}
+.btn-primary:hover{background:transparent;color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* inputs */
+.input{width:100%;padding:12px 16px;border:1px solid var(--rule-strong);background:transparent;color:var(--ink);font-size:.9rem;font-family:inherit;transition:border-color .3s cubic-bezier(.4,0,.2,1),box-shadow .3s cubic-bezier(.4,0,.2,1);outline:none;border-radius:0}
+.input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(184,134,11,.08)}
+textarea.input{resize:vertical;min-height:120px;line-height:1.8}
+select.input{width:auto;min-width:140px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8578' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+
+/* card */
+.card{border:1px solid var(--rule);padding:32px 28px;background:rgba(255,255,255,.5);transition:border-color .3s,box-shadow .3s}
+.card:hover{border-color:var(--gold);box-shadow:0 2px 24px rgba(0,0,0,.03)}
+
+/* animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .6s cubic-bezier(.4,0,.2,1) both}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}
+
+/* checkbox */
+.checkbox-custom{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
+
+/* mode hint transition */
+#contentArea{transition:all .3s ease}
+</style>
+</head>
+<body>
+
+<nav class="nav-top">
+  <a class="nav-brand" href="/">LAS</a>
+  <span class="mono text-xs text-muted">v5.2.3</span>
+</nav>
+
+<main class="max-w-3xl mx-auto px-6" style="padding-top:80px;padding-bottom:80px">
+  <section class="fade-up d1">
+    <p class="mono text-xs text-muted tracking-[4px] mb-2 uppercase">Submit Your Work</p>
+    <h1 class="serif text-4xl md:text-5xl font-black leading-[1.1] mb-6">提交作品</h1>
+
+    <form id="workForm" class="card">
+
+      <!-- 作品名称 -->
+      <div class="mb-3">
+        <input class="input" name="title" placeholder="作品名称" required maxlength="200">
+      </div>
+
+      <!-- 作者 -->
+      <div class="mb-3">
+        <input class="input" name="author" placeholder="作者（选填，经典模式可由系统自动识别）" maxlength="100">
+      </div>
+
+      <!-- 模式 + 高级选项 -->
+      <div class="flex items-center gap-4 mb-3" style="flex-wrap:wrap">
+        <select name="mode" id="modeSelect" class="input">
+          <option value="original">原创模式</option>
+          <option value="classic">经典模式</option>
+        </select>
+        <label class="flex items-center gap-2 cursor-pointer" style="user-select:none">
+          <input type="checkbox" name="ancestor_dialogue" value="true" class="checkbox-custom">
+          <span class="text-sm text-muted">启用「先贤灵境」</span>
+          <span class="text-xs text-muted/60" style="font-size:11px">邀请文学先贤共读对谈</span>
+        </label>
+      </div>
+
+      <!-- 正文区域 -->
+      <div id="contentArea">
+        <textarea class="input mb-2" name="content" placeholder="粘贴或输入作品全文..." required style="min-height:200px"></textarea>
+        <p class="text-xs text-muted mb-3" id="contentHint">原创模式下需要提供完整作品正文以供逐维度分析。</p>
+      </div>
+
+      <!-- 错误提示 -->
+      <p id="uploadError" class="text-xs" style="color:var(--crimson);margin-bottom:12px;display:none"></p>
+
+      <!-- 提交 -->
+      <button type="submit" class="btn btn-primary">开始分析 &rarr;</button>
+    </form>
+  </section>
+</main>
+
+<script>
+const modeSelect = document.getElementById('modeSelect');
+const contentArea = document.getElementById('contentArea');
+modeSelect.addEventListener('change', () => {
+  const isClassic = modeSelect.value === 'classic';
+  if (isClassic) {
+    contentArea.innerHTML = `
+      <textarea class="input mb-2" name="content" placeholder="经典模式：可留空。LLM 将基于训练知识库中的全文记忆进行分析。" style="min-height:80px"></textarea>
+      <p class="text-xs text-muted mb-3">经典模式无需提供正文——仅凭作品名即可分析。也可粘贴部分文本辅助定位版本。</p>`;
+  } else {
+    contentArea.innerHTML = `
+      <textarea class="input mb-2" name="content" placeholder="粘贴或输入作品全文..." required style="min-height:200px"></textarea>
+      <p class="text-xs text-muted mb-3">原创模式下需要提供完整作品正文以供逐维度分析。</p>`;
+  }
+});
+
+// 表单提交演示
+const form = document.getElementById('workForm');
+const errEl = document.getElementById('uploadError');
+form.onsubmit = (e) => {
+  e.preventDefault();
+  const fd = new FormData(form);
+  const data = Object.fromEntries(fd.entries());
+  if (data.mode === 'original' && !data.content.trim()) {
+    errEl.textContent = '原创模式需要提供作品正文';
+    errEl.style.display = 'block';
+    return;
+  }
+  // 模拟提交
+  errEl.style.display = 'none';
+  const btn = form.querySelector('button');
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '开始分析 →';
+    alert('这是独立预览页，提交功能已禁用。\n\n实际运行时将跳转到分析页面并调用 API。');
+  }, 1200);
+};
+</script>
+</body>
+</html>
