@@ -17,10 +17,11 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
 .reveal.visible{opacity:1;transform:translateY(0)}
 
-.btn{padding:8px 24px;border:1px solid var(--gold);color:var(--gold);font-size:.85rem;letter-spacing:2px;cursor:pointer;transition:all .3s;background:transparent;font-family:inherit}
-.btn:hover{background:var(--gold);color:var(--paper)}
-.btn-primary{background:var(--gold);color:var(--paper)}
+.btn{padding:12px 32px;border:1px solid var(--gold);color:var(--gold);font-size:.85rem;letter-spacing:3px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);background:transparent;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.btn:hover{background:var(--gold);color:var(--paper);transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,134,11,.15)}
+.btn-primary{background:var(--gold);color:var(--paper);font-weight:500}
 .btn-primary:hover{background:transparent;color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-danger{border-color:var(--crimson);color:var(--crimson)}
 .btn-danger:hover{background:var(--crimson);color:var(--paper)}
 .input{width:100%;padding:10px 14px;border:1px solid var(--rule-strong);background:transparent;color:var(--ink);font-size:.9rem;font-family:inherit;transition:border-color .3s;outline:none}

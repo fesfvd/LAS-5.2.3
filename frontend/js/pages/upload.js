@@ -48,7 +48,7 @@ App.register('/upload', () => {
 
         <div class="mt-16">
           <p id="uploadError" class="mono text-xs mb-4" style="color:var(--crimson);display:none"></p>
-          <button type="submit" class="btn btn-primary">开始分析 <span class="text-muted/50" style="font-size:11px;letter-spacing:0">/ Analyze</span></button>
+          <button type="submit" class="btn btn-primary">开始分析</button>
         </div>
 
       </form>
