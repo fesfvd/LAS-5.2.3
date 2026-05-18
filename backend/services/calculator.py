@@ -1,4 +1,7 @@
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 STRATEGY_WEIGHTS = {
     1: {"A": 0.25, "B": 0.35, "C": 0.25, "D": 0.15},
@@ -92,6 +95,8 @@ def apply_originality_check(scores: dict, adjustments: list | None = None) -> di
             d_val = adj.get("d_value", 1)
             if dim_id is None or dim_id not in scores:
                 continue
+            if d_val not in GAP_RATIOS:
+                logger.warning(f"apply_originality_check: 非标准 D 值 d_value={d_val!r} (dim={dim_id})，已回退为 D=1")
             d_val = d_val if d_val in GAP_RATIOS else 1
             original = scores[dim_id]
             new = round(original * GAP_RATIOS[d_val] - SUBS[d_val], 1)
@@ -118,13 +123,14 @@ def apply_defect_exemption(scores: dict, genre: str) -> dict:
     if not weak_dims:
         return result
 
+    # 每个 >=105 的高分维度豁免一个 <=85 的低分维度（最多 4 个）
     exempted = set()
     for md_id, _ in master_dims:
+        if len(exempted) >= 4:
+            break
         for wd_id, w_score in weak_dims:
             if wd_id in exempted:
                 continue
-            if len(exempted) >= 4:
-                break
             others = [v for k, v in result.items() if k != wd_id]
             avg = sum(others) / len(others) if others else w_score
             result[wd_id] = round(avg, 1)
@@ -148,6 +154,7 @@ def compute_wcs(scores: dict, strategy: int, mode: str, genre: str) -> dict:
         noncore_dims = [d for d in range(1, 15) if d not in core_ids]
         noncore_avg = sum(scores[d] for d in noncore_dims) / len(noncore_dims)
         gap = abs(core_avg - noncore_avg)
+        # 偏科惩罚: k = 1/(1 + 0.01×gap)，gap>5 且核心≤90 时触发；k 下界 0.65
         if genre not in BIAS_EXEMPT_GENRES and core_avg <= 90 and gap > 5:
             k = 1.0 / (1.0 + 0.01 * gap)
             k = max(k, 0.65)
@@ -159,6 +166,7 @@ def compute_wcs(scores: dict, strategy: int, mode: str, genre: str) -> dict:
         vals_14 = [scores[d] for d in range(1, 15)]
         mean_14 = sum(vals_14) / 14
         sd_14 = math.sqrt(sum((v - mean_14) ** 2 for v in vals_14) / 14) if vals_14 else 0
+        # 平庸惩罚: mf = 1 - 0.006×(75 - mean)，mean<65 且 sd≤8 时触发；mf 下界 0.75
         if mean_14 < 65 and sd_14 <= 8:
             mf = 1.0 - 0.006 * (75 - mean_14)
             mf = max(mf, 0.75)

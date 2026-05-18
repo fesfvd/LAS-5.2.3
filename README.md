@@ -150,12 +150,14 @@ LAS/
 │   │       ├── analyze.js   # 分析进度页
 │   │       └── report.js    # 报告渲染
 │   └── templates/
-│       ├── classic.html     # 经典模式报告模板（深红）
-│       └── original.html    # 原创模式报告模板（紫色）
+│       ├── classic.html     # 经典模式报告模板（深红，纯 HTML 无脚本）
+│       └── original.html    # 原创模式报告模板（紫色，纯 HTML 无脚本）
+│   └── standalone/          # 独立报告页（自包含 HTML）
 │
 ├── LAS v5.2.3 bata.MD       # 原始 LAS 框架文档（V1 提示词基准）
 ├── LAS v5.2.3 json-mode.MD  # JSON 输出模式提示词（V2，当前使用）
 ├── lascd.html               # 首页（LAS 体系介绍）
+├── DESIGN.md                 # 设计规范（awesome-design-md 格式，供 AI/设计师）
 ├── Dockerfile
 ├── docker-compose.yml
 ├── start.bat                # Windows 启动脚本
@@ -195,17 +197,21 @@ docker compose up -d
 
 ---
 
-## Claude Code 技能
+## 设计规范
 
-本项目包含 5 个自定义技能，在对话中通过 `/skill-name` 调用：
+项目根目录的 `DESIGN.md` 基于 [awesome-design-md](https://github.com/VoltAgent/awesome-design-md) 范式编写。AI 编程工具（Claude Code、Cursor 等）可读取该文件，按照 LAS 的设计语言（学术期刊 × 东方古籍美学、深红/金色/墨色系统、三级字体栈）生成风格一致的 UI。
+
+`LAS 报告页 2D 视觉微调指导文档 (v5.2.3).md` 进一步细化报告页的排版与交互规范。
+
+## Claude Code 技能
 
 | 技能 | 用途 |
 |------|------|
 | `/las-debug` | 全链路诊断：报告空白、分析失败时逐层排查 |
-| `/las-smoke` | 端到端冒烟测试：14 字唐诗秒级验证全链路 |
-| `/code-reviewer` | 前端代码语义化/a11y/性能/安全审查 |
-| `/design-to-code` | 设计稿→代码，1px 级还原 |
-| `/frontend-designer` | 前端设计美学与工程规范 |
+| `/las-smoke` | 端到端冒烟测试 |
+| `/code-reviewer` | 前端代码多维度审查 |
+| `/design-to-code` | 设计稿→代码还原 |
+| `/frontend-designer` | 前端设计美学规范 |
 
 ---
 

@@ -97,7 +97,6 @@ function bindSubmitHandler() {
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
     data.ancestor_dialogue = form.querySelector('[name="ancestor_dialogue"]').checked;
-    delete data[''];
 
     if (data.mode === 'original' && !data.content.trim()) {
       errEl.classList.add('show');

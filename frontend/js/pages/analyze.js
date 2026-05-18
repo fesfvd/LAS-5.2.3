@@ -55,11 +55,16 @@ App.register('/analyze', () => {
   }).catch(() => {});
 
   startStream(id);
+
+  window.addEventListener('beforeunload', () => {
+    if (_progressInterval) clearInterval(_progressInterval);
+  });
 });
 
 let _shownStepIndex = -1;
 let _activeProgressBar = null;
 let _progressInterval = null;
+let _currentCharTotal = 0;
 
 function updateRing(stepIndex) {
   const circle = document.getElementById('progressCircle');
@@ -98,7 +103,7 @@ function addLogLine(config) {
 
     const barContainer = document.createElement('span');
     barContainer.className = 'log-progress';
-    barContainer.innerHTML = '<span class="progress-bar"><span class="progress-fill"></span></span><span class="progress-text">0%</span>';
+    barContainer.innerHTML = '<span class="mini-progress-bar"><span class="progress-fill"></span></span><span class="progress-text">0%</span>';
     lineDiv.appendChild(barContainer);
 
     const fillEl = barContainer.querySelector('.progress-fill');
@@ -106,14 +111,17 @@ function addLogLine(config) {
     fillEl.style.background = config.color || 'var(--muted)';
     _activeProgressBar = { fillEl, textEl, startTime: Date.now(), duration: 8000, color: config.color };
 
+    _activeProgressBar._stepIndex = config.stepIndex;
+    _activeProgressBar._startChars = config.minChars;
+    _activeProgressBar._endChars = config.endChars || (config.minChars + 3500);
     if (_progressInterval) clearInterval(_progressInterval);
     _progressInterval = setInterval(() => {
       if (!_activeProgressBar) { clearInterval(_progressInterval); return; }
-      const elapsed = Date.now() - _activeProgressBar.startTime;
-      const p = Math.min(98, Math.round(elapsed / _activeProgressBar.duration * 100));
-      _activeProgressBar.fillEl.style.width = p + '%';
-      _activeProgressBar.textEl.textContent = p + '%';
-    }, 200);
+      const range = _activeProgressBar._endChars - _activeProgressBar._startChars;
+      const p = range > 0 ? Math.min(99, Math.round((_currentCharTotal - _activeProgressBar._startChars) / range * 100)) : 50;
+      _activeProgressBar.fillEl.style.width = Math.max(0, p) + '%';
+      _activeProgressBar.textEl.textContent = Math.max(0, p) + '%';
+    }, 500);
   }
 
   if (logBox) logBox.scrollTop = logBox.scrollHeight;
@@ -126,6 +134,8 @@ function showStepsUpTo(charTotal) {
   if (idx <= _shownStepIndex) return;
 
   for (let i = _shownStepIndex + 1; i <= idx; i++) {
+    WORKFLOW[i].stepIndex = i;
+    WORKFLOW[i].endChars = WORKFLOW[i + 1] ? WORKFLOW[i + 1].minChars : (WORKFLOW[i].minChars + 5000);
     addLogLine(WORKFLOW[i]);
   }
   _shownStepIndex = idx;
@@ -146,7 +156,6 @@ function finishProgressBar() {
 function onComplete() {
   finishProgressBar();
   if (_progressInterval) clearInterval(_progressInterval);
-  // Show remaining steps
   for (let i = _shownStepIndex + 1; i < WORKFLOW.length; i++) {
     addLogLine(WORKFLOW[i]);
   }
@@ -155,8 +164,20 @@ function onComplete() {
 
   const statusText = document.getElementById('statusText');
   const statusIndicator = document.getElementById('statusIndicator');
-  if (statusText) statusText.textContent = '';
+  if (statusText) statusText.textContent = '分析完成，报告生成中...';
   if (statusIndicator) statusIndicator.style.display = 'block';
+}
+
+async function waitForReport(workId) {
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const data = await API.getReport(workId);
+      if (data.report && data.report.ok) return;
+    } catch (e) {
+      console.log('[LAS] 报告轮询 ' + (i + 1) + '/60: ' + e.message);
+    }
+  }
 }
 
 async function startStream(workId) {
@@ -170,13 +191,15 @@ async function startStream(workId) {
     let buffer = '';
     let charTotal = 0;
     let lastUpdate = 0;
+    let receivedDone = false;
 
     if (statusText) statusText.textContent = 'EXECUTING...';
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
+      if (value) {
+        buffer += decoder.decode(value, { stream: true });
+      }
 
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
@@ -191,16 +214,30 @@ async function startStream(workId) {
 
           if (event.type === 'token') {
             charTotal += (event.text || '').length;
+            _currentCharTotal = charTotal;
             if (charTotal - lastUpdate > 500) {
               lastUpdate = charTotal;
               showStepsUpTo(charTotal);
             }
           } else if (event.type === 'done') {
+            receivedDone = true;
             onComplete();
-            setTimeout(() => App.navigate('#/report/' + workId), 1000);
+            await waitForReport(workId);
+            App.navigate('#/report/' + workId);
             return;
           }
         } catch (e) { /* skip */ }
+      }
+
+      if (done) {
+        if (!receivedDone) {
+          onComplete();
+          const statusText = document.getElementById('statusText');
+          if (statusText) statusText.textContent = '连接中断，等待报告就绪...';
+          await waitForReport(workId);
+          App.navigate('#/report/' + workId);
+        }
+        break;
       }
     }
   } catch (err) {

@@ -25,13 +25,14 @@ App.register('/report', async () => {
 
   showLoading('正在加载报告...');
 
-  for (let attempt = 0; attempt < 40; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
     try {
       const data = await API.getReport(id);
       const r = data.report;
 
       if (r && r.ok) {
-        await renderFromTemplate(data, r);
+        await renderFromTemplate(data, r, id);
         return;
       }
       if (r && !r.ok) {
@@ -42,23 +43,35 @@ App.register('/report', async () => {
         return;
       }
     } catch (err) {
-      // Report not ready yet — silently retry
+      console.log('[LAS] 报告加载 ' + (attempt + 1) + '/5: ' + (err.message || err));
     }
-
-    const wait = Math.min(2000 + attempt * 500, 8000);
-    await new Promise(r => setTimeout(r, wait));
   }
 
-  showError('报告加载超时', '分析可能仍在后台运行，请稍后刷新页面重试。');
+  showError('报告加载失败', '分析可能尚未完成，请稍后刷新页面重试。');
 });
 
-async function renderFromTemplate(data, r) {
+// ── Report rendering pipeline ──
+
+async function renderFromTemplate(data, r, id) {
   const mode = data.mode || 'original';
   const isOriginal = mode === 'original';
   const tplUrl = isOriginal ? '/templates/original.html' : '/templates/classic.html';
   const res = await fetch(tplUrl);
   let tpl = await res.text();
 
+  const { sections, dimData, layerAvgs, wcs, tier } = buildReportSections(data, r, id);
+  tpl = applyTemplate(tpl, sections);
+
+  window.__LAS_REPORT_MODE = mode;
+
+  const root = document.getElementById('spaApp');
+  root.innerHTML = tpl;
+  initReport(root, { dimData, layerAvgs, wcs, tier });
+}
+
+function buildReportSections(data, r, fallbackId) {
+  const mode = data.mode || 'original';
+  const isOriginal = mode === 'original';
   const s = r.scoring || {};
   const ac = r.analysis_content || {};
   const dmap = r.dimensions || {};
@@ -99,7 +112,7 @@ async function renderFromTemplate(data, r) {
     };
   });
 
-  // Assessment Summary: best/worst dimension
+  // Assessment Summary
   const sorted = [...dims].sort((a, b) => (b.adjusted_score || b.score) - (a.adjusted_score || a.score));
   const best = sorted[0];
   const worst = sorted[sorted.length - 1];
@@ -154,7 +167,6 @@ async function renderFromTemplate(data, r) {
       </div>
     </div>`;
   }).join('');
-  const benchSectionHtml = benchHtml;
 
   // Deep analysis accordion
   const deepSections = [];
@@ -167,15 +179,17 @@ async function renderFromTemplate(data, r) {
   const deepHtml = deepSections.map(([emoji, title, text], idx) =>
     `<div class="glass-card rounded-xl overflow-hidden">
       <button class="accordion-trigger w-full flex items-center justify-between p-4 text-left" onclick="toggleAccordion(${idx})">
-        <div class="flex items-center gap-3"><span class="text-base">${emoji}</span><span class="font-semibold serif-text text-sm">${title}</span></div>
+        <div class="flex items-center gap-3">
+          <span class="text-lg flex-shrink-0">${emoji}</span>
+          <span class="font-bold serif text-sm">${title}</span>
+        </div>
         <i class="fas fa-chevron-down accordion-icon" style="color:var(--muted);font-size:10px;transition:transform .3s"></i>
       </button>
       <div class="accordion-content">
-        <div class="px-4 pb-4 text-sm leading-relaxed" style="color:var(--muted)">${nl2p(esc(text))}</div>
+        <div class="px-4 pb-4 text-sm leading-[2] serif" style="color:var(--muted)">${nl2p(esc(text))}</div>
       </div>
     </div>`
   ).join('');
-  const deepSectionHtml = deepHtml;
 
   // Professional sections
   let editorHtml = '', guideHtml = '', readingHtml = '';
@@ -188,51 +202,51 @@ async function renderFromTemplate(data, r) {
     if (es.improvement_direction) ehtml += `<p class="mb-2"><strong class="text-ink/60">提升方向：</strong>${esc(es.improvement_direction)}</p>`;
     if (es.reference) ehtml += `<p class="mb-2"><strong class="text-ink/60">参考范本：</strong>${esc(es.reference)}</p>`;
     if (ehtml) editorHtml = `
-      <div class="glass-card rounded-xl p-5 border-l-4" style="border-color:var(--jade)">
+      <div class="glass-card rounded-xl p-5">
         <div class="flex items-center gap-2 mb-3">
-          <i class="fas fa-edit" style="color:var(--jade);font-size:14px"></i>
-          <h3 class="text-sm font-bold serif-text">编辑审稿建议</h3>
+          <i class="fas fa-edit text-sm flex-shrink-0" style="color:var(--jade)"></i>
+          <h3 class="text-sm font-bold serif">编辑审稿建议</h3>
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-jade/8" style="color:var(--jade);font-weight:500">原创模式</span>
         </div>
-        <div class="text-sm leading-relaxed" style="color:var(--muted)">${ehtml}</div>
+        <div class="text-sm leading-[2] serif" style="color:var(--muted)">${ehtml}</div>
       </div>`;
   }
   if (isOriginal && ac.creative_guidance) {
     guideHtml = `
-      <div class="glass-card rounded-xl p-5 border-l-4" style="border-color:var(--crimson)">
+      <div class="glass-card rounded-xl p-5">
         <div class="flex items-center gap-2 mb-3">
-          <i class="fas fa-lightbulb" style="color:var(--crimson);font-size:14px"></i>
-          <h3 class="text-sm font-bold serif-text">创作导语</h3>
+          <i class="fas fa-lightbulb text-sm flex-shrink-0" style="color:var(--crimson)"></i>
+          <h3 class="text-sm font-bold serif">创作导语</h3>
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-crimson/8" style="color:var(--crimson);font-weight:500">原创模式</span>
         </div>
-        <div class="text-sm leading-relaxed" style="color:var(--muted)">${nl2p(esc(ac.creative_guidance))}</div>
+        <div class="text-sm leading-[2] serif" style="color:var(--muted)">${nl2p(esc(ac.creative_guidance))}</div>
       </div>`;
   } else if (!isOriginal && ac.creative_inspiration) {
     guideHtml = `
-      <div class="glass-card rounded-xl p-5 border-l-4" style="border-color:var(--jade)">
+      <div class="glass-card rounded-xl p-5">
         <div class="flex items-center gap-2 mb-3">
-          <i class="fas fa-book-reader" style="color:var(--jade);font-size:14px"></i>
-          <h3 class="text-sm font-bold serif-text">创作启示</h3>
+          <i class="fas fa-book-reader text-sm flex-shrink-0" style="color:var(--jade)"></i>
+          <h3 class="text-sm font-bold serif">创作启示</h3>
         </div>
-        <div class="text-sm leading-relaxed" style="color:var(--muted)">${nl2p(esc(ac.creative_inspiration))}</div>
+        <div class="text-sm leading-[2] serif" style="color:var(--muted)">${nl2p(esc(ac.creative_inspiration))}</div>
       </div>`;
   }
   const rs = ac.reading_suggestions || {};
   if (rs.general || rs.research) {
     readingHtml = `
-      <div class="glass-card rounded-xl p-5 border-l-4" style="border-color:var(--jade)">
+      <div class="glass-card rounded-xl p-5">
         <div class="flex items-center gap-2 mb-3">
-          <i class="fas fa-book-reader" style="color:var(--jade);font-size:14px"></i>
-          <h3 class="text-sm font-bold serif-text">阅读与研习建议</h3>
+          <i class="fas fa-book-reader text-sm flex-shrink-0" style="color:var(--jade)"></i>
+          <h3 class="text-sm font-bold serif">阅读与研习建议</h3>
         </div>
-        <div class="text-sm leading-relaxed" style="color:var(--muted)">
+        <div class="text-sm leading-[2] serif" style="color:var(--muted)">
           ${rs.general ? `<p><strong style="color:var(--muted)">面向普通读者：</strong>${esc(rs.general)}</p>` : ''}
           ${rs.research ? `<p class="mt-1"><strong style="color:var(--muted)">面向研究者/教学者：</strong>${esc(rs.research)}</p>` : ''}
         </div>
       </div>`;
   }
 
-  // Ancestor dialogue (conditional)
+  // Ancestor dialogue
   const ancestor = ac.ancestor_dialogue || {};
   const ancestorHtml = (data.ancestor_dialogue && ancestor.enabled) ? `
     <section id="ancestor-dialogue" class="py-10 reveal">
@@ -296,9 +310,8 @@ async function renderFromTemplate(data, r) {
         ).join('')}</div>
       </div>`;
   }
-  const appSectionHtml = appHtml || '';
 
-  // Verification section (original only)
+  // Verification data (original only)
   const extremeText = ds.triggered ? '已触发' : '无';
   const extremeDetail = ds.triggered ? `（${esc(ds.trigger_type || '')}）` : '（未触发任何极端情况，继续详细评分流程）';
   const hasAdjustments = dimData.some(d => d.adjusted);
@@ -324,36 +337,8 @@ async function renderFromTemplate(data, r) {
       </div>`
     ).join('')
     : '<div class="text-sm" style="color:var(--muted)">无调整记录</div>';
-  const verifyHtml = isOriginal ? `
-    <section id="verification" class="py-10 reveal">
-      <hr class="rule-strong mb-6">
-      <div class="flex items-center gap-3 mb-5">
-        <h2 class="text-2xl font-bold serif">审慎校验记录</h2>
-        <span class="text-[10px] px-2 py-0.5 rounded" style="background:rgba(184,134,11,.06);color:#8b6914;font-weight:500">原创模式特有</span>
-      </div>
-      <div class="mb-5">
-        <h3 class="text-base font-bold serif mb-3 flex items-center"><i class="fas fa-shield-alt mr-2" style="color:var(--jade);font-size:14px"></i>一、极端情况筛查</h3>
-        <div class="flex items-center gap-3 p-3 rounded" style="background:rgba(45,106,79,.04);border:1px solid rgba(45,106,79,.1)">
-          <i class="fas fa-check-circle" style="color:var(--jade)"></i>
-          <span class="text-sm" style="color:var(--muted)">筛查结果：<strong style="color:var(--jade)">${extremeText}</strong>${extremeDetail}</span>
-        </div>
-      </div>
-      <div>
-        <h3 class="text-base font-bold serif mb-3 flex items-center"><i class="fas fa-balance-scale mr-2" style="color:var(--gold);font-size:14px"></i>二、维度分数审慎下调</h3>
-        <div class="p-3 mb-4 rounded" style="background:rgba(180,120,30,.04);border:1px solid rgba(180,120,30,.1)">
-          <div class="flex items-start gap-2">
-            <i class="fas fa-exclamation-triangle mt-0.5" style="color:var(--gold);font-size:13px"></i>
-            <div class="text-xs" style="color:var(--muted)">
-              <p class="font-semibold mb-0.5" style="color:#8b6914">下调触发条件</p>
-              <p>${hasAdjustments ? '高分段维度触发原创审慎校验下调' : '无需调整'}</p>
-            </div>
-          </div>
-        </div>
-        <div class="space-y-2">${adjItemsHtml}</div>
-      </div>
-    </section>` : '';
 
-  // Penalty calculation display (original mode only)
+  // Penalty calculation display (original only)
   const kVal = s.core_penalty_k !== undefined ? s.core_penalty_k : 1;
   const mfVal = s.mediocrity_mf !== undefined ? s.mediocrity_mf : 1;
   const pwsVal = s.pws !== undefined ? s.pws : (s.wcs || 0);
@@ -400,91 +385,392 @@ async function renderFromTemplate(data, r) {
   // Literary fortune
   const div = ac.divination || {};
 
-  // Do placeholder replacements
-  tpl = tpl
-    .replace(/\{\{WORK_TITLE\}\}/g, esc(data.title))
-    .replace(/\{\{WORK_AUTHOR\}\}/g, esc(data.author || ''))
-    .replace(/\{\{WORK_TAGS\}\}/g, tags)
-    .replace(/\{\{LAS_ID\}\}/g, esc(ac.report_id || 'LAS-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+id.slice(0,3)))
-    .replace(/\{\{WORK_TYPE\}\}/g, esc(meta.genre || ''))
-    .replace(/\{\{WCS_SCORE\}\}/g, (s.wcs || 0).toFixed(2))
-    .replace(/\{\{WORK_LEVEL\}\}/g, esc(s.tier || ''))
-    .replace(/\{\{WORK_PERCENTILE\}\}/g, percentile)
-    .replace(/\{\{WORK_TITLE_HONOR\}\}/g, esc(ac.nickname || ''))
-    .replace(/\{\{WORK_SHARP_COMMENT\}\}/g, esc(ac.one_liner || ''))
-    .replace(/\{\{WORK_OVERVIEW\}\}/g, nl2p(esc(ac.overview || '')))
-    .replace(/\{\{GOLDEN_QUOTE\}\}/g, esc(ac.golden_quote || ''))
-    .replace(/\{\{LITERARY_ECHO\}\}/g, esc(ac.literary_echo || ''))
-    .replace(/\{\{LITERARY_ECHO_SOURCE\}\}/g, esc(ac.literary_echo_source || ''))
-    .replace(/\{\{LAYER1_PERCENT\}\}/g, layerPct(layerAvgs.A))
-    .replace(/\{\{LAYER1_AVG\}\}/g, layerAvgs.A.toFixed(2))
-    .replace(/\{\{LAYER2_PERCENT\}\}/g, layerPct(layerAvgs.B))
-    .replace(/\{\{LAYER2_AVG\}\}/g, layerAvgs.B.toFixed(2))
-    .replace(/\{\{LAYER3_PERCENT\}\}/g, layerPct(layerAvgs.C))
-    .replace(/\{\{LAYER3_AVG\}\}/g, layerAvgs.C.toFixed(2))
-    .replace(/\{\{LAYER4_PERCENT\}\}/g, layerPct(layerAvgs.D))
-    .replace(/\{\{LAYER4_AVG\}\}/g, layerAvgs.D.toFixed(2))
-    .replace(/\{\{DIM_DATA_JSON\}\}/g, JSON.stringify(dimData).replace(/<\//g, '<\\/'))
-    .replace(/\{\{ASSESSMENT_SUMMARY\}\}/g, assessmentHtml)
-    .replace(/\{\{CORE_BENCHMARKS\}\}/g, benchSectionHtml)
-    .replace(/\{\{DEEP_ANALYSIS_SECTIONS\}\}/g, deepSectionHtml)
-    .replace(/\{\{CONCLUSION_CONTENT\}\}/g, conclusionHtml)
-    .replace(/\{\{APPENDIX_SECTIONS\}\}/g, appSectionHtml)
-    .replace(/\{\{EDITOR_REVIEW_SECTION\}\}/g, editorHtml)
-    .replace(/\{\{CREATION_GUIDE_SECTION\}\}/g, guideHtml)
-    .replace(/\{\{READING_RECOMMENDATIONS\}\}/g, readingHtml)
-    .replace(/\{\{PROFESSIONAL_SECTIONS\}\}/g, editorHtml + guideHtml + readingHtml)
-    .replace(/\{\{ANCESTOR_DIALOGUE_SECTION\}\}/g, ancestorHtml)
-    .replace(/\{\{EXTREME_CHECK_RESULT\}\}/g, extremeText)
-    .replace(/\{\{EXTREME_CHECK_DETAIL\}\}/g, extremeDetail)
-    .replace(/\{\{ADJUSTMENT_TRIGGER\}\}/g, hasAdjustments ? '高分段维度触发原创审慎校验下调' : '无需调整')
-    .replace(/\{\{ADJUSTMENT_ITEMS\}\}/g, adjItemsHtml)
-    .replace(/\{\{PENALTY_CALCULATION\}\}/g, penaltyHtml)
-    .replace(/\{\{FORTUNE_LEVEL\}\}/g, esc(div.grade || ''))
-    .replace(/\{\{FORTUNE_KEYWORD\}\}/g, esc(div.word || ''))
-    .replace(/\{\{FORTUNE_TEXT\}\}/g, esc(div.poem || ''))
-    .replace(/\{\{FORTUNE_SOURCE\}\}/g, esc(div.source || ''))
-    .replace(/\{\{CURRENT_DATE\}\}/g, dateStr)
-    .replace(/\{\{TOKEN_USAGE\}\}/g, (() => {
-      const t = data.tokens || {};
-      if (!t.total) return '';
-      const k = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'K' : String(v);
-      return '消耗 ' + k(t.total) + ' tokens（提示 ' + k(t.prompt) + ' + 生成 ' + k(t.completion) + '）';
-    })());
+  // Token usage
+  const t = data.tokens || {};
+  const tokenStr = (() => {
+    if (!t.total) return '';
+    const k = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'K' : String(v);
+    return '消耗 ' + k(t.total) + ' tokens（提示 ' + k(t.prompt) + ' + 生成 ' + k(t.completion) + '）';
+  })();
 
-  // Insert into DOM
-  const root = document.getElementById('spaApp');
-  root.innerHTML = tpl;
-
-  // Debug: capture script errors without breaking scope
-  const scriptErrors = [];
-  const prevOnError = window.onerror;
-  window.onerror = function(msg, src, line, col, err) {
-    scriptErrors.push((msg || '').toString().substring(0, 100));
-    if (prevOnError) prevOnError.apply(this, arguments);
-    return false;
+  const sections = {
+    WORK_TITLE: esc(data.title),
+    WORK_AUTHOR: esc(data.author || ''),
+    WORK_TAGS: tags,
+    LAS_ID: esc(ac.report_id || 'LAS-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+(fallbackId||'').slice(0,3)),
+    WORK_TYPE: esc(meta.genre || ''),
+    WCS_SCORE: (s.wcs || 0).toFixed(2),
+    WORK_LEVEL: esc(s.tier || ''),
+    WORK_PERCENTILE: percentile,
+    WORK_TITLE_HONOR: esc(ac.nickname || ''),
+    WORK_SHARP_COMMENT: esc(ac.one_liner || ''),
+    WORK_OVERVIEW: nl2p(esc(ac.overview || '')),
+    GOLDEN_QUOTE: esc(ac.golden_quote || ''),
+    LITERARY_ECHO: esc(ac.literary_echo || ''),
+    LITERARY_ECHO_SOURCE: esc(ac.literary_echo_source || ''),
+    LAYER1_PERCENT: layerPct(layerAvgs.A),
+    LAYER1_AVG: layerAvgs.A.toFixed(2),
+    LAYER2_PERCENT: layerPct(layerAvgs.B),
+    LAYER2_AVG: layerAvgs.B.toFixed(2),
+    LAYER3_PERCENT: layerPct(layerAvgs.C),
+    LAYER3_AVG: layerAvgs.C.toFixed(2),
+    LAYER4_PERCENT: layerPct(layerAvgs.D),
+    LAYER4_AVG: layerAvgs.D.toFixed(2),
+    DIM_DATA_JSON: JSON.stringify(dimData).replace(/<\//g, '<\\/'),
+    ASSESSMENT_SUMMARY: assessmentHtml,
+    CORE_BENCHMARKS: benchHtml,
+    DEEP_ANALYSIS_SECTIONS: deepHtml,
+    CONCLUSION_CONTENT: conclusionHtml,
+    APPENDIX_SECTIONS: appHtml || '',
+    EDITOR_REVIEW_SECTION: editorHtml,
+    CREATION_GUIDE_SECTION: guideHtml,
+    READING_RECOMMENDATIONS: readingHtml,
+    PROFESSIONAL_SECTIONS: editorHtml + guideHtml + readingHtml,
+    ANCESTOR_DIALOGUE_SECTION: ancestorHtml,
+    EXTREME_CHECK_RESULT: extremeText,
+    EXTREME_CHECK_DETAIL: extremeDetail,
+    ADJUSTMENT_TRIGGER: hasAdjustments ? '高分段维度触发原创审慎校验下调' : '无需调整',
+    ADJUSTMENT_ITEMS: adjItemsHtml,
+    PENALTY_CALCULATION: penaltyHtml,
+    FORTUNE_LEVEL: esc(div.grade || ''),
+    FORTUNE_KEYWORD: esc(div.word || ''),
+    FORTUNE_TEXT: esc(div.poem || ''),
+    FORTUNE_SOURCE: esc(div.source || ''),
+    CURRENT_DATE: dateStr,
+    TOKEN_USAGE: tokenStr,
   };
 
-  root.querySelectorAll('script:not([src])').forEach(oldScript => {
-    const newScript = document.createElement('script');
-    newScript.textContent = oldScript.textContent;
-    oldScript.parentNode.replaceChild(newScript, oldScript);
+  return { sections, dimData, layerAvgs, wcs: s.wcs, tier: s.tier };
+}
+
+function applyTemplate(tpl, sections) {
+  for (const [key, value] of Object.entries(sections)) {
+    tpl = tpl.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), String(value));
+  }
+  const residual = tpl.match(/\{\{[A-Z_]+\}\}/g);
+  if (residual) console.warn('[LAS] 未替换的占位符:', [...new Set(residual)].join(', '));
+  return tpl;
+}
+
+function initReport(root, { dimData, layerAvgs, wcs, tier }) {
+  const mode = window.__LAS_REPORT_MODE || 'original';
+  const isOriginal = mode === 'original';
+  const LC = isOriginal ? ['#6b21a8','#2d6a4f','#b8860b','#1a1a1a'] : ['#8b0000','#2d6a4f','#b8860b','#1a1a1a'];
+  const primaryColor = LC[0];
+
+  window.__LAS_DATA = { dimData, LC, mode, primaryColor, wcs };
+
+  if (dimData.length === 0) {
+    const dbg = document.createElement('div');
+    dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;color:#e0e0e0;padding:12px 20px;font-size:11px;font-family:monospace;z-index:9999;max-height:160px;overflow:auto;border-top:2px solid var(--crimson)';
+    dbg.innerHTML = '<strong style="color:var(--crimson)">[LAS DEBUG]</strong> dimData: 0 items — extreme case, no interactive init';
+    root.appendChild(dbg);
+    return;
+  }
+
+  initFontSize();
+  initScoreRing(wcs);
+  initRadarChart(dimData, LC, primaryColor);
+  buildTable();
+  initTableEvents();
+  initNav(isOriginal);
+  initSectionNav(isOriginal);
+  initScroll();
+  initReveal();
+}
+
+// ── init helpers ──
+
+function initFontSize() {
+  const el = document.getElementById('goldenQuote');
+  if (el) {
+    const l = el.textContent.trim().length;
+    if (l <= 15) { el.style.fontSize = '1.25rem'; el.style.fontWeight = '600'; }
+    else if (l <= 25) { el.style.fontSize = '1.1rem'; el.style.fontWeight = '500'; }
+    else if (l <= 40) { el.style.fontSize = '1rem'; el.style.fontWeight = '500'; }
+    else if (l <= 60) { el.style.fontSize = '0.9rem'; el.style.fontWeight = '400'; }
+    else { el.style.fontSize = '0.875rem'; el.style.fontWeight = '400'; }
+  }
+  const sc = document.getElementById('sharpComment');
+  if (sc) {
+    const l = sc.textContent.trim().length;
+    if (l <= 20) { sc.style.fontSize = '1.35rem'; sc.style.fontWeight = '700'; }
+    else if (l <= 35) { sc.style.fontSize = '1.2rem'; sc.style.fontWeight = '600'; }
+    else if (l <= 50) { sc.style.fontSize = '1.1rem'; sc.style.fontWeight = '600'; }
+    else if (l <= 70) { sc.style.fontSize = '1rem'; sc.style.fontWeight = '500'; }
+    else if (l <= 100) { sc.style.fontSize = '0.9rem'; sc.style.fontWeight = '500'; }
+    else { sc.style.fontSize = '0.875rem'; sc.style.fontWeight = '400'; }
+  }
+}
+
+function initScoreRing(wcsScore) {
+  const p = document.getElementById('heroProgress'), v = document.getElementById('heroValue');
+  if (!p || !v) return;
+  const score = wcsScore || 0, c = 2 * Math.PI * 42, o = c * (1 - score / 150);
+  setTimeout(() => {
+    p.style.strokeDashoffset = o;
+    const d = 2000, start = performance.now();
+    (function a(t) {
+      const progress = Math.min((t - start) / d, 1);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      v.textContent = (eased * score).toFixed(2);
+      if (progress < 1) requestAnimationFrame(a);
+    })(performance.now());
+  }, 400);
+}
+
+function initRadarChart(dimData, LC, primaryColor) {
+  const canvas = document.getElementById('radarChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const tgt = dimData.map(d => d.score), cur = new Array(16).fill(0);
+
+  const lvlPlugin = {
+    id: 'lvl',
+    beforeDatasetsDraw(ch) {
+      const { ctx: c, chartArea: { top, bottom, left, right }, scales: { r } } = ch;
+      const cx = (left + right) / 2, cy = (top + bottom) / 2, da = r.drawingArea;
+      [150, 125, 105, 95, 75].forEach((v, i) => {
+        const rd = (v / 150) * da;
+        c.save(); c.beginPath(); c.arc(cx, cy, rd, 0, 2 * Math.PI);
+        c.strokeStyle = (primaryColor === '#6b21a8' ? 'rgba(107,33,168,' : 'rgba(139,0,0,') + (0.4 - i * 0.06).toFixed(2) + ')';
+        c.lineWidth = 0.8; c.setLineDash([3, 4]); c.stroke(); c.setLineDash([]);
+        c.fillStyle = 'rgba(26,26,26,.3)'; c.font = '9px "Noto Sans SC"';
+        c.textAlign = 'left'; c.textBaseline = 'middle';
+        c.fillText(v, cx + rd + 4, cy); c.restore();
+      });
+    }
+  };
+
+  const isPurple = primaryColor === '#6b21a8';
+  const chartBg = isPurple ? 'rgba(107,33,168,0.06)' : 'rgba(139,0,0,0.06)';
+  const chartBorder = isPurple ? 'rgba(107,33,168,0.5)' : 'rgba(139,0,0,0.5)';
+  const chartPoint = isPurple ? 'rgba(107,33,168,0.7)' : 'rgba(139,0,0,0.7)';
+  const tooltipBorder = isPurple ? 'rgba(107,33,168,0.1)' : 'rgba(139,0,0,0.1)';
+
+  const chart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: dimData.map(d => d.name),
+      datasets: [{
+        data: cur, fill: true,
+        backgroundColor: chartBg, borderColor: chartBorder,
+        pointBackgroundColor: chartPoint, pointBorderColor: '#faf8f5',
+        pointBorderWidth: 1.5, pointRadius: 5, pointHoverRadius: 9, borderWidth: 1.5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: false },
+      onHover: (e, el) => { e.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
+      onClick: (e, el) => { if (el.length) document.getElementById('table').scrollIntoView({ behavior: 'smooth' }); },
+      scales: {
+        r: {
+          min: 0, max: 150, ticks: { display: false },
+          grid: { color: 'rgba(26,26,26,.04)', circular: true },
+          angleLines: { color: 'rgba(26,26,26,.04)' },
+          pointLabels: { font: { size: 11, family: "'Noto Sans SC'", weight: '500' }, color: '#1a1a1a' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(26,26,26,0.88)', titleColor: '#faf8f3',
+          bodyColor: 'rgba(250,248,245,0.8)', borderColor: 'rgba(184,134,11,0.3)', borderWidth: 1, padding: 10, cornerRadius: 6,
+          titleFont: { family: "'Noto Serif SC'", weight: '700', size: 14 },
+          bodyFont: { family: "'Noto Sans SC'", weight: '500', size: 12 },
+          titleMarginBottom: 6,
+          callbacks: {
+            title: c => dimData[c[0].dataIndex].name,
+            label: c => [
+              '  ' + dimData[c[0].dataIndex].score + ' / 150',
+              '  档位  ' + dimData[c[0].dataIndex].level,
+              '  权重  ' + dimData[c[0].dataIndex].weight
+            ]
+          }
+        }
+      },
+      animation: { duration: 0 }
+    },
+    plugins: [lvlPlugin]
   });
 
-  // Restore and show debug if data looks wrong
-  window.onerror = prevOnError;
-  if (dimData.length === 0 || scriptErrors.length > 0) {
-    const debugDiv = document.createElement('div');
-    debugDiv.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;color:#e0e0e0;padding:12px 20px;font-size:11px;font-family:monospace;z-index:9999;max-height:160px;overflow:auto;border-top:2px solid var(--crimson)';
-    debugDiv.innerHTML = '<strong style="color:var(--crimson)">[LAS DEBUG]</strong> ' +
-      'dimData: ' + dimData.length + ' items | ' +
-      'layerAvgs: ' + JSON.stringify(s.layer_avgs || {}) + ' | ' +
-      'wcs: ' + (s.wcs || '?') + ' | ' +
-      'tier: ' + (s.tier || '?') + ' | ' +
-      (scriptErrors.length ? '<br>Script errors: ' + scriptErrors.join('; ') : '<br>No script errors detected') +
-      '<br><span style="color:#888">If this bar is visible, something is wrong — dimData should have 16 items.</span>';
-    root.appendChild(debugDiv);
+  setTimeout(() => {
+    const d = 2500, start = performance.now();
+    (function a(t) {
+      const progress = Math.min((t - start) / d, 1);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      for (let i = 0; i < 16; i++) cur[i] = tgt[i] * eased;
+      chart.update('none');
+      if (progress < 1) requestAnimationFrame(a);
+    })(performance.now());
+  }, 600);
+}
+
+function buildTable(filter, query) {
+  const D = window.__LAS_DATA;
+  if (!D) return;
+  const { dimData: DIM, LC, mode } = D;
+  const isOriginal = mode === 'original';
+  const hoverBg = isOriginal ? 'rgba(107,33,168,.03)' : 'rgba(139,0,0,.03)';
+  const lowerRefColor = isOriginal ? 'rgba(107,33,168,.5)' : 'rgba(139,0,0,.5)';
+  const topLevelColor = LC[0];
+  const topLevelBg = isOriginal ? 'rgba(107,33,168,.08)' : 'rgba(139,0,0,.08)';
+
+  const f = filter !== undefined ? filter : (document.getElementById('levelFilter') ? document.getElementById('levelFilter').value : 'all');
+  const q = query !== undefined ? query : (document.getElementById('tableSearch') ? document.getElementById('tableSearch').value : '');
+
+  const tb = document.getElementById('tableBody');
+  if (!tb) return;
+  tb.innerHTML = '';
+  let n = 0;
+
+  DIM.forEach((d, i) => {
+    if (f !== 'all' && d.level !== f) return;
+    if (q && !d.name.includes(q)) return;
+    n++;
+
+    const r = document.createElement('tr');
+    r.style.cssText = 'border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s';
+    r.onmouseenter = () => r.style.background = hoverBg;
+    r.onmouseleave = () => r.style.background = '';
+
+    const topTiers = {
+      '文学之巅': 'color:' + topLevelColor + ';background:' + topLevelBg,
+      '永恒殿堂': 'color:#b8860b;background:rgba(184,134,11,.08)',
+      '不朽丰碑': 'color:#1a1a1a;background:rgba(26,26,26,.04)',
+      '典范之作': 'color:#2d6a4f;background:rgba(45,106,79,.08)',
+      '上乘佳作': 'color:#059669;background:rgba(5,150,105,.06)',
+    };
+    const lc = topTiers[d.level] || 'color:#8a8578;background:rgba(138,133,120,.06)';
+    const adj = d.adjusted ? '<span class="text-[9px] text-gold/60 ml-0.5" title="已校验调整">*</span>' : '';
+
+    r.innerHTML = '<td class="py-2.5 px-3 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style="background:' + LC[d.layer] + '"></span>' + d.name + adj + '</td>'
+      + '<td class="py-2.5 px-2 text-center mono text-muted text-xs">' + d.weight + '</td>'
+      + '<td class="py-2.5 px-2 text-center mono font-bold">' + d.score + '</td>'
+      + '<td class="py-2.5 px-2 text-center"><span class="text-[11px] px-2 py-0.5 rounded-full font-semibold" style="' + lc + '">' + d.level + '</span></td>'
+      + '<td class="py-2.5 px-3 text-muted text-xs">' + d.benchmark + '</td>'
+      + '<td class="py-2.5 px-2 text-center"><i class="fas fa-chevron-down text-muted/30 text-[10px] arr" id="arr' + i + '"></i></td>';
+    r.onclick = () => toggleRow(i);
+    tb.appendChild(r);
+
+    const er = document.createElement('tr');
+    er.id = 'er' + i;
+    const gapContent = d.gapLevel
+      ? '<p><strong class="text-ink/60">① 基准表现：</strong>' + (d.benchmarkPerf || '暂无') + '</p>'
+        + '<p><strong class="text-ink/60">② 证据引用：</strong>' + (d.evidence || '暂无') + '</p>'
+        + '<p><strong class="text-ink/60">③ 差距等级：</strong>' + d.gapLevel + '</p>'
+        + (d.lowerRef ? '<p><strong style="color:' + lowerRefColor + '">④ 反向锚定：</strong>' + d.lowerRef + '</p>' : '')
+        + '<p><strong class="text-ink/60">⑤ 结论：</strong>' + (d.compare || '暂无') + '</p>'
+      : '<p><strong class="text-ink/60">关键证据：</strong>' + (d.evidence || '暂无') + '</p>'
+        + '<p><strong class="text-ink/60">基准比较：</strong>' + (d.compare || '暂无') + '</p>'
+        + (d.lowerRef ? '<p><strong style="color:' + lowerRefColor + '">反向锚定：</strong>' + d.lowerRef + '</p>' : '');
+    er.innerHTML = '<td colspan="6" class="p-0"><div class="expand-row" id="ex' + i + '"><div class="px-6 py-3 text-sm text-muted leading-relaxed space-y-1.5 serif" style="background:rgba(26,26,26,.015)">'
+      + gapContent + '</div></div></td>';
+    tb.appendChild(er);
+  });
+
+  if (!n) {
+    const e = document.createElement('tr');
+    e.innerHTML = '<td colspan="6" class="py-8 text-center text-muted">无匹配结果</td>';
+    tb.appendChild(e);
   }
+}
+
+function initTableEvents() {
+  const search = document.getElementById('tableSearch');
+  const filter = document.getElementById('levelFilter');
+  if (search) search.addEventListener('input', () => buildTable());
+  if (filter) filter.addEventListener('change', () => buildTable());
+}
+
+function initNav(isOriginal) {
+  const secs = isOriginal
+    ? ['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix']
+    : ['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix'];
+
+  document.querySelectorAll('.nav-pip').forEach(p => p.addEventListener('click', () => scrollTo(p.dataset.target)));
+
+  const sObs = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (e.isIntersecting) document.querySelectorAll('.nav-pip').forEach(p => p.classList.toggle('active', p.dataset.target === e.target.id));
+    });
+  }, { threshold: 0.15, rootMargin: '-10% 0px -60% 0px' });
+
+  secs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) sObs.observe(el);
+  });
+}
+
+function initSectionNav(isOriginal) {
+  const container = document.getElementById('sectionNavInner');
+  if (!container) return;
+  const secs = isOriginal
+    ? ['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix']
+    : ['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix'];
+  const labels = isOriginal
+    ? ['概览','评估','校验','详表','基准','分析','专业','结论','附录']
+    : ['概览','评估','详表','基准','分析','专业','结论','附录'];
+  const enLabels = isOriginal
+    ? ['HERO','ASSESS','VERIFY','TABLE','BENCH','DEEP','PRO','VERDICT','EXTRA']
+    : ['HERO','ASSESS','TABLE','BENCH','DEEP','PRO','VERDICT','EXTRA'];
+
+  secs.forEach((id, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'section-nav-btn';
+    btn.dataset.target = id;
+    btn.innerHTML = '<span class="section-nav-en">' + enLabels[i] + '</span><span class="section-nav-zh">' + labels[i] + '</span>';
+    btn.addEventListener('click', () => scrollTo(id));
+    container.appendChild(btn);
+  });
+
+  const sObs = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        container.querySelectorAll('.section-nav-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.target === e.target.id);
+        });
+      }
+    });
+  }, { threshold: 0.2, rootMargin: '-80px 0px -60% 0px' });
+
+  secs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) sObs.observe(el);
+  });
+}
+
+function initScroll() {
+  const bar = document.getElementById('stickyBar'), hero = document.getElementById('hero'), sn = document.getElementById('sectionNav');
+  window.addEventListener('scroll', () => {
+    if (bar && hero) { const show = hero.getBoundingClientRect().bottom < 0; bar.classList.toggle('show', show); if (sn) sn.classList.toggle('show', show); }
+    const btn = document.getElementById('topBtn');
+    if (btn) {
+      const show = window.scrollY > 600;
+      btn.style.opacity = show ? '1' : '0';
+      btn.style.pointerEvents = show ? 'auto' : 'none';
+    }
+  }, { passive: true });
+}
+
+function initReveal() {
+  const rObs = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => rObs.observe(el));
+
+  const bObs = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.width + '%');
+        bObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  const lb = document.getElementById('layerBars');
+  if (lb) bObs.observe(lb);
 }
 
 function esc(s) {
@@ -497,4 +783,34 @@ function esc(s) {
 function nl2p(text) {
   if (!text) return '';
   return text.split('\n').filter(l => l.trim()).map(l => `<p class="mb-2 last:mb-0">${l}</p>`).join('');
+}
+
+// ── Shared report interactivity (called from template & report.js generated HTML) ──
+
+function toggleAdjustment(idx) {
+  const items = document.querySelectorAll('#adjustmentList > div');
+  items.forEach((item, i) => {
+    const c = item.querySelector('.accordion-content'), a = item.querySelector('.accordion-icon');
+    if (!c || !a) return;
+    if (i === idx) { c.classList.toggle('open'); a.classList.toggle('open'); }
+    else { c.classList.remove('open'); a.classList.remove('open'); }
+  });
+}
+
+function toggleAccordion(idx) {
+  const items = document.querySelectorAll('#accordion > div');
+  const c = items[idx].querySelector('.accordion-content'), a = items[idx].querySelector('.accordion-icon');
+  c.classList.toggle('open'); a.classList.toggle('open');
+}
+
+function toggleRow(i) {
+  const ex = document.getElementById('ex' + i), ar = document.getElementById('arr' + i);
+  const open = ex.classList.contains('open');
+  document.querySelectorAll('.expand-row').forEach(e => e.classList.remove('open'));
+  document.querySelectorAll('.arr').forEach(a => a.style.transform = '');
+  if (!open) { ex.classList.add('open'); ar.style.transform = 'rotate(180deg)'; }
+}
+
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

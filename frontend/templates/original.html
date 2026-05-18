@@ -14,6 +14,12 @@
 </div>
 </div>
 
+
+	<div class="section-nav" id="sectionNav">
+	<div class="max-w-5xl mx-auto px-6 flex items-center gap-4 overflow-x-auto" id="sectionNavInner">
+	</div>
+	</div>
+
 <div class="side-nav fixed right-5 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 items-center" id="sideNav">
 <div class="nav-pip active" data-target="hero"></div>
 <div class="nav-pip" data-target="assessmentSummary"></div>
@@ -103,8 +109,7 @@
 
 </div>
 
-<div class="md:col-span-8 fade-up d3">
-<div class="h-full flex flex-col">
+<div class="md:col-span-8 fade-up d3 flex flex-col">
 <p class="text-[11px] text-muted uppercase tracking-widest mb-2 font-medium">十六维评分雷达图（校验后）</p>
 <div class="flex-1 w-full">
 <canvas id="radarChart"></canvas>
@@ -150,21 +155,18 @@
 </section>
 
 
-<section id="workInfo" class="py-8 reveal">
+<section id="workInfo" class="py-10 reveal">
 <hr class="rule-strong mb-6">
-<div class="grid md:grid-cols-3 gap-6">
-<div class="md:col-span-2">
-<div class="text-sm leading-relaxed mb-5" style="color:var(--muted)">{{WORK_OVERVIEW}}</div>
+<h2 class="text-2xl font-bold serif mb-5">作品概况</h2>
+<div class="grid ">
+<div class="">
+<div class="text-sm leading-[2] mb-5 serif" style="color:var(--muted)">{{WORK_OVERVIEW}}</div>
+<div class="pl-4 border-l-2" style="border-color:var(--gold)">
+<p class="text-[10px] text-muted uppercase tracking-widest mb-2 font-medium">金句</p>
+<blockquote class="text-lg serif leading-relaxed italic" style="color:var(--ink)" id="goldenQuote">"{{GOLDEN_QUOTE}}"</blockquote>
+</div>
+</div>
 
-<p class="text-[11px] text-muted uppercase tracking-widest mb-2 font-medium">金句</p>
-<blockquote class="text-lg serif leading-relaxed" style="color:var(--ink)" id="goldenQuote">"{{GOLDEN_QUOTE}}"</blockquote>
-</div>
-<div class="text-xs text-muted space-y-1" style="line-height:2">
-<p>{{LAS_ID}} &middot; {{WORK_TYPE}}</p>
-<p>{{WORK_TITLE}} &middot; {{WORK_AUTHOR}}</p>
-<p>{{CURRENT_DATE}}</p>
-</div>
-</div>
 </section>
 
 <section id="table" class="py-10 reveal">
@@ -225,9 +227,7 @@
 <hr class="rule-strong mb-6">
 <h2 class="text-2xl font-bold serif mb-5">专业视角应用</h2>
 <div class="space-y-4">
-{{EDITOR_REVIEW_SECTION}}
-{{CREATION_GUIDE_SECTION}}
-{{READING_RECOMMENDATIONS}}
+	{{PROFESSIONAL_SECTIONS}}
 </div>
 </section>
 
@@ -264,21 +264,21 @@
 </div>
 </div>
 
-<footer style="border-top:1px solid var(--rule)" class="py-5">
-<div class="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-muted">
+<footer style="border-top:1px solid var(--rule)" class="py-8">
+<div class="max-w-5xl mx-auto px-6">
+<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted">
 <div class="flex items-center gap-2">
 <span class="mono">{{LAS_ID}}</span>
 <span class="text-muted/30">·</span>
 <span>LAS v5.2</span>
 <span class="text-muted/30">·</span>
 <span>{{CURRENT_DATE}}</span>
-			<span class="text-muted/30">·</span>
-			<span class="text-xs">{{TOKEN_USAGE}}</span>
 <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple/8 text-purple">原创模式</span>
 </div>
-<div class="flex items-center gap-2">
+<div class="mono text-xs" style="color:var(--muted)">{{TOKEN_USAGE}}</div>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted mt-2 pt-2" style="border-top:1px solid var(--rule)">
 <span>本报告为系统框架下的相对定位与分析参考</span>
-<span class="text-muted/30">·</span>
 <a href="https://qm.qq.com/q/lvpxj69QLm" target="_blank" class="text-purple hover:underline">QQ群 1091165886</a>
 </div>
 </div>
@@ -288,145 +288,3 @@
 <i class="fas fa-arrow-up text-xs"></i>
 </button>
 
-<script>
-var DIM={{DIM_DATA_JSON}};
-const LC=['#6b21a8','#2d6a4f','#b8860b','#1a1a1a'];
-
-(function(){
-const q=document.getElementById('goldenQuote');
-if(!q)return;
-const t=q.textContent.trim(),l=t.length;
-let s='0.875rem',w='400';
-if(l<=15){s='1.25rem';w='600'}
-else if(l<=25){s='1.1rem';w='500'}
-else if(l<=40){s='1rem';w='500'}
-else if(l<=60){s='0.9rem';w='400'}
-else{s='0.8rem';w='400'}
-q.style.fontSize=s;q.style.fontWeight=w;
-})();
-
-(function(){
-const el=document.getElementById('sharpComment');
-if(!el)return;
-const t=el.textContent.trim(),l=t.length;
-let s='1rem',w='600';
-if(l<=20){s='1.35rem';w='700'}
-else if(l<=35){s='1.2rem';w='600'}
-else if(l<=50){s='1.1rem';w='600'}
-else if(l<=70){s='1rem';w='500'}
-else if(l<=100){s='0.9rem';w='500'}
-else{s='0.8rem';w='400'}
-el.style.fontSize=s;el.style.fontWeight=w;
-})();
-
-(function(){
-const p=document.getElementById('heroProgress'),v=document.getElementById('heroValue');
-const score={{WCS_SCORE}},c=2*Math.PI*42,o=c*(1-score/150);
-setTimeout(()=>{p.style.strokeDashoffset=o;const d=2000,s=performance.now();
-(function a(t){const p=Math.min((t-s)/d,1),e=1-Math.pow(1-p,4);v.textContent=(e*score).toFixed(2);if(p<1)requestAnimationFrame(a);})(performance.now());},400);
-})();
-
-let chart;
-const tgt=DIM.map(d=>d.score),cur=new Array(16).fill(0);
-(function(){
-const ctx=document.getElementById('radarChart').getContext('2d');
-const lvlPlugin={id:'lvl',beforeDatasetsDraw(ch){
-const{ctx:c,chartArea:{top,bottom,left,right},scales:{r}}=ch;
-const cx=(left+right)/2,cy=(top+bottom)/2,da=r.drawingArea;
-[150,125,105,95,75].forEach((v,i)=>{
-const rd=(v/150)*da;
-c.save();c.beginPath();c.arc(cx,cy,rd,0,2*Math.PI);
-c.strokeStyle=`rgba(107,33,168,${.4-i*.06})`;c.lineWidth=.8;c.setLineDash([3,4]);c.stroke();c.setLineDash([]);
-c.fillStyle='rgba(26,26,26,.3)';c.font='9px "Noto Sans SC"';c.textAlign='left';c.textBaseline='middle';
-c.fillText(v,cx+rd+4,cy);c.restore();
-});
-}};
-chart=new Chart(ctx,{type:'radar',
-data:{labels:DIM.map(d=>d.name),datasets:[{data:cur,fill:true,
-backgroundColor:'rgba(107,33,168,.06)',borderColor:'rgba(107,33,168,.5)',
-pointBackgroundColor:'rgba(107,33,168,.7)',pointBorderColor:'#faf8f5',
-pointBorderWidth:1.5,pointRadius:3.5,pointHoverRadius:6,borderWidth:1.5}]},
-options:{responsive:true,maintainAspectRatio:false,
-onClick:(e,el)=>{if(el.length)document.getElementById('table').scrollIntoView({behavior:'smooth'});},
-scales:{r:{min:0,max:150,ticks:{display:false},grid:{color:'rgba(26,26,26,.04)',circular:true},
-angleLines:{color:'rgba(26,26,26,.04)'},
-pointLabels:{font:{size:11,family:"'Noto Sans SC'",weight:'500'},color:'#1a1a1a'}}},
-plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(250,248,245,.95)',titleColor:'#6b21a8',
-bodyColor:'#1a1a1a',borderColor:'rgba(107,33,168,.1)',borderWidth:1,padding:8,cornerRadius:4,
-titleFont:{family:"'Noto Serif SC'",weight:'600'},
-callbacks:{title:c=>[DIM[c[0].dataIndex].name],label:c=>[`分数: ${DIM[c.dataIndex].score}/150`,`档位: ${DIM[c.dataIndex].level}`,`权重: ${DIM[c.dataIndex].weight}`]}},
-animation:{duration:0}},
-plugins:[lvlPlugin]});
-setTimeout(()=>{const d=2500,s=performance.now();
-(function a(t){const p=Math.min((t-s)/d,1),e=1-Math.pow(1-p,4);
-for(let i=0;i<16;i++)cur[i]=tgt[i]*e;chart.update('none');if(p<1)requestAnimationFrame(a);})(performance.now());},600);
-})();
-
-function toggleAdjustment(idx){
-const items=document.querySelectorAll('#adjustmentList > div');
-items.forEach((item,i)=>{
-const c=item.querySelector('.accordion-content'),a=item.querySelector('.accordion-icon');
-if(!c||!a)return;
-if(i===idx){c.classList.toggle('open');a.classList.toggle('open');}
-else{c.classList.remove('open');a.classList.remove('open');}
-});
-}
-
-function buildTable(f='all',q=''){
-const tb=document.getElementById('tableBody');tb.innerHTML='';let n=0;
-DIM.forEach((d,i)=>{
-if(f!=='all'&&d.level!==f)return;if(q&&!d.name.includes(q))return;n++;
-const r=document.createElement('tr');r.style.cssText='border-bottom:1px solid var(--rule);cursor:pointer;transition:background .2s';
-r.onmouseenter=()=>r.style.background='rgba(107,33,168,.03)';
-r.onmouseleave=()=>r.style.background='';
-const lc=d.level==='文学之巅'?'color:#6b21a8;background:rgba(107,33,168,.08)':d.level==='永恒殿堂'?'color:#b8860b;background:rgba(184,134,11,.08)':d.level==='不朽丰碑'?'color:#1a1a1a;background:rgba(26,26,26,.04)':d.level==='典范之作'?'color:#2d6a4f;background:rgba(45,106,79,.08)':d.level==='上乘佳作'?'color:#059669;background:rgba(5,150,105,.06)':'color:#8a8578;background:rgba(138,133,120,.06)';
-const adj=d.adjusted?'<span class="text-[9px] text-gold/60 ml-0.5" title="已校验调整">*</span>':'';
-r.innerHTML=`<td class="py-2.5 px-3 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style="background:${LC[d.layer]}"></span>${d.name}${adj}</td>
-<td class="py-2.5 px-2 text-center mono text-muted text-xs">${d.weight}</td>
-<td class="py-2.5 px-2 text-center mono font-bold">${d.score}</td>
-<td class="py-2.5 px-2 text-center"><span class="text-[11px] px-2 py-0.5 rounded-full font-semibold" style="${lc}">${d.level}</span></td>
-<td class="py-2.5 px-3 text-muted text-xs">${d.benchmark}</td>
-<td class="py-2.5 px-2 text-center"><i class="fas fa-chevron-down text-muted/30 text-[10px] arr" id="arr${i}"></i></td>`;
-r.onclick=()=>toggleRow(i);tb.appendChild(r);
-const er=document.createElement('tr');er.id='er'+i;
-er.innerHTML=`<td colspan="6" class="p-0"><div class="expand-row" id="ex${i}"><div class="px-6 py-3 text-sm text-muted leading-relaxed space-y-1.5 serif" style="background:rgba(26,26,26,.015)">
-${d.gapLevel?`<p><strong class="text-ink/60">① 基准表现：</strong>${d.benchmarkPerf||'暂无'}</p><p><strong class="text-ink/60">② 证据引用：</strong>${d.evidence||'暂无'}</p><p><strong class="text-ink/60">③ 差距等级：</strong>${d.gapLevel}</p>${d.lowerRef?`<p><strong style="color:rgba(107,33,168,.5)">④ 反向锚定：</strong>${d.lowerRef}</p>`:''}<p><strong class="text-ink/60">⑤ 结论：</strong>${d.compare||'暂无'}</p>`
-:`<p><strong class="text-ink/60">关键证据：</strong>${d.evidence||'暂无'}</p><p><strong class="text-ink/60">基准比较：</strong>${d.compare||'暂无'}</p>${d.lowerRef?`<p><strong style="color:rgba(107,33,168,.5)">反向锚定：</strong>${d.lowerRef}</p>`:''}`}
-</div></div></td>`;tb.appendChild(er);
-});
-if(!n){const e=document.createElement('tr');e.innerHTML='<td colspan="6" class="py-8 text-center text-muted">无匹配结果</td>';tb.appendChild(e);}
-}
-function toggleRow(i){
-const ex=document.getElementById('ex'+i),ar=document.getElementById('arr'+i);
-const open=ex.classList.contains('open');
-document.querySelectorAll('.expand-row').forEach(e=>e.classList.remove('open'));
-document.querySelectorAll('.arr').forEach(a=>a.style.transform='');
-if(!open){ex.classList.add('open');ar.style.transform='rotate(180deg)';}
-}
-buildTable();
-document.getElementById('tableSearch').addEventListener('input',e=>buildTable(document.getElementById('levelFilter').value,e.target.value));
-document.getElementById('levelFilter').addEventListener('change',e=>buildTable(e.target.value,document.getElementById('tableSearch').value));
-
-function toggleAccordion(idx){
-const items=document.querySelectorAll('#accordion > div');
-const c=items[idx].querySelector('.accordion-content'),a=items[idx].querySelector('.accordion-icon');
-c.classList.toggle('open');a.classList.toggle('open');
-}
-
-const secs=['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix'];
-function scrollTo(id){document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
-document.querySelectorAll('.nav-pip').forEach(p=>p.addEventListener('click',()=>scrollTo(p.dataset.target)));
-const sObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)document.querySelectorAll('.nav-pip').forEach(p=>p.classList.toggle('active',p.dataset.target===e.target.id));});},{threshold:.15,rootMargin:'-10% 0px -60% 0px'});
-secs.forEach(id=>{const el=document.getElementById(id);if(el)sObs.observe(el);});
-const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:.08});
-document.querySelectorAll('.reveal').forEach(el=>rObs.observe(el));
-const bObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.bar-fill').forEach(b=>b.style.width=b.dataset.width+'%');bObs.unobserve(e.target);}});},{threshold:.3});
-const lb=document.getElementById('layerBars');if(lb)bObs.observe(lb);
-const bar=document.getElementById('stickyBar'),hero=document.getElementById('hero');
-window.addEventListener('scroll',()=>{
-bar.classList.toggle('show',hero.getBoundingClientRect().bottom<0);
-const btn=document.getElementById('topBtn');
-btn.style.opacity=window.scrollY>600?'1':'0';btn.style.pointerEvents=window.scrollY>600?'auto':'none';
-}
-},{passive:true});
-</script>

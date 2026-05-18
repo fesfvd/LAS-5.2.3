@@ -3,7 +3,7 @@ import logging
 import traceback
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 from sqlalchemy.orm import Session
 
 from backend.models.orm import Work, Analysis, User, get_session
@@ -141,25 +141,33 @@ async def start_analysis(
                 except Exception as e:
                     logger.error("报告构建异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
                     report = {"ok": False, "error": f"报告构建异常: {e}", "raw_preview": str(raw)[:500]}
-                analysis.report_json = report
-                usage = result_holder.get("usage") or {}
-                if usage.get("total"):
-                    analysis.prompt_tokens = usage.get("prompt")
-                    analysis.completion_tokens = usage.get("completion")
-                    analysis.total_tokens = usage.get("total")
-                if report.get("ok"):
-                    analysis.status = "done"
-                    analysis.wcs_score = report.get("scoring", {}).get("wcs")
-                    analysis.tier = report.get("scoring", {}).get("tier", "")
-                    analysis.tier_badge = report.get("scoring", {}).get("badge", "")
-                    # Auto-fill author for classic mode
-                    if not work.author:
-                        llm_author = raw.get("metadata", {}).get("author", "")
-                        if llm_author:
-                            work.author = llm_author
-                else:
+                try:
+                    analysis.report_json = report
+                    usage = result_holder.get("usage") or {}
+                    if usage.get("total"):
+                        analysis.prompt_tokens = usage.get("prompt")
+                        analysis.completion_tokens = usage.get("completion")
+                        analysis.total_tokens = usage.get("total")
+                    if report.get("ok"):
+                        analysis.status = "done"
+                        analysis.wcs_score = report.get("scoring", {}).get("wcs")
+                        analysis.tier = report.get("scoring", {}).get("tier", "")
+                        analysis.tier_badge = report.get("scoring", {}).get("badge", "")
+                        if not work.author:
+                            llm_author = raw.get("metadata", {}).get("author", "")
+                            if llm_author:
+                                work.author = llm_author
+                    else:
+                        analysis.status = "failed"
+                    db.commit()
+                except Exception as e:
+                    logger.error("报告保存异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
+                    analysis.report_json = {"ok": False, "error": f"报告保存异常: {e}"}
                     analysis.status = "failed"
-                db.commit()
+                    try:
+                        db.commit()
+                    except Exception:
+                        pass
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                 return
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"

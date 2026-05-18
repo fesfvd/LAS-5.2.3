@@ -4,6 +4,8 @@ import re
 import time
 from typing import AsyncIterator, Tuple
 
+from json_repair import repair_json
+
 from openai import AsyncOpenAI
 
 from backend.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_MAX_TOKENS, LLM_TEMPERATURE, PROMPT_VERSION
@@ -121,25 +123,127 @@ def _extract_json(text: str) -> str | None:
     return None
 
 
+def _repair_truncated(text: str) -> str | None:
+    """Try to close a truncated JSON string by appending missing quotes/brackets/braces."""
+    start = text.find('{')
+    if start == -1:
+        return None
+    s = text[start:]
+    depth_obj = 0
+    depth_arr = 0
+    in_string = False
+    escape = False
+    for c in s:
+        if escape:
+            escape = False
+            continue
+        if c == '\\':
+            escape = True
+            continue
+        if c == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if c == '{':
+            depth_obj += 1
+        elif c == '}':
+            depth_obj -= 1
+        elif c == '[':
+            depth_arr += 1
+        elif c == ']':
+            depth_arr -= 1
+    if depth_obj == 0 and depth_arr == 0 and not in_string:
+        return s  # already balanced, shouldn't happen but be safe
+    repaired = s.rstrip()
+    last_char = repaired[-1] if repaired else ''
+    if in_string:
+        repaired += '"'
+    if last_char == ',' or last_char == ':':
+        repaired += 'null'
+    while depth_arr > 0:
+        repaired += ']'
+        depth_arr -= 1
+    while depth_obj > 0:
+        repaired += '}'
+        depth_obj -= 1
+    return repaired
+
+
 def _parse_json(text: str) -> dict:
     raw = _extract_json(text)
+    used_repair = False
+    if not raw:
+        raw = _repair_truncated(text)
+        used_repair = True
     if not raw:
         snippet = text[:800].replace('\n', '↵')
+        logger.warning("LLM 输出完全无法提取 JSON（总长%d字，开头: %s）", len(text), snippet[:200])
         return {"ok": False, "error": f"无法找到 JSON 对象（总长{len(text)}字，开头: {snippet[:200]}）", "raw": text[:500]}
 
+    # Fast path: valid JSON
+    result = None
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError as e:
-        line_col = ""
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # Fallback: attempt repair (handles truncation, unescaped quotes, trailing commas, etc.)
+    if result is None:
         try:
-            line_no = e.lineno
-            col_no = e.colno
-            lines = raw.split('\n')
-            if line_no and col_no and line_no <= len(lines):
-                problem_line = lines[line_no - 1]
-                start = max(0, col_no - 40)
-                end = min(len(problem_line), col_no + 40)
-                line_col = f" 行{line_no}列{col_no}附近: ...{problem_line[start:end]}..."
+            repaired = repair_json(raw)
+            result = json.loads(repaired)
+            used_repair = True
+            logger.warning("JSON 已自动修复（原长%d，修复后%d），可能包含截断或格式错误", len(raw), len(repaired))
         except Exception:
             pass
-        return {"ok": False, "error": f"JSON 解析失败: {e.msg}{line_col}", "raw": raw[:500]}
+
+    # Final attempt: manual truncation repair
+    if result is None:
+        try:
+            manual = _repair_truncated(text)
+            if manual:
+                result = json.loads(manual)
+                used_repair = True
+        except Exception:
+            pass
+
+    # All attempts failed — report detailed error
+    if result is None:
+        try:
+            json.loads(raw)
+        except json.JSONDecodeError as e:
+            line_col = ""
+            try:
+                line_no = e.lineno
+                col_no = e.colno
+                lines = raw.split('\n')
+                if line_no and col_no and line_no <= len(lines):
+                    problem_line = lines[line_no - 1]
+                    start = max(0, col_no - 40)
+                    end = min(len(problem_line), col_no + 40)
+                    line_col = f" 行{line_no}列{col_no}附近: ...{problem_line[start:end]}..."
+            except Exception:
+                pass
+            logger.warning("JSON 修复失败（%d次尝试），错误: %s%s", 3 if used_repair else 1, e.msg, line_col)
+            return {"ok": False, "error": f"JSON 解析失败: {e.msg}{line_col}", "raw": raw[:500]}
+
+    # Parsed successfully — validate structure
+    if not isinstance(result, dict):
+        logger.warning("LLM 输出解析成功但结果不是 JSON 对象，类型: %s", type(result).__name__)
+        return {"ok": False, "error": f"LLM 输出不是有效的 JSON 对象（类型: {type(result).__name__}）", "raw": str(result)[:500]}
+
+    if not result.get("ok"):
+        llm_error = result.get("error", "")
+        if not llm_error:
+            llm_error = "LLM 返回 ok=false 但未提供具体错误原因"
+        logger.warning("LLM 分析失败（JSON 完整）: %s", llm_error)
+        result["raw"] = raw[:500]
+        if used_repair:
+            result["error"] = f"（经自动修复）{llm_error}"
+        elif not result.get("error"):
+            result["error"] = llm_error
+        result["_parse_ok"] = True
+        return result
+
+    return result

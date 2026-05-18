@@ -4,9 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LAS v5.2.3 — 文学分析系统</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com">
+// Touch toggle for mobile (replace hover)
+document.addEventListener('click',function(e){
+    var card = e.target.closest('.axiom-card');
+    if(card && window.innerWidth <= 768){
+        document.querySelectorAll('.axiom-card.tapped').forEach(function(c){
+            if(c !== card) c.classList.remove('tapped');
+        });
+        card.classList.toggle('tapped');
+        return;
+    }
+    card = e.target.closest('.dim-card');
+    if(card && window.innerWidth <= 768){
+        document.querySelectorAll('.dim-card.tapped').forEach(function(c){
+            if(c !== card) c.classList.remove('tapped');
+        });
+        card.classList.toggle('tapped');
+    }
+});
+</script>
 <script>
 tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b8860b',crimson:'#8b0000',jade:'#2d6a4f',muted:'#8a8578',primary:'#b8860b',accent:'#8b0000'},fontFamily:{serif:['Noto Serif SC','Georgia','serif'],sans:['Noto Sans SC','Helvetica','sans-serif'],mono:['JetBrains Mono','monospace']}}}}
+
+// Touch toggle for mobile (replace hover)
+document.addEventListener('click',function(e){
+    var card = e.target.closest('.axiom-card');
+    if(card && window.innerWidth <= 768){
+        document.querySelectorAll('.axiom-card.tapped').forEach(function(c){
+            if(c !== card) c.classList.remove('tapped');
+        });
+        card.classList.toggle('tapped');
+        return;
+    }
+    card = e.target.closest('.dim-card');
+    if(card && window.innerWidth <= 768){
+        document.querySelectorAll('.dim-card.tapped').forEach(function(c){
+            if(c !== card) c.classList.remove('tapped');
+        });
+        card.classList.toggle('tapped');
+    }
+});
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -116,7 +154,52 @@ footer a:hover{color:var(--crimson)}
 .side-nav{display:none}
 .hero-inner{padding:2rem 1rem}
 .strategy-panel{padding:16px 0}
+	.hero-cta{display:block;margin:0 auto 12px!important;max-width:260px;width:100%;text-align:center}
+	.hero-cta+.hero-cta{margin-top:10px}
+	.hero-title{font-size:clamp(3.5rem,18vw,7rem)!important}
+	.hero-sub{letter-spacing:.12em}
+	.hero-tagline{letter-spacing:.25em}
+	.hero-meta{font-size:.68rem;letter-spacing:1px}
+	.tier-bar{width:auto!important;min-width:94%;padding:8px 12px}
+	.tier-expand{width:auto!important;min-width:94%}
+	.tier-name{font-size:.78rem}
+	.tier-score{min-width:52px;font-size:.65rem}
+	.tier-indicator{width:6px;height:6px}
+	.strategy-tab{padding:4px 10px;font-size:.68rem;letter-spacing:0}
+	.weight-bar{height:20px}
+	.weight-seg{font-size:.5rem;letter-spacing:0}
+	.wf-line{padding-left:24px}
+	.wf-step::before{left:-28px;width:6px;height:6px}
+	.wf-num{font-size:.6rem}
+	.wf-title{font-size:.85rem}
+	.wf-desc{font-size:.75rem}
+	.layer-btn{padding:5px 10px;font-size:.68rem}
+	main.px-6{padding-left:1rem;padding-right:1rem}
+	footer .md\:text-left,footer .md\:text-right{text-align:center!important}
+	footer .grid{gap:1.25rem}
+	#topBtn{bottom:16px;right:10px;width:36px;height:36px}
+	.axiom-card{padding:16px 18px}
+	.axiom-name{font-size:1rem}
+	.axiom-desc{font-size:.8rem}
+	.dim-card{padding:14px 16px}
+	.dim-name{font-size:.9rem}
+	.hero-label{letter-spacing:4px;font-size:.65rem}
+	.scroll-hint{bottom:20px}
 }
+@media(max-width:480px){
+.hero-title{font-size:clamp(2.8rem,16vw,4.5rem)!important}
+.hero-sub{font-size:.9rem}
+.hero-tagline{font-size:.75rem;letter-spacing:.15em}
+.strategy-tab{padding:3px 8px;font-size:.62rem}
+.layer-btn{padding:4px 8px;font-size:.62rem}
+.tier-name{font-size:.7rem}
+.tier-score{font-size:.6rem;min-width:44px}
+.tier-bar{padding:6px 10px}
+}
+.axiom-card.tapped .axiom-prohibitions{max-height:400px}
+.dim-card.tapped .dim-detail{max-height:220px;margin-top:12px;opacity:1}
+.dim-card.tapped .dim-weight-seg{height:6px}
+.dim-card.tapped::after{width:5px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -345,7 +428,7 @@ C 思想与意义层 45% &middot; D 审美与影响层 25%
 <div class="text-center mb-12">
 <p class="text-[11px] text-muted uppercase tracking-widest mb-3">文学签文</p>
 <div class="flex items-center justify-center gap-3 mb-3">
-<span class="text-lg serif font-bold text-gold">上签</span>
+<span class="text-lg serif font-bold text-gold">上上</span>
 <span class="text-gold/30">&middot;</span>
 <span class="text-lg serif font-bold text-crimson">洞见</span>
 </div>
@@ -590,6 +673,25 @@ btn.style.pointerEvents=window.scrollY>600?'auto':'none';
 
 updateProgress();
 updateSideNav();
+});
+
+// Touch toggle for mobile (replace hover)
+document.addEventListener('click',function(e){
+    var card = e.target.closest('.axiom-card');
+    if(card && window.innerWidth <= 768){
+        document.querySelectorAll('.axiom-card.tapped').forEach(function(c){
+            if(c !== card) c.classList.remove('tapped');
+        });
+        card.classList.toggle('tapped');
+        return;
+    }
+    card = e.target.closest('.dim-card');
+    if(card && window.innerWidth <= 768){
+        document.querySelectorAll('.dim-card.tapped').forEach(function(c){
+            if(c !== card) c.classList.remove('tapped');
+        });
+        card.classList.toggle('tapped');
+    }
 });
 </script>
 </body>
