@@ -143,12 +143,11 @@ async function renderFromTemplate(data, r) {
   const benchmarks = r.benchmarks || {};
   const benchKeys = ['A', 'B', 'C', 'D'];
   const benchNames = { A: '语言与形式', B: '叙事与内容', C: '思想与意义', D: '审美与影响' };
-  const benchGrads = ['from-crimson to-crimson/70', 'from-jade to-jade/70', 'from-gold to-gold/70', 'from-ink to-ink/70'];
-  const benchColors = ['var(--crimson)', 'var(--jade)', 'var(--gold)', 'var(--ink)'];
+  const benchColors = ['#8b0000', '#2d6a4f', '#b8860b', '#1a1a1a'];
   const benchHtml = benchKeys.map((k, i) => {
     const b = benchmarks[k] || {};
     return `<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-crimson/5 transition cursor-default border" style="border-color:var(--rule)">
-      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0" style="background:linear-gradient(135deg,${benchColors[i]},${benchColors[i]}88)">${k}</div>
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0" style="background:${benchColors[i]}">${k}</div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold serif-text leading-tight truncate">${esc(b.work || '—')}</p>
         <p class="text-[10px]" style="color:var(--muted)">${b.dimension_id||''}.${b.dimension_name||''} · ${b.level||''} · ${benchNames[k]}</p>
@@ -413,6 +412,7 @@ async function renderFromTemplate(data, r) {
     .replace(/\{\{WORK_PERCENTILE\}\}/g, percentile)
     .replace(/\{\{WORK_TITLE_HONOR\}\}/g, esc(ac.nickname || ''))
     .replace(/\{\{WORK_SHARP_COMMENT\}\}/g, esc(ac.one_liner || ''))
+    .replace(/\{\{WORK_OVERVIEW\}\}/g, nl2p(esc(ac.overview || '')))
     .replace(/\{\{GOLDEN_QUOTE\}\}/g, esc(ac.golden_quote || ''))
     .replace(/\{\{LITERARY_ECHO\}\}/g, esc(ac.literary_echo || ''))
     .replace(/\{\{LITERARY_ECHO_SOURCE\}\}/g, esc(ac.literary_echo_source || ''))

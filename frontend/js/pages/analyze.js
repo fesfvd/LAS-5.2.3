@@ -4,10 +4,10 @@ const WORKFLOW = [
   { step: '01', text: '接收文本，清洗格式噪声...', type: 'text', minChars: 0 },
   { step: '02', text: '识别体裁，匹配权重策略...', type: 'text', minChars: 600 },
   { step: '03', text: '加载十五级评分标尺坐标系...', type: 'text', minChars: 1200 },
-  { step: '04', text: '解析 A层 · 语言与形式', type: 'progress', minChars: 2500 },
-  { step: '05', text: '解析 B层 · 叙事与内容', type: 'progress', minChars: 5000 },
-  { step: '06', text: '解析 C层 · 思想与意义', type: 'progress', minChars: 7500 },
-  { step: '07', text: '解析 D层 · 审美与影响', type: 'progress', minChars: 10000 },
+  { step: '04', text: '解析 A层 · 语言与形式', type: 'progress', minChars: 2500, color: 'var(--gold)' },
+  { step: '05', text: '解析 B层 · 叙事与内容', type: 'progress', minChars: 5000, color: 'var(--gold)' },
+  { step: '06', text: '解析 C层 · 思想与意义', type: 'progress', minChars: 7500, color: 'var(--gold)' },
+  { step: '07', text: '解析 D层 · 审美与影响', type: 'progress', minChars: 10000, color: 'var(--gold)' },
   { step: '08', text: '十六维标尺逐项比对基准序列...', type: 'text', minChars: 13500 },
   { step: '09', text: '校验维度均衡性，抵抗全面平庸...', type: 'text', minChars: 16000 },
   { step: '10', text: '核算最终权重，生成评估报告', type: 'text', minChars: 18000 },
@@ -103,13 +103,14 @@ function addLogLine(config) {
 
     const fillEl = barContainer.querySelector('.progress-fill');
     const textEl = barContainer.querySelector('.progress-text');
-    _activeProgressBar = { fillEl, textEl, startTime: Date.now(), duration: 8000 };
+    fillEl.style.background = config.color || 'var(--muted)';
+    _activeProgressBar = { fillEl, textEl, startTime: Date.now(), duration: 8000, color: config.color };
 
     if (_progressInterval) clearInterval(_progressInterval);
     _progressInterval = setInterval(() => {
       if (!_activeProgressBar) { clearInterval(_progressInterval); return; }
       const elapsed = Date.now() - _activeProgressBar.startTime;
-      const p = Math.min(95, Math.round(elapsed / _activeProgressBar.duration * 100));
+      const p = Math.min(98, Math.round(elapsed / _activeProgressBar.duration * 100));
       _activeProgressBar.fillEl.style.width = p + '%';
       _activeProgressBar.textEl.textContent = p + '%';
     }, 200);
@@ -136,8 +137,8 @@ function finishProgressBar() {
   if (_progressInterval) clearInterval(_progressInterval);
   if (_activeProgressBar) {
     _activeProgressBar.fillEl.style.width = '100%';
-    _activeProgressBar.fillEl.style.background = 'var(--gold)';
-    _activeProgressBar.textEl.textContent = 'DONE';
+    _activeProgressBar.fillEl.style.background = _activeProgressBar.color || 'var(--gold)';
+    _activeProgressBar.textEl.textContent = '100%';
     _activeProgressBar = null;
   }
 }
