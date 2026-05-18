@@ -2,111 +2,143 @@ App.register('/upload', () => {
   document.title = '提交作品 — LAS';
   const root = document.getElementById('spaApp');
   root.innerHTML = `
-    <main class="max-w-2xl mx-auto px-6" style="padding-top:100px;padding-bottom:120px">
+    <div class="submit-container">
+      <div class="submit-header">
+        <p class="mono text-xs text-muted tracking-[4px] mb-1">SUBMISSION 作品录入</p>
+        <h1 class="serif text-3xl font-black leading-[1.1]">提交作品</h1>
+      </div>
 
-      <section class="fade-up d1">
-        <p class="mono text-xs text-muted tracking-[4px] mb-3 uppercase">Submission Protocol</p>
-        <h1 class="serif text-5xl font-black leading-[1.1] mb-4">提交作品</h1>
-        <p class="text-muted text-sm mb-12" style="max-width:420px">作品初始文学价值为零。每一分都须通过证据和与基准作品的严格比较获得。</p>
-      </section>
+      <form id="workForm" class="submit-form">
 
-      <form id="workForm" class="fade-up d2">
-
-        <div class="mb-8">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Work Title</label>
-          <input class="input-underline" name="title" placeholder="作品名称" required maxlength="200">
-        </div>
-
-        <div class="mb-8">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Author <span class="text-muted/50" style="font-size:10px">选填</span></label>
-          <input class="input-underline" name="author" placeholder="作者（经典模式可由系统自动识别）" maxlength="100">
-        </div>
-
-        <div class="mb-8">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Analysis Mode</label>
-          <div class="flex gap-4">
-            <button type="button" class="mode-btn active" data-mode="original">原创</button>
-            <button type="button" class="mode-btn" data-mode="classic">经典</button>
+        <div class="submit-row-2">
+          <div class="field-group">
+            <label class="field-label">TITLE <span class="field-label-zh">作品名称</span></label>
+            <input class="input-underline" name="title" placeholder="必填" required maxlength="200">
           </div>
-          <input type="hidden" name="mode" id="modeInput" value="original">
-        </div>
-
-        <div class="mb-8" id="contentArea">
-          <label class="mono text-xs tracking-widest uppercase text-muted mb-2 block">Full Text</label>
-          <textarea class="input-underline textarea" name="content" placeholder="粘贴或输入作品全文以供逐维度审查..." required></textarea>
-          <p class="mono text-xs text-muted mt-2" style="font-size:10px;opacity:.7">// 原创模式要求提供完整正文，拒绝可读性致幻</p>
-        </div>
-
-        <label class="ancestor-toggle">
-          <input type="checkbox" name="ancestor_dialogue" value="true">
-          <div class="toggle-track"><div class="toggle-dot"></div></div>
-          <div>
-            <span class="mono text-xs text-gold tracking-wider">先贤灵境</span>
-            <span class="text-xs text-muted ml-2">邀请文学先贤共读对谈</span>
+          <div class="field-group">
+            <label class="field-label">AUTHOR <span class="field-label-zh">作者</span></label>
+            <input class="input-underline" name="author" placeholder="经典模式可自动识别" maxlength="100">
           </div>
-        </label>
-
-        <div class="mt-16">
-          <p id="uploadError" class="mono text-xs mb-4" style="color:var(--crimson);display:none"></p>
-          <button type="submit" class="btn btn-primary">开始分析</button>
         </div>
 
+        <div class="submit-row-2" style="align-items:flex-end">
+          <div class="field-group">
+            <label class="field-label">MODE <span class="field-label-zh">分析模式</span></label>
+            <div class="mode-switch">
+              <button type="button" class="mode-btn active" data-mode="original">ORIGINAL <span class="mode-btn-zh">原创</span></button>
+              <button type="button" class="mode-btn" data-mode="classic">CLASSIC <span class="mode-btn-zh">经典</span></button>
+            </div>
+            <input type="hidden" name="mode" id="modeInput" value="original">
+          </div>
+          <div style="flex:1"></div>
+        </div>
+
+        <div class="textarea-group">
+          <label class="field-label">TEXT <span class="field-label-zh">作品正文</span></label>
+          <textarea class="input-underline textarea" name="content" placeholder="粘贴全文，系统将进行多维标尺分析..." required></textarea>
+          <p class="mono text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint">// 原创模式必须提供完整正文</p>
+        </div>
+
+        <div class="submit-options">
+          <label class="ancestor-toggle">
+            <input type="checkbox" name="ancestor_dialogue" value="true">
+            <div class="toggle-track"><div class="toggle-dot"></div></div>
+            <div>
+              <span class="mono text-xs tracking-wider" style="color:var(--gold)">ANCESTOR <span style="font-family:'Noto Sans SC';font-size:11px">先贤灵境</span></span>
+            </div>
+          </label>
+          <span class="submit-error" id="uploadError">> ERROR: 正文不能为空</span>
+        </div>
+
+        <div class="submit-action">
+          <button type="submit" class="btn btn-primary">INITIATE <span class="btn-zh">启动分析</span> &rarr;</button>
+        </div>
       </form>
-    </main>`;
+
+      <div class="submit-overlay" id="submitOverlay">
+        <div class="submit-log" id="submitLog1"></div>
+        <div class="submit-log" id="submitLog2"></div>
+        <div class="submit-log" id="submitLog3" style="color:var(--gold)"></div>
+      </div>
+    </div>`;
 
   const modeInput = document.getElementById('modeInput');
+  const textarea = document.querySelector('textarea[name="content"]');
+  const contentHint = document.getElementById('contentHint');
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const mode = btn.dataset.mode;
       modeInput.value = mode;
-      const ta = document.querySelector('textarea[name="content"]');
-      const hint = document.querySelector('#contentArea .mono');
       if (mode === 'classic') {
-        ta.removeAttribute('required');
-        ta.style.minHeight = '80px';
-        ta.placeholder = '经典模式：正文可留空。LLM 将基于知识库中的全文记忆进行分析。';
-        if (hint) hint.textContent = '// 经典模式无需正文，仅凭作品名即可锚定谱系';
+        textarea.removeAttribute('required');
+        textarea.placeholder = '经典模式正文可留空，系统将基于知识库记忆进行分析...';
+        contentHint.textContent = '// 经典模式无需正文，仅凭作品名启动';
       } else {
-        ta.setAttribute('required', '');
-        ta.style.minHeight = '200px';
-        ta.placeholder = '粘贴或输入作品全文以供逐维度审查...';
-        if (hint) hint.textContent = '// 原创模式要求提供完整正文，拒绝可读性致幻';
+        textarea.setAttribute('required', '');
+        textarea.placeholder = '粘贴全文，系统将进行多维标尺分析...';
+        contentHint.textContent = '// 原创模式必须提供完整正文';
       }
     });
   });
 
-  bindUploadHandler();
+  bindSubmitHandler();
 });
 
-function bindUploadHandler() {
+function bindSubmitHandler() {
   const form = document.getElementById('workForm');
   const errEl = document.getElementById('uploadError');
+  const overlay = document.getElementById('submitOverlay');
   if (!form) return;
+
   form.onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
     data.ancestor_dialogue = form.querySelector('[name="ancestor_dialogue"]').checked;
     delete data[''];
+
     if (data.mode === 'original' && !data.content.trim()) {
-      errEl.textContent = '> ERROR: 原创模式需要提供作品正文';
-      errEl.style.display = 'block';
+      errEl.classList.add('show');
+      setTimeout(() => errEl.classList.remove('show'), 3000);
       return;
     }
-    errEl.style.display = 'none';
-    const btn = form.querySelector('button');
-    btn.disabled = true;
-    btn.innerHTML = 'Processing...';
+    errEl.classList.remove('show');
+
+    // Show overlay with animated logs
+    const formBody = form;
+    formBody.style.opacity = '0.3';
+    formBody.style.filter = 'blur(2px)';
+    formBody.style.pointerEvents = 'none';
+    setTimeout(() => overlay.classList.add('show'), 300);
+
+    const logs = [
+      { el: 'submitLog1', text: '> 正在接收文本数据...', delay: 400 },
+      { el: 'submitLog2', text: '> 正在校验完整性...', delay: 1000 },
+      { el: 'submitLog3', text: '> 分析准备就绪', delay: 1800 }
+    ];
+    logs.forEach(log => {
+      setTimeout(() => {
+        const el = document.getElementById(log.el);
+        if (el) el.textContent = log.text;
+      }, log.delay);
+    });
+
     try {
       const work = await API.createWork(data);
-      App.navigate('#/analyze/' + work.id);
+      setTimeout(() => App.navigate('#/analyze/' + work.id), 2400);
     } catch (err) {
+      overlay.classList.remove('show');
+      formBody.style.opacity = '';
+      formBody.style.filter = '';
+      formBody.style.pointerEvents = '';
+      logs.forEach(log => {
+        const el = document.getElementById(log.el);
+        if (el) el.textContent = '';
+      });
       errEl.textContent = '> ERROR: ' + err.message;
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = '开始分析';
+      errEl.classList.add('show');
     }
   };
 }

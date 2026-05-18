@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提交作品 — LAS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b8860b',crimson:'#8b0000',jade:'#2d6a4f',muted:'#8a8578'},fontFamily:{serif:['Noto Serif SC','Georgia','serif'],sans:['Noto Sans SC','Helvetica','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--crimson:#8b0000;--muted:#8a8578;--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+html, body { height: 100%; overflow: hidden; }
+body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+.serif{font-family:'Noto Serif SC',Georgia,serif;letter-spacing:.03em}
+.mono{font-family:'JetBrains Mono',monospace;letter-spacing:0}
+
+.nav-top{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--rule);background:rgba(250,248,243,.92);backdrop-filter:blur(12px);z-index:50;flex-shrink:0}
+.nav-brand{font-weight:700;font-size:1.1rem;color:var(--gold);text-decoration:none;font-family:'Noto Serif SC',Georgia,serif}
+
+.main-container{flex:1;display:flex;flex-direction:column;max-width:860px;width:100%;margin:0 auto;padding:32px 24px 24px;overflow:hidden;position:relative}
+.form-header{margin-bottom:24px;flex-shrink:0}
+.form-body{flex:1;display:flex;flex-direction:column;gap:20px;min-height:0;transition:opacity .5s, filter .5s}
+.form-body.is-submitting { opacity: 0.3; filter: blur(2px); pointer-events: none; }
+
+.field-group{display:flex;flex-direction:column}
+.field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;display:flex;gap:8px}
+.field-label .zh{color:var(--ink);font-size:12px;font-weight:500;font-family:'Noto Sans SC',sans-serif}
+.input{width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--rule-strong);background:transparent;color:var(--ink);font-size:.95rem;font-family:'Noto Sans SC',sans-serif;transition:border-color .3s;outline:none}
+.input:focus{border-bottom-color:var(--gold)}
+.input::placeholder{color:var(--muted);opacity:.4}
+
+.row-2{display:flex;gap:24px}
+.row-2 .field-group{flex:1}
+
+.mode-switch{display:flex;gap:12px}
+.mode-btn{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:1px;padding:6px 16px;border:1px solid var(--rule-strong);background:transparent;color:var(--muted);cursor:pointer;transition:all .3s;display:flex;gap:6px}
+.mode-btn .zh{font-family:'Noto Sans SC',sans-serif;font-size:11px}
+.mode-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.05)}
+.mode-btn:hover:not(.active){border-color:var(--muted)}
+
+.textarea-group{flex:1;display:flex;flex-direction:column;min-height:0}
+textarea.input{resize:none;flex:1;border:1px solid var(--rule-strong);padding:12px 16px;line-height:1.7;min-height:0}
+textarea.input:focus{border-color:var(--gold);box-shadow:0 0 0 1px rgba(184,134,11,.1)}
+
+.options-row{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;padding-top:8px;border-top:1px solid var(--rule)}
+.ancestor-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.ancestor-toggle input{display:none}
+.toggle-track{width:32px;height:16px;border:1px solid var(--muted);border-radius:8px;position:relative;transition:all .3s}
+.toggle-dot{width:10px;height:10px;background:var(--muted);border-radius:50%;position:absolute;top:2px;left:2px;transition:all .3s}
+.ancestor-toggle input:checked ~ .toggle-track{border-color:var(--gold)}
+.ancestor-toggle input:checked ~ .toggle-track .toggle-dot{transform:translateX(16px);background:var(--gold)}
+
+.submit-row{flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:16px;padding-top:4px}
+.btn{padding:10px 28px;border:1px solid var(--gold);color:var(--gold);font-size:.85rem;letter-spacing:3px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);background:transparent;font-family:'JetBrains Mono',monospace;display:flex;gap:8px;align-items:center}
+.btn .zh{font-family:'Noto Sans SC',sans-serif;font-size:12px;letter-spacing:1px}
+.btn:hover{background:var(--gold);color:var(--paper)}
+.btn-primary{background:var(--gold);color:var(--paper)}
+.btn-primary:hover{background:transparent;color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.error-msg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--crimson);opacity:0;transition:opacity .3s}
+.error-msg.show{opacity:1}
+
+.submit-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--paper);display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity .5s;z-index:10}
+.submit-overlay.show{opacity:1;pointer-events:auto}
+.submit-log{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:8px;min-height:20px}
+</style>
+</head>
+<body>
+
+<nav class="nav-top">
+  <a class="nav-brand" href="/">LAS</a>
+  <span class="mono text-xs text-muted">v5.2.3</span>
+</nav>
+
+<div class="main-container">
+  
+  <div class="form-header">
+    <p class="mono text-xs text-muted tracking-[4px] mb-1">SUBMISSION 作品录入</p>
+    <h1 class="serif text-3xl font-black leading-[1.1]">提交作品</h1>
+  </div>
+
+  <form id="workForm" class="form-body">
+    
+    <div class="row-2">
+      <div class="field-group">
+        <label class="field-label">TITLE <span class="zh">作品名称</span></label>
+        <input class="input" name="title" placeholder="必填" required maxlength="200">
+      </div>
+      <div class="field-group">
+        <label class="field-label">AUTHOR <span class="zh">作者</span></label>
+        <input class="input" name="author" placeholder="经典模式可自动识别" maxlength="100">
+      </div>
+    </div>
+
+    <div class="row-2" style="align-items:flex-end">
+      <div class="field-group">
+        <label class="field-label">MODE <span class="zh">分析模式</span></label>
+        <div class="mode-switch">
+          <button type="button" class="mode-btn active" data-mode="original">ORIGINAL <span class="zh">原创</span></button>
+          <button type="button" class="mode-btn" data-mode="classic">CLASSIC <span class="zh">经典</span></button>
+        </div>
+        <input type="hidden" name="mode" id="modeInput" value="original">
+      </div>
+      <div style="flex:1"></div>
+    </div>
+
+    <div class="textarea-group">
+      <label class="field-label">TEXT <span class="zh">作品正文</span></label>
+      <textarea class="input" name="content" placeholder="粘贴全文，系统将进行多维标尺分析..." required></textarea>
+      <p class="mono text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint">// 原创模式必须提供完整正文</p>
+    </div>
+
+    <div class="options-row">
+      <label class="ancestor-toggle">
+        <input type="checkbox" name="ancestor_dialogue" value="true">
+        <div class="toggle-track"><div class="toggle-dot"></div></div>
+        <div>
+          <span class="mono text-xs tracking-wider" style="color:var(--gold)">ANCESTOR <span style="font-family:'Noto Sans SC';font-size:11px">先贤灵境</span></span>
+        </div>
+      </label>
+      <span class="error-msg" id="uploadError">> ERROR: 正文不能为空</span>
+    </div>
+
+    <div class="submit-row">
+      <button type="submit" class="btn btn-primary">INITIATE <span class="zh">启动分析</span> &rarr;</button>
+    </div>
+  </form>
+
+  <div class="submit-overlay" id="submitOverlay">
+    <div class="submit-log" id="submitLog1"></div>
+    <div class="submit-log" id="submitLog2"></div>
+    <div class="submit-log" id="submitLog3" style="color:var(--gold)"></div>
+  </div>
+</div>
+
+<script>
+const modeInput = document.getElementById('modeInput');
+const modeBtns = document.querySelectorAll('.mode-btn');
+const textarea = document.querySelector('textarea.input');
+const contentHint = document.getElementById('contentHint');
+
+modeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode = btn.dataset.mode;
+    modeInput.value = mode;
+    if (mode === 'classic') {
+      textarea.removeAttribute('required');
+      textarea.placeholder = '经典模式正文可留空，系统将基于知识库记忆进行分析...';
+      contentHint.textContent = '// 经典模式无需正文，仅凭作品名启动';
+    } else {
+      textarea.setAttribute('required', '');
+      textarea.placeholder = '粘贴全文，系统将进行多维标尺分析...';
+      contentHint.textContent = '// 原创模式必须提供完整正文';
+    }
+  });
+});
+
+const form = document.getElementById('workForm');
+const errEl = document.getElementById('uploadError');
+const formBody = document.querySelector('.form-body');
+const overlay = document.getElementById('submitOverlay');
+
+form.onsubmit = (e) => {
+  e.preventDefault();
+  const fd = new FormData(form);
+  const data = Object.fromEntries(fd.entries());
+  
+  if (data.mode === 'original' && !data.content.trim()) {
+    errEl.classList.add('show');
+    setTimeout(() => errEl.classList.remove('show'), 3000);
+    return;
+  }
+  
+  formBody.classList.add('is-submitting');
+  setTimeout(() => overlay.classList.add('show'), 300);
+  
+  const logs = [
+    { el: 'submitLog1', text: '> 正在接收文本数据...', delay: 600 },
+    { el: 'submitLog2', text: '> 正在校验完整性...', delay: 1400 },
+    { el: 'submitLog3', text: '> 分析准备就绪', delay: 2200 }
+  ];
+  
+  logs.forEach(log => {
+    setTimeout(() => {
+      document.getElementById(log.el).textContent = log.text;
+    }, log.delay);
+  });
+  
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    formBody.classList.remove('is-submitting');
+    document.getElementById('submitLog1').textContent = '';
+    document.getElementById('submitLog2').textContent = '';
+    document.getElementById('submitLog3').textContent = '';
+    alert('演示环境拦截：实际运行中将无缝跳转至分析终端。');
+  }, 4000);
+};
+</script>
+</body>
+</html>
