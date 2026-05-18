@@ -427,5 +427,6 @@ window.addEventListener('scroll',()=>{
 bar.classList.toggle('show',hero.getBoundingClientRect().bottom<0);
 const btn=document.getElementById('topBtn');
 btn.style.opacity=window.scrollY>600?'1':'0';btn.style.pointerEvents=window.scrollY>600?'auto':'none';
+}
 },{passive:true});
 </script>
