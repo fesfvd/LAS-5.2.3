@@ -465,11 +465,9 @@ async function renderFromTemplate(data, r) {
     return false;
   };
 
-  // Re-execute inline scripts — each wrapped in a block scope so
-  // const/let don't collide if renderFromTemplate is called again.
   root.querySelectorAll('script:not([src])').forEach(oldScript => {
     const newScript = document.createElement('script');
-    newScript.textContent = '{\n' + oldScript.textContent + '\n}';
+    newScript.textContent = oldScript.textContent;
     oldScript.parentNode.replaceChild(newScript, oldScript);
   });
 
