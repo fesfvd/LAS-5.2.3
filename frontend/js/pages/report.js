@@ -234,7 +234,7 @@ async function renderFromTemplate(data, r) {
 
   // Ancestor dialogue (conditional)
   const ancestor = ac.ancestor_dialogue || {};
-  const ancestorHtml = ancestor.enabled ? `
+  const ancestorHtml = (data.ancestor_dialogue && ancestor.enabled) ? `
     <section id="ancestor-dialogue" class="py-10 reveal">
       <hr class="rule-strong mb-6">
       <div class="flex items-center gap-3 mb-5">
