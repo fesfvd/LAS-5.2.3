@@ -18,7 +18,7 @@ LLM_PROVIDER = os.getenv("LAS_LLM_PROVIDER", "openai")
 LLM_MODEL = os.getenv("LAS_LLM_MODEL", "gpt-4o")
 LLM_API_KEY = os.getenv("LAS_LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("LAS_LLM_BASE_URL", "https://api.openai.com/v1")
-LLM_MAX_TOKENS = int(os.getenv("LAS_LLM_MAX_TOKENS", "16000"))
+LLM_MAX_TOKENS = int(os.getenv("LAS_LLM_MAX_TOKENS", "32000"))
 LLM_TEMPERATURE = float(os.getenv("LAS_LLM_TEMPERATURE", "0.4"))
 
 DEV_MODE = os.getenv("LAS_DEV", "").lower() == "true"

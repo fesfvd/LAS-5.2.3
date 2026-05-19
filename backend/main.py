@@ -24,6 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("LAS v5.2.3 启动中...")
+    os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
     init_db()
     logger.info("数据库初始化完成")
     yield
@@ -50,6 +51,7 @@ frontend_dir = os.path.join(BASE_DIR, "frontend")
 app.mount("/css", StaticFiles(directory=os.path.join(frontend_dir, "css")), name="css")
 app.mount("/js", StaticFiles(directory=os.path.join(frontend_dir, "js")), name="js")
 app.mount("/templates", StaticFiles(directory=os.path.join(frontend_dir, "templates")), name="templates")
+app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 
 @app.get("/api/health")
@@ -64,7 +66,9 @@ async def serve_index():
 
 @app.get("/app")
 async def serve_spa():
-    return FileResponse(os.path.join(frontend_dir, "spa.html"))
+    resp = FileResponse(os.path.join(frontend_dir, "spa.html"))
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
 
 @app.get("/favicon.ico")

@@ -34,8 +34,17 @@ App.register('/upload', () => {
         </div>
 
         <div class="textarea-group">
-          <label class="field-label">TEXT <span class="field-label-zh">作品正文</span></label>
-          <textarea class="input-underline textarea" name="content" placeholder="粘贴全文，系统将进行多维标尺分析..." required></textarea>
+          <div class="flex items-center justify-between">
+            <label class="field-label">TEXT <span class="field-label-zh">作品正文</span></label>
+            <span class="mono text-[10px]" style="color:var(--muted)" id="wordCount">0 字</span>
+          </div>
+          <div class="upload-bar">
+            <input type="file" id="fileInput" accept=".txt,.md,.docx,.doc,.json,.csv,.xml,.html,.log,.py,.js,.ts,.java,.c,.cpp,.h,.rs,.go,.rb,.php,.lua,.yml,.yaml,.toml,.ini,.cfg,.tex,.rst,.text" hidden>
+            <button type="button" class="upload-btn" id="uploadBtn" style="display:inline-flex!important;align-items:center;padding:6px 16px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:#b8860b;cursor:pointer;font-size:0.78rem;font-family:'JetBrains Mono',monospace"><i class="fas fa-folder-open mr-1.5"></i>上传 TXT / MD / Word</button>
+            <span class="upload-hint" id="uploadHint">或拖拽文件到文本框</span>
+            <span class="upload-done" id="uploadDone" style="display:none"><i class="fas fa-file-alt mr-1"></i><span id="uploadName"></span><span class="upload-clear" id="uploadClear">×</span></span>
+          </div>
+          <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="粘贴全文，或点击上方按钮上传文件..." required></textarea>
           <p class="mono text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint">// 原创模式必须提供完整正文</p>
         </div>
 
@@ -63,7 +72,7 @@ App.register('/upload', () => {
     </div>`;
 
   const modeInput = document.getElementById('modeInput');
-  const textarea = document.querySelector('textarea[name="content"]');
+  const textarea = document.getElementById('contentArea');
   const contentHint = document.getElementById('contentHint');
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -82,6 +91,83 @@ App.register('/upload', () => {
       }
     });
   });
+
+  // ── File upload & word count ──
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadHint = document.getElementById('uploadHint');
+  const uploadDone = document.getElementById('uploadDone');
+  const uploadName = document.getElementById('uploadName');
+  const uploadClear = document.getElementById('uploadClear');
+  const wordCount = document.getElementById('wordCount');
+
+  uploadBtn.addEventListener('click', () => fileInput.click());
+  uploadClear.addEventListener('click', () => {
+    fileInput.value = '';
+    uploadDone.style.display = 'none';
+    uploadBtn.style.display = '';
+    uploadHint.style.display = '';
+    textarea.value = '';
+    updateWordCount();
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+  // Drag & drop onto textarea
+  textarea.addEventListener('dragover', (e) => { e.preventDefault(); textarea.classList.add('dragover'); });
+  textarea.addEventListener('dragleave', () => { textarea.classList.remove('dragover'); });
+  textarea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    textarea.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  // Word count on input/paste
+  textarea.addEventListener('input', updateWordCount);
+  function updateWordCount() {
+    const n = (textarea.value || '').replace(/\s/g, '').length;
+    wordCount.textContent = n + ' 字';
+  }
+
+  function handleFile(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const nameNoExt = file.name.replace(/\.[^.]+$/, '');
+
+    function onText(text) {
+      textarea.value = text;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      updateWordCount();
+      const titleInput = document.querySelector('input[name="title"]');
+      if (titleInput && !titleInput.value.trim()) {
+        const cleanName = nameNoExt.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (cleanName) titleInput.value = cleanName;
+      }
+      uploadName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+      uploadBtn.style.display = 'none';
+      uploadHint.style.display = 'none';
+      uploadDone.style.display = '';
+    }
+
+    function onErr() {
+      const errEl = document.getElementById('uploadError');
+      errEl.textContent = '> ERROR: 文件读取失败';
+      errEl.classList.add('show');
+      setTimeout(() => errEl.classList.remove('show'), 3000);
+    }
+
+    if (ext === 'docx') {
+      if (typeof mammoth === 'undefined') { onErr(); return; }
+      mammoth.extractRawText({ arrayBuffer: file.arrayBuffer() })
+        .then(r => onText(r.value))
+        .catch(onErr);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => onText(reader.result);
+    reader.onerror = onErr;
+    reader.readAsText(file);
+  }
 
   bindSubmitHandler();
 });

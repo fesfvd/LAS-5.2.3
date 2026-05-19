@@ -38,6 +38,6 @@ timeout /t 5 /nobreak >nul
 echo   Opening browser...
 start http://localhost:8000
 echo.
-echo   [OK] Server running. You can close this window.
-echo.
-pause
+echo   [OK] Server running. This window will close automatically.
+timeout /t 3 /nobreak >nul
+exit

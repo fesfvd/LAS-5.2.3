@@ -3,6 +3,7 @@ import logging
 from backend.services.calculator import (
     verify_strategy,
     apply_originality_check,
+    apply_original_caps,
     apply_defect_exemption,
     compute_wcs,
     layer_for_dim,
@@ -41,9 +42,11 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
     actual_strategy = verify_strategy(scores, predicted)
 
     if mode == "original":
-        llm_adjustments = raw.get("scoring_audit", {}).get("originality_adjustments", [])
+        sa = raw.get("scoring_audit", {})
+        llm_adjustments = sa.get("originality_adjustments", [])
         scores = apply_originality_check(scores, llm_adjustments if llm_adjustments else None)
-        scores = apply_defect_exemption(scores, genre)
+        scores = apply_defect_exemption(scores, sa.get("defect_exemptions"))
+        scores = apply_original_caps(scores)
 
     calc = compute_wcs(scores, actual_strategy, mode, genre)
 
@@ -71,8 +74,10 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
             "predicted_strategy": predicted,
             "verified_strategy": actual_strategy,
             "genre_keywords": raw.get("metadata", {}).get("genre_keywords", []),
+            "spectral_keywords": raw.get("metadata", {}).get("spectral_keywords", []),
         },
         "defect_scan": raw.get("defect_scan", {}),
+        "scoring_audit": raw.get("scoring_audit", {}),
         "benchmarks": raw.get("benchmarks", {}),
         "lower_bounds": raw.get("lower_bounds", {}),
         "dimensions": dims_map,

@@ -1,5 +1,13 @@
-function esc(s) { if (s === null || s === undefined) return ''; const div = document.createElement('div'); div.textContent = String(s); return div.innerHTML; }
-function nl2p(text) { return (text || '').split('\n').filter(Boolean).map(l => l.trim()).join('<br>'); }
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  const div = document.createElement('div');
+  div.textContent = String(s);
+  return div.innerHTML;
+}
+function nl2p(text) {
+  if (!text) return '';
+  return text.split('\n').filter(function(l) { return l.trim(); }).map(function(l) { return '<p class="mb-2 last:mb-0">' + l + '</p>'; }).join('');
+}
 
 const App = {
   state: { page: '', params: {} },

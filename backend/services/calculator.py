@@ -114,28 +114,51 @@ def apply_originality_check(scores: dict, adjustments: list | None = None) -> di
     return adjusted
 
 
-def apply_defect_exemption(scores: dict, genre: str) -> dict:
+def apply_defect_exemption(scores: dict, exemptions: list | None = None) -> dict:
+    """Apply defect exemptions based on LLM's three-factor judgment.
+
+    Unlike the old mechanical rule, this trusts the LLM's scoring_audit.defect_exemptions
+    which already performed 因果必然性/不可规避性/内在一贯性 analysis.
+    Without LLM-approved exemptions, no exemption is applied.
+    """
     result = dict(scores)
-    master_dims = [(k, v) for k, v in scores.items() if v >= 105]
-    if not master_dims:
-        return result
-    weak_dims = [(k, v) for k, v in scores.items() if v <= 85]
-    if not weak_dims:
+    if not exemptions:
         return result
 
-    # 每个 >=105 的高分维度豁免一个 <=85 的低分维度（最多 4 个）
-    exempted = set()
-    for md_id, _ in master_dims:
-        if len(exempted) >= 4:
+    exempted_count = 0
+    for ex in exemptions:
+        if exempted_count >= 4:
             break
-        for wd_id, w_score in weak_dims:
-            if wd_id in exempted:
-                continue
-            others = [v for k, v in result.items() if k != wd_id]
-            avg = sum(others) / len(others) if others else w_score
-            result[wd_id] = round(avg, 1)
-            exempted.add(wd_id)
-            break
+        dim_id = ex.get("exempted_dimension_id")
+        if dim_id is None or dim_id not in result:
+            continue
+        # Verify pre-condition: exempted dim must be ≤85
+        if result[dim_id] > 85:
+            logger.warning("apply_defect_exemption: dim %d score %.1f > 85, 驳回豁免", dim_id, result[dim_id])
+            continue
+        # Verify pre-condition: linked master dim must be ≥105
+        master_id = ex.get("linked_to_master_dimension_id")
+        if master_id is None or master_id not in result or result[master_id] < 105:
+            logger.warning("apply_defect_exemption: master dim %d score %.1f < 105, 驳回豁免", master_id or 0, result.get(master_id, 0))
+            continue
+
+        others = [v for k, v in result.items() if k != dim_id]
+        avg = sum(others) / len(others) if others else result[dim_id]
+        logger.info("apply_defect_exemption: 正缺陷豁免 dim %d (%.1f→%.1f) via master dim %d (%.1f)",
+                    dim_id, result[dim_id], round(avg, 1), master_id, result[master_id])
+        result[dim_id] = round(avg, 1)
+        exempted_count += 1
+
+    return result
+
+
+def apply_original_caps(scores: dict) -> dict:
+    """Enforce dimension 15/16 cap at 60 for original mode (潜质估算法)."""
+    result = dict(scores)
+    for dim_id in (15, 16):
+        if dim_id in result and result[dim_id] > 60:
+            logger.info("apply_original_caps: dim %d capped %.1f → 60", dim_id, result[dim_id])
+            result[dim_id] = 60.0
     return result
 
 

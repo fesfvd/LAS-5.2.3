@@ -56,7 +56,8 @@ async function renderFromTemplate(data, r, id) {
   const mode = data.mode || 'original';
   const isOriginal = mode === 'original';
   const tplUrl = isOriginal ? '/templates/original.html' : '/templates/classic.html';
-  const res = await fetch(tplUrl);
+  let res; try { res = await fetch(tplUrl); } catch (e) { console.error('[LAS] 模板加载失败:', e); return; }
+  if (!res.ok) { console.error('[LAS] 模板HTTP错误:', res.status); return; }
   let tpl = await res.text();
 
   const { sections, dimData, layerAvgs, wcs, tier } = buildReportSections(data, r, id);
@@ -66,6 +67,46 @@ async function renderFromTemplate(data, r, id) {
 
   const root = document.getElementById('spaApp');
   root.innerHTML = tpl;
+
+  // Screenshot button
+  const ssHTML = `
+    <div class="ss-float" id="ssFloat">
+      <button class="ss-btn" id="ssBtn" title="保存截图"><i class="fas fa-camera"></i></button>
+      <div class="ss-menu" id="ssMenu">
+        <button class="ss-opt" data-scope="hero">仅首页</button>
+        <button class="ss-opt" data-scope="full">全部报告</button>
+      </div>
+    </div>`;
+  root.insertAdjacentHTML('beforeend', ssHTML);
+  document.getElementById('ssBtn').addEventListener('click', () => {
+    document.getElementById('ssMenu').classList.toggle('open');
+  });
+  document.querySelectorAll('.ss-opt').forEach(btn => {
+    btn.addEventListener('click', async function () {
+      document.getElementById('ssMenu').classList.remove('open');
+      const scope = this.dataset.scope;
+      const btnEl = document.getElementById('ssBtn');
+      btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      try {
+        const target = scope === 'hero' ? document.querySelector('header, #reportHero, .report-header, [id^="hero"]') || root.querySelector('section:first-of-type') : root;
+        const canvas = await html2canvas(target, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#faf8f3',
+          windowWidth: target.scrollWidth,
+          windowHeight: scope === 'hero' ? target.offsetHeight : target.scrollHeight,
+        });
+        const link = document.createElement('a');
+        link.download = `LAS_${(data.title||'report').slice(0,20)}_${scope}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (e) {
+        console.error('[LAS] 截图失败:', e);
+      }
+      btnEl.innerHTML = '<i class="fas fa-camera"></i>';
+    });
+  });
+
   initReport(root, { dimData, layerAvgs, wcs, tier });
 }
 
@@ -82,6 +123,16 @@ function buildReportSections(data, r, fallbackId) {
   const now = new Date();
   const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
   const percentile = Math.min(Math.round((s.wcs || 0) / 150 * 100), 99);
+
+
+  // Genre & spectral keywords
+  const genreKW = (meta.genre_keywords || []).map(k =>
+    `<span class="tag" style="background:rgba(184,134,11,.04);border:1px solid rgba(184,134,11,.12);color:var(--gold)">${esc(k)}</span>`
+  ).join('');
+  const spectralKW = (meta.spectral_keywords || []).map(k =>
+    `<span class="tag" style="background:rgba(26,26,26,.03);border:1px solid rgba(26,26,26,.06);color:var(--muted)">${esc(k)}</span>`
+  ).join('');
+  const keywordsHtml = (genreKW || spectralKW) ? `<div class="flex flex-wrap gap-1.5 mb-4">${genreKW}${spectralKW}</div>` : '';
 
   const tags = (ac.tags || []).map(t =>
     `<span class="tag" style="background:rgba(139,0,0,.06);border:1px solid rgba(139,0,0,.1);color:var(--crimson)">${esc(t)}</span>`
@@ -159,23 +210,27 @@ function buildReportSections(data, r, fallbackId) {
   const benchColors = ['#8b0000', '#2d6a4f', '#b8860b', '#1a1a1a'];
   const benchHtml = benchKeys.map((k, i) => {
     const b = benchmarks[k] || {};
-    return `<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-crimson/5 transition cursor-default border" style="border-color:var(--rule)">
-      <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0" style="background:${benchColors[i]}">${k}</div>
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold serif-text leading-tight truncate">${esc(b.work || '—')}</p>
-        <p class="text-[10px]" style="color:var(--muted)">${b.dimension_id||''}.${b.dimension_name||''} · ${b.level||''} · ${benchNames[k]}</p>
+    return `<div class="bench-card border rounded-lg overflow-hidden" style="border-color:var(--rule);cursor:pointer;transition:all .25s" onclick="this.classList.toggle('expanded')">
+      <div class="flex items-center gap-3 p-3">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0" style="background:${benchColors[i]}">${k}</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold serif-text leading-tight truncate">${esc(b.work || '—')}</p>
+          <p class="text-[10px]" style="color:var(--muted)">${b.dimension_id||''}.${b.dimension_name||''} · ${b.level||''} · ${benchNames[k]}</p>
+        </div>
+        ${(b.reason||'').trim() ? '<i class="fas fa-chevron-down text-[10px] bench-chevron flex-shrink-0" style="color:var(--muted);transition:transform .3s"></i>' : ''}
       </div>
+      ${(b.reason||'').trim() ? `<div class="bench-reason"><div class="px-3 pb-3 pl-16 text-[11px] leading-relaxed" style="color:var(--muted)"><span class="text-muted/60">选择依据：</span>${esc(b.reason||'')}</div></div>` : ''}
     </div>`;
   }).join('');
 
   // Deep analysis accordion
   const deepSections = [];
   if (ac.literary_position) deepSections.push(['📖', '文学坐标与谱系定位', ac.literary_position]);
+  const profileKey = isOriginal ? (ac.author_profile || '') : (ac.creation_background || '');
+  if (profileKey) deepSections.push(['✍️', isOriginal ? '作者创作侧写' : '创作背景分析', profileKey]);
+  if (ac.core_contribution) deepSections.push(['💡', '核心贡献与创新分析', ac.core_contribution]);
   if (ac.tension_analysis) deepSections.push(['⚡', '张力、开放性与阐释空间', ac.tension_analysis]);
   if (ac.critical_consensus) deepSections.push(['📜', '批评共识与接受史', ac.critical_consensus]);
-  const profileKey = isOriginal ? (ac.author_profile || '') : (ac.creation_background || '');
-  if (profileKey) deepSections.push(['✍️', isOriginal ? '作者创作侧写' : '创作背景', profileKey]);
-  if (ac.core_contribution) deepSections.push(['💡', '核心贡献', ac.core_contribution]);
   const deepHtml = deepSections.map(([emoji, title, text], idx) =>
     `<div class="glass-card rounded-xl overflow-hidden">
       <button class="accordion-trigger w-full flex items-center justify-between p-4 text-left" onclick="toggleAccordion(${idx})">
@@ -312,7 +367,15 @@ function buildReportSections(data, r, fallbackId) {
   }
 
   // Verification data (original only)
-  const extremeText = ds.triggered ? '已触发' : '无';
+  const defects = ds.defects || [];
+  const defectsHtml = defects.length ? defects.map(d =>
+    `<div class="glass-card rounded-lg p-3 text-sm" style="border-left:3px solid #dc2626">
+      <p class="font-semibold text-xs mb-1" style="color:#dc2626">${esc(d.type || '')}</p>
+      <p class="text-xs leading-relaxed" style="color:var(--muted)">${esc(d.detail || '')}</p>
+      ${d.bound_dimensions && d.bound_dimensions.length ? `<p class="text-[10px] mt-1" style="color:var(--muted)">绑定维度：${d.bound_dimensions.join(', ')}</p>` : ''}
+    </div>`
+  ).join('') : '';
+const extremeText = ds.triggered ? '已触发' : '无';
   const extremeDetail = ds.triggered ? `（${esc(ds.trigger_type || '')}）` : '（未触发任何极端情况，继续详细评分流程）';
   const hasAdjustments = dimData.some(d => d.adjusted);
   const adjItemsHtml = hasAdjustments
@@ -337,6 +400,10 @@ function buildReportSections(data, r, fallbackId) {
       </div>`
     ).join('')
     : '<div class="text-sm" style="color:var(--muted)">无调整记录</div>';
+
+  // Lower bounds reference (original only)
+  const lbs = r.lower_bounds || {};
+  const lowerBoundsHtml = (lbs.A || lbs.B || lbs.C || lbs.D) ? `<p class="text-[11px] mt-3" style="color:var(--muted)"><span class="text-muted/60">下限参照：</span>A层《${esc(lbs.A||'')}》 · B层《${esc(lbs.B||'')}》 · C层《${esc(lbs.C||'')}》 · D层《${esc(lbs.D||'')}》</p>` : '';
 
   // Penalty calculation display (original only)
   const kVal = s.core_penalty_k !== undefined ? s.core_penalty_k : 1;
@@ -393,6 +460,18 @@ function buildReportSections(data, r, fallbackId) {
     return '消耗 ' + k(t.total) + ' tokens（提示 ' + k(t.prompt) + ' + 生成 ' + k(t.completion) + '）';
   })();
 
+
+  // ── Scoring Audit Log ──
+  const sa = r.scoring_audit || {};
+  let auditHtml = '';
+  const sv = sa.strategy_verification || {};
+  const svBestLayer = {A:'语言与形式',B:'叙事与内容',C:'思想与意义',D:'审美与影响'}[sv.best_layer] || '';
+  if (sv.predicted !== undefined) {
+    const matched = sv.predicted === sv.verified_strategy;
+    auditHtml += `<div class="audit-item"><div class="audit-row"><span class="audit-label mono">策略校验</span><span class="audit-value">预判策略 ${sv.predicted || '?'} → 校验确认策略 ${sv.verified_strategy || '?'}</span><span class="audit-tag ${matched ? '' : 'updated'}">${matched ? '一致' : '已更新'}</span></div>${sv.best_layer ? `<p class="audit-sub">四层均分：A ${(sv.layer_avgs||{}).A||'?'} / B ${(sv.layer_avgs||{}).B||'?'} / C ${(sv.layer_avgs||{}).C||'?'} / D ${(sv.layer_avgs||{}).D||'?'} · 最优层：${svBestLayer}${sv.weight_updated === true ? ' · 权重已更新' : ''}</p>` : ''}</div>`;
+  }
+  const auditSectionHtml = auditHtml ? `<section id="auditLog" class="py-10 reveal"><hr class="rule-strong mb-6"><h2 class="text-2xl font-bold serif mb-5">评分决策日志</h2><div class="glass-card rounded-xl p-5 space-y-3">${auditHtml}</div></section>` : '';
+
   const sections = {
     WORK_TITLE: esc(data.title),
     WORK_AUTHOR: esc(data.author || ''),
@@ -427,11 +506,14 @@ function buildReportSections(data, r, fallbackId) {
     READING_RECOMMENDATIONS: readingHtml,
     PROFESSIONAL_SECTIONS: editorHtml + guideHtml + readingHtml,
     ANCESTOR_DIALOGUE_SECTION: ancestorHtml,
+    AUDIT_SECTION: auditSectionHtml,
     EXTREME_CHECK_RESULT: extremeText,
     EXTREME_CHECK_DETAIL: extremeDetail,
+    DEFECT_DETAILS: defectsHtml,
     ADJUSTMENT_TRIGGER: hasAdjustments ? '高分段维度触发原创审慎校验下调' : '无需调整',
     ADJUSTMENT_ITEMS: adjItemsHtml,
     PENALTY_CALCULATION: penaltyHtml,
+    LOWER_BOUNDS_REF: lowerBoundsHtml,
     FORTUNE_LEVEL: esc(div.grade || ''),
     FORTUNE_KEYWORD: esc(div.word || ''),
     FORTUNE_TEXT: esc(div.poem || ''),
@@ -530,7 +612,7 @@ function initRadarChart(dimData, LC, primaryColor) {
     beforeDatasetsDraw(ch) {
       const { ctx: c, chartArea: { top, bottom, left, right }, scales: { r } } = ch;
       const cx = (left + right) / 2, cy = (top + bottom) / 2, da = r.drawingArea;
-      [150, 125, 105, 95, 75].forEach((v, i) => {
+      [150, 120, 90, 60, 30].forEach((v, i) => {
         const rd = (v / 150) * da;
         c.save(); c.beginPath(); c.arc(cx, cy, rd, 0, 2 * Math.PI);
         c.strokeStyle = (primaryColor === '#6b21a8' ? 'rgba(107,33,168,' : 'rgba(139,0,0,') + (0.4 - i * 0.06).toFixed(2) + ')';
@@ -556,12 +638,12 @@ function initRadarChart(dimData, LC, primaryColor) {
         data: cur, fill: true,
         backgroundColor: chartBg, borderColor: chartBorder,
         pointBackgroundColor: chartPoint, pointBorderColor: '#faf8f5',
-        pointBorderWidth: 1.5, pointRadius: 5, pointHoverRadius: 9, borderWidth: 1.5
+        pointBorderWidth: 1.5, pointRadius: 3, pointHoverRadius: 6, hoverRadius: 8, borderWidth: 1.5
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'nearest', intersect: false },
+      interaction: { mode: 'nearest', intersect: true },
       onHover: (e, el) => { e.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
       onClick: (e, el) => { if (el.length) document.getElementById('table').scrollIntoView({ behavior: 'smooth' }); },
       scales: {
@@ -584,9 +666,9 @@ function initRadarChart(dimData, LC, primaryColor) {
           callbacks: {
             title: c => dimData[c[0].dataIndex].name,
             label: c => [
-              '  ' + dimData[c[0].dataIndex].score + ' / 150',
-              '  档位  ' + dimData[c[0].dataIndex].level,
-              '  权重  ' + dimData[c[0].dataIndex].weight
+              dimData[c.dataIndex].score + ' / 150',
+              '档位  ' + dimData[c.dataIndex].level,
+              '权重  ' + dimData[c.dataIndex].weight
             ]
           }
         }
@@ -773,17 +855,7 @@ function initReveal() {
   if (lb) bObs.observe(lb);
 }
 
-function esc(s) {
-  if (s === null || s === undefined) return '';
-  const div = document.createElement('div');
-  div.textContent = String(s);
-  return div.innerHTML;
-}
-
-function nl2p(text) {
-  if (!text) return '';
-  return text.split('\n').filter(l => l.trim()).map(l => `<p class="mb-2 last:mb-0">${l}</p>`).join('');
-}
+// esc/nl2p 定义在 app.js 中，全局可用
 
 // ── Shared report interactivity (called from template & report.js generated HTML) ──
 

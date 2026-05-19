@@ -9,7 +9,7 @@
 <div class="flex items-center gap-3">
 <span class="mono text-sm font-bold text-purple">{{WCS_SCORE}}<span class="text-xs text-muted font-normal">/150</span></span>
 <span class="text-xs px-2 py-0.5 rounded bg-jade/8 text-jade font-medium">{{WORK_LEVEL}}</span>
-<button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="text-muted hover:text-purple transition text-xs ml-1"><i class="fas fa-arrow-up"></i></button>
+<button onclick="document.documentElement.scrollTop=0;window.scrollTo({top:0,behavior:'smooth'})" class="text-muted hover:text-purple transition text-xs ml-1"><i class="fas fa-arrow-up"></i></button>
 </div>
 </div>
 </div>
@@ -34,10 +34,10 @@
 
 <div class="mob-nav hidden fixed bottom-0 left-0 right-0 z-50 bg-paper/95 backdrop-blur border-t" style="border-color:var(--rule)">
 <div class="flex justify-around py-2">
-<button onclick="scrollTo('hero')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-home"></i>概览</button>
-<button onclick="scrollTo('verification')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-shield-alt"></i>校验</button>
-<button onclick="scrollTo('deepAnalysis')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-feather"></i>分析</button>
-<button onclick="scrollTo('appendix')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-scroll"></i>附录</button>
+<button onclick="if(typeof scrollTo==='function')scrollTo('hero')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-home"></i>概览</button>
+<button onclick="if(typeof scrollTo==='function')scrollTo('verification')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-shield-alt"></i>校验</button>
+<button onclick="if(typeof scrollTo==='function')scrollTo('deepAnalysis')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-feather"></i>分析</button>
+<button onclick="if(typeof scrollTo==='function')scrollTo('appendix')" class="text-muted text-[11px] flex flex-col items-center gap-0.5"><i class="fas fa-scroll"></i>附录</button>
 </div>
 </div>
 
@@ -110,7 +110,6 @@
 </div>
 
 <div class="md:col-span-8 fade-up d3 flex flex-col">
-<p class="text-[11px] text-muted uppercase tracking-widest mb-2 font-medium">十六维评分雷达图（校验后）</p>
 <div class="flex-1 w-full">
 <canvas id="radarChart"></canvas>
 </div>
@@ -133,6 +132,7 @@
 <div class="flex items-center gap-3 p-3 rounded" style="background:rgba(45,106,79,.04);border:1px solid rgba(45,106,79,.1)">
 <i class="fas fa-check-circle text-jade"></i>
 <span class="text-sm text-ink/55">筛查结果：<strong class="text-jade">{{EXTREME_CHECK_RESULT}}</strong>{{EXTREME_CHECK_DETAIL}}</span>
+	{{DEFECT_DETAILS}}
 </div>
 </div>
 
@@ -151,15 +151,19 @@
 {{ADJUSTMENT_ITEMS}}
 </div>
 		{{PENALTY_CALCULATION}}
+		{{LOWER_BOUNDS_REF}}
 </div>
 </section>
 
 
+
+{{AUDIT_SECTION}}
+
 <section id="workInfo" class="py-10 reveal">
 <hr class="rule-strong mb-6">
 <h2 class="text-2xl font-bold serif mb-5">作品概况</h2>
-<div class="grid ">
-<div class="">
+<div >
+<div >
 <div class="text-sm leading-[2] mb-5 serif" style="color:var(--muted)">{{WORK_OVERVIEW}}</div>
 <div class="pl-4 border-l-2" style="border-color:var(--gold)">
 <p class="text-[10px] text-muted uppercase tracking-widest mb-2 font-medium">金句</p>
@@ -284,7 +288,7 @@
 </div>
 </footer>
 
-<button id="topBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-16 md:bottom-6 right-5 w-9 h-9 rounded-full flex items-center justify-center text-muted/30 hover:text-purple transition opacity-0 pointer-events-none z-40" style="background:var(--paper);border:1px solid var(--rule)">
+<button id="topBtn" onclick="document.documentElement.scrollTop=0;window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-16 md:bottom-6 right-5 w-9 h-9 rounded-full flex items-center justify-center text-muted/30 hover:text-purple transition opacity-0 pointer-events-none z-40" style="background:var(--paper);border:1px solid var(--rule)">
 <i class="fas fa-arrow-up text-xs"></i>
 </button>
 

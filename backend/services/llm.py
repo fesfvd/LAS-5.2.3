@@ -44,6 +44,18 @@ async def analyze_stream(
     full_text = ""
     t0 = time.time()
 
+    # Progress milestones: keyword → workflow step index (0-based)
+    _MILESTONES = [
+        ("genre", 1),           # 02 体裁识别
+        ("defect_scan", 2),     # 03 加载标尺
+        ('"id":1', 3),          # 04 A层开始 (LLM 输出无空格)
+        ('"id":5', 4),          # 05 B层开始
+        ('"id":9', 5),          # 06 C层开始
+        ('"id":13', 6),         # 07 D层开始
+        ("scoring_audit", 7),   # 08 基准比对
+        ("analysis_content", 8),# 09 均衡校验
+    ]
+
     async def _stream() -> AsyncIterator[dict]:
         nonlocal full_text
         logger.info("LLM 调用开始 model=%s title=%s len=%d", m, title, len(content))
@@ -58,11 +70,20 @@ async def analyze_stream(
             stream=True,
             stream_options={"include_usage": True},
         )
+        reached = 0  # Step 01 already shown on first token
+        first_token = False
         async for chunk in stream:
             delta = chunk.choices[0].delta
             if delta.content:
                 full_text += delta.content
                 yield {"type": "token", "text": delta.content}
+                if not first_token:
+                    first_token = True
+                    yield {"type": "progress", "step": 0}  # Step 01
+                # Check milestones
+                while reached < len(_MILESTONES) and _MILESTONES[reached][0] in full_text:
+                    yield {"type": "progress", "step": _MILESTONES[reached][1]}
+                    reached += 1
             if hasattr(chunk, 'usage') and chunk.usage:
                 total = getattr(chunk.usage, 'total_tokens', 0) or 0
                 inp = getattr(chunk.usage, 'prompt_tokens', 0) or 0
