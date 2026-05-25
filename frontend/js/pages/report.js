@@ -606,23 +606,41 @@ function initReport(root, { dimData, layerAvgs, wcs, tier }) {
 
   window.__LAS_DATA = { dimData, LC, mode, primaryColor, wcs };
 
-  if (dimData.length === 0) {
-    const dbg = document.createElement('div');
-    dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;color:#e0e0e0;padding:12px 20px;font-size:11px;font-family:monospace;z-index:9999;max-height:160px;overflow:auto;border-top:2px solid var(--crimson)';
-    dbg.innerHTML = '<strong style="color:var(--crimson)">[LAS DEBUG]</strong> dimData: 0 items — extreme case, no interactive init';
-    root.appendChild(dbg);
-    return;
-  }
-
   initFontSize();
-  initScoreRing(wcs);
-  initRadarChart(dimData, LC, primaryColor);
-  buildTable();
-  initTableEvents();
   initNav(isOriginal);
   initSectionNav(isOriginal);
   initScroll();
   initReveal();
+
+  if (dimData.length === 0) {
+    // LLM 拒评：隐藏无数据的交互元素，展示提示横幅
+    const ring = document.getElementById('progressRing') || document.querySelector('.score-ring');
+    if (ring) ring.style.display = 'none';
+    const radar = document.getElementById('radarChart');
+    if (radar) radar.style.display = 'none';
+    const table = document.getElementById('table');
+    if (table) table.style.display = 'none';
+    const layerBars = document.getElementById('layerBars');
+    if (layerBars) layerBars.style.display = 'none';
+
+    const summary = document.getElementById('assessmentSummary');
+    if (summary) {
+      const banner = document.createElement('div');
+      banner.className = 'glass-card';
+      banner.style.cssText = 'padding:20px;margin-bottom:24px;border-left:3px solid var(--gold)';
+      banner.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px">'
+        + '<span style="font-size:24px;flex-shrink:0">&#9888;</span>'
+        + '<div><p class="serif" style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">无法完成十六维标尺评定</p>'
+        + '<p class="text-sm" style="color:var(--muted);line-height:1.8">该作品经缺陷扫描与极端情况预审，被判定为<strong style="color:var(--ink)">未达到可评定的最低文学完成度</strong>（缺陷明显/严重瑕疵区间）。以下展示 LLM 对该作品的定性分析与诊断，供参考。</p></div></div>';
+      summary.parentNode.insertBefore(banner, summary);
+    }
+    return;
+  }
+
+  initScoreRing(wcs);
+  initRadarChart(dimData, LC, primaryColor);
+  buildTable();
+  initTableEvents();
 }
 
 // ── init helpers ──
