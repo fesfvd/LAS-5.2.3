@@ -1,4 +1,4 @@
-const CIRCUMFERENCE = 150.796; // 2*PI*24
+const CIRCUMFERENCE = 201.062; // 2*PI*32
 
 const WORKFLOW = [
   { step: '01', text: '接收文本，清洗格式噪声...' },
@@ -9,7 +9,7 @@ const WORKFLOW = [
   { step: '06', text: '解析 C层 · 思想与意义' },
   { step: '07', text: '解析 D层 · 审美与影响' },
   { step: '08', text: '十六维标尺逐项比对基准序列...' },
-  { step: '09', text: '校验维度均衡性，抵抗全面平庸...' },
+  { step: '09', text: '生成主报告 · 结论与附录...' },
   { step: '10', text: '核算最终权重，生成评估报告' },
 ];
 
@@ -21,6 +21,7 @@ App.register('/analyze', () => {
 
   _shownStepIndex = -1;
   _completed = false;
+  _pageEnter = Date.now();
   if (_stepTimer) { clearInterval(_stepTimer); _stepTimer = null; }
   if (_cursorTimer) { clearInterval(_cursorTimer); _cursorTimer = null; }
   _quoteActive = false;
@@ -28,42 +29,53 @@ App.register('/analyze', () => {
 
   const root = document.getElementById('spaApp');
   root.innerHTML = `
-    <div class="analyze-container">
-      <div class="analyze-header">
-        <div>
-          <p class="mono text-xs text-muted tracking-[4px] mb-1">WORKFLOW 分析推演</p>
-          <h1 class="serif text-3xl font-black leading-[1.1]">正在分析</h1>
-        </div>
-        <div class="progress-ring-container">
-          <svg width="56" height="56" viewBox="0 0 56 56">
-            <circle cx="28" cy="28" r="24" stroke-width="2" fill="none" stroke="var(--rule)" />
-            <circle id="progressCircle" cx="28" cy="28" r="24" stroke-width="2" fill="none"
-                    stroke="var(--gold)" stroke-linecap="round" stroke-dasharray="${CIRCUMFERENCE}" stroke-dashoffset="${CIRCUMFERENCE}" />
-          </svg>
-          <span class="progress-percent" id="progressText">0%</span>
-        </div>
-      </div>
+    <div class="analyze-page">
+      <div class="analyze-container">
 
-      <div class="terminal-window" id="logBox">
-        <div id="dynamicContent"></div>
-      </div>
 
-      <div class="analyze-status">
-        <p class="mono text-xs text-muted" id="statusText">序列启动中...</p>
-        <p class="mono text-xs" id="statusIndicator" style="color:var(--gold);display:none">&bull; 分析完成</p>
-      </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:24px">
+            <div>
+              <span class="section-label">WORKFLOW ANALYSIS</span>
+              <h1 class="serif" style="font-size:30px;font-weight:700;line-height:1.1;letter-spacing:0.03em;color:var(--ink);margin-top:2px">正在分析</h1>
+            </div>
+            <div class="progress-ring-container waiting" id="progressRing">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="32" stroke-width="5" fill="none" class="progress-bg" />
+                <circle id="progressCircle" cx="40" cy="40" r="32" stroke-width="5" fill="none"
+                        stroke-dasharray="${CIRCUMFERENCE}" stroke-dashoffset="191" class="progress-arc" />
+              </svg>
+              <span class="progress-percent" id="progressText" style="position:absolute;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)">--</span>
+            </div>
+          </div>
 
-      <div class="quote-carousel" id="quoteCarousel">
-        <p class="quote-label mono">文心拾贝</p>
-        <div class="quote-body">
-          <span class="quote-mark">&#x300C;</span>
-          <span class="quote-text serif" id="quoteText"></span>
-          <span class="quote-mark">&#x300D;</span>
-        </div>
-        <p class="quote-source serif" id="quoteSource"></p>
-      </div>
+          <hr class="rule" style="margin:24px 0">
 
-      <p class="text-xs text-muted mt-1" id="moduleHint" style="display:none"></p>
+          <div id="dynamicContent"></div>
+
+          <hr class="rule" style="margin:24px 0">
+
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="analyze-status-line" id="statusText" style="color:var(--muted)">序列启动中...</span>
+            <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
+          </div>
+
+          <hr class="rule" style="margin:24px 0">
+
+          <div style="text-align:center">
+            <span class="section-label">LITERARY MUSES</span>
+            <div class="rule-gold" style="margin:12px auto 20px"></div>
+            <blockquote class="muse-quote" id="museQuote">
+              <span class="quote-bracket">&#x300C;</span>
+              <span id="quoteText"></span>
+              <span class="quote-bracket">&#x300D;</span>
+            </blockquote>
+            <cite class="muse-source" id="quoteSource"></cite>
+          </div>
+
+          <p class="text-xs text-muted mt-1" id="moduleHint" style="display:none"></p>
+
+
+      </div>
     </div>`;
 
   API.getWork(id).then(w => {
@@ -76,18 +88,20 @@ App.register('/analyze', () => {
   // Build all step DOM elements immediately
   buildAllSteps();
 
-  startStream(id);
+  startStream(id, window.__LAS_MODEL || '');
   startQuoteCarousel();
 
   window.addEventListener('beforeunload', () => {
     if (_stepTimer) clearInterval(_stepTimer);
     if (_cursorTimer) clearInterval(_cursorTimer);
     if (_quoteTimer) clearTimeout(_quoteTimer);
-  });
+    if (window.__LAS_ANALYZE_CTRL) window.__LAS_ANALYZE_CTRL.abort();
+  }, { once: true });
 });
 
 let _shownStepIndex = -1;
 let _completed = false;
+let _pageEnter = 0;
 let _stepTimer = null;
 let _cursorTimer = null;
 let _quoteTimer = null;
@@ -101,8 +115,9 @@ function buildAllSteps() {
   if (!container) return;
   _stepEls = WORKFLOW.map((w, i) => {
     const div = document.createElement('div');
-    div.className = 'log-line';
-    div.innerHTML = `<span class="log-step">${w.step}</span><span class="log-text">${w.text}</span><span class="log-status"></span>`;
+    div.className = 'terminal-line';
+    div.style.cssText = 'margin-bottom:6px;opacity:0.35;color:var(--muted);display:flex;align-items:center';
+    div.innerHTML = '<span class="log-step" style="margin-right:8px;flex-shrink:0">' + w.step + '</span><span class="log-text" style="flex:1">' + w.text + '</span><span class="log-status" style="margin-left:auto;flex-shrink:0;font-size:11px"></span>';
     container.appendChild(div);
     return div;
   });
@@ -116,6 +131,8 @@ function advanceStep() {
   // Mark previous as done
   if (_shownStepIndex >= 0 && _stepEls[_shownStepIndex]) {
     _stepEls[_shownStepIndex].classList.add('done');
+    _stepEls[_shownStepIndex].style.opacity = '0.55';
+    _stepEls[_shownStepIndex].style.color = 'var(--muted)';
     const status = _stepEls[_shownStepIndex].querySelector('.log-status');
     if (status) status.textContent = '✓';
   }
@@ -124,10 +141,11 @@ function advanceStep() {
   _shownStepIndex = next;
   if (_stepEls[next]) {
     _stepEls[next].classList.add('show', 'active');
+    _stepEls[next].style.opacity = '1';
+    _stepEls[next].style.color = 'var(--ink)';
     startCursorPulse(_stepEls[next]);
   }
   updateRing();
-
 }
 
 function startCursorPulse(el) {
@@ -165,6 +183,8 @@ function onComplete() {
   for (let i = _shownStepIndex; i < WORKFLOW.length; i++) {
     if (_stepEls[i]) {
       _stepEls[i].classList.add('show', 'done');
+      _stepEls[i].style.opacity = '0.55';
+      _stepEls[i].style.color = 'var(--muted)';
       const textSpan = _stepEls[i].querySelector('.log-text');
       if (textSpan) textSpan.textContent = textSpan.textContent.replace(' │', '');
       const status = _stepEls[i].querySelector('.log-status');
@@ -177,37 +197,73 @@ function onComplete() {
   // Stop quotes
   _quoteActive = false;
   if (_quoteTimer) { clearTimeout(_quoteTimer); _quoteTimer = null; }
-  const qc = document.getElementById('quoteCarousel');
-  const qb = document.querySelector('.quote-body');
-  if (qb) { qb.style.opacity = '0'; qb.style.transform = 'translateY(-8px)'; }
-  if (qc) qc.style.opacity = '0';
+  const mq = document.getElementById('museQuote');
+  if (mq) mq.style.opacity = '0';
 
   const statusText = document.getElementById('statusText');
   const statusIndicator = document.getElementById('statusIndicator');
-  if (statusText) statusText.textContent = '分析完成，报告生成中...';
+  if (statusText) { statusText.textContent = '分析完成，报告生成中...'; statusText.style.color = 'var(--jade)'; }
   if (statusIndicator) statusIndicator.style.display = 'block';
 }
 
-async function startStream(workId) {
+async function startStream(workId, model) {
   const statusText = document.getElementById('statusText');
-
   if (statusText) statusText.textContent = 'CONNECTING...';
 
-  try {
-    const res = await API.analyzeStream(workId);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+  const controller = new AbortController();
+  window.__LAS_ANALYZE_CTRL = controller;
 
+  try {
+    const res = await API.analyzeStream(workId, model || '', controller.signal);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     if (statusText) statusText.textContent = 'EXECUTING...';
 
+    let firstEvent = true;
     let lastProgressStep = -1;
+    let receivedDone = false;
+    let parseErrors = 0;
+    let lastEventTime = Date.now();
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
+    const IDLE_WARN = 60000;    // 60s no event → warn
+    const IDLE_GIVEUP = 300000;  // 5min no event → give up
+    const READ_TIMEOUT = 25000;  // 25s per read() call (heartbeat every 15s)
+
     while (true) {
-      const { done, value } = await reader.read();
+      let result;
+      try {
+        result = await Promise.race([
+          reader.read(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('READ_TIMEOUT')), READ_TIMEOUT))
+        ]);
+      } catch (readErr) {
+        if (readErr.message === 'READ_TIMEOUT') {
+          // Check idle duration
+          const idle = Date.now() - lastEventTime;
+          if (idle >= IDLE_GIVEUP) {
+            console.warn('[LAS] 流读取超时超过 5 分钟，已放弃');
+            if (statusText) { statusText.textContent = '分析超时，请重试'; statusText.style.color = 'var(--semantic-warning)'; }
+            return;
+          }
+          if (idle >= IDLE_WARN && !document.getElementById('idleWarn')) {
+            const w = document.createElement('p');
+            w.id = 'idleWarn';
+            w.className = 'analyze-status-line';
+            w.style.cssText = 'color:var(--semantic-warning);margin-top:4px';
+            w.textContent = '分析耗时较长，请耐心等待...';
+            document.getElementById('dynamicContent').parentNode.appendChild(w);
+          }
+          continue; // keep trying
+        }
+        throw readErr;
+      }
+
+      const { done, value } = result;
       if (value) {
         buffer += decoder.decode(value, { stream: true });
+        lastEventTime = Date.now();
       }
 
       const lines = buffer.split('\n');
@@ -215,41 +271,68 @@ async function startStream(workId) {
 
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6).trim();
-        if (!data) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
         try {
-          const event = JSON.parse(data);
+          const event = JSON.parse(raw);
+          // Skip heartbeats before firstEvent gate
+          if (event.type === 'heartbeat') continue;
+          if (firstEvent) {
+            firstEvent = false;
+            const elapsed = Date.now() - _pageEnter;
+            const minDelay = Math.max(0, 800 - elapsed);
+            setTimeout(() => {
+              const ring = document.getElementById('progressRing');
+              if (ring) ring.classList.remove('waiting');
+              const pctText = document.getElementById('progressText');
+              if (pctText) pctText.textContent = '0%';
+            }, minDelay);
+          }
           if (event.type === 'progress') {
             const step = event.step;
             if (step > lastProgressStep) {
-              for (let s = lastProgressStep + 1; s <= step; s++) {
-                advanceStep();
-              }
+              for (let s = lastProgressStep + 1; s <= step; s++) advanceStep();
               lastProgressStep = step;
             }
           } else if (event.type === 'done') {
+            receivedDone = true;
             onComplete();
-            await waitForReport(workId);
+            const ok = await waitForReport(workId);
+            if (!ok) console.warn('[LAS] 报告未及时就绪，仍尝试导航');
             App.navigate('#/report/' + workId);
             return;
           }
-        } catch (e) { /* skip */ }
+        } catch (e) {
+          parseErrors++;
+          if (parseErrors <= 3) console.warn('[LAS] SSE 解析失败:', e.message || e, 'raw:', raw.slice(0, 80));
+          if (parseErrors === 10) {
+            console.error('[LAS] 连续 10 次 SSE 解析失败，流可能已损坏');
+            if (statusText) { statusText.textContent = '数据传输异常'; statusText.style.color = 'var(--semantic-warning)'; }
+          }
+        }
       }
 
       if (done) {
-        onComplete();
-        await waitForReport(workId);
-        App.navigate('#/report/' + workId);
+        if (!receivedDone) {
+          console.warn('[LAS] 流在收到 done 事件前断开');
+          if (statusText) { statusText.textContent = '连接意外中断'; statusText.style.color = 'var(--semantic-warning)'; }
+          // Still try to navigate — report may have been saved server-side
+          const ok = await waitForReport(workId);
+          if (ok) { App.navigate('#/report/' + workId); }
+        }
         return;
       }
     }
   } catch (err) {
+    if (err.name === 'AbortError') { console.log('[LAS] 分析流已取消'); return; }
     console.error('[LAS] 分析流异常:', err);
     if (statusText) statusText.textContent = '连接失败，请重试';
+  } finally {
+    window.__LAS_ANALYZE_CTRL = null;
   }
 }
 
-// ── Quote carousel ──
+// ── Quote carousel (crossfade + height morph) ──
 
 async function startQuoteCarousel() {
   try {
@@ -269,13 +352,14 @@ async function startQuoteCarousel() {
 function cycleQuote() {
   if (!_quoteActive) return;
   if (_quoteTimer) clearTimeout(_quoteTimer);
-  const body = document.querySelector('.quote-body');
+  const mq = document.getElementById('museQuote');
   const el = document.getElementById('quoteText');
-  const container = document.getElementById('quoteCarousel');
-  if (!el || !body || !container || !_quotes.length) return;
+  if (!mq || !el || !_quotes.length) return;
 
-  body.style.opacity = '0';
-  body.style.transform = 'translateY(12px)';
+  // Freeze current height
+  const curH = mq.offsetHeight;
+  mq.style.height = curH + 'px';
+  mq.style.opacity = '0';
 
   setTimeout(() => {
     const q = _quotes[_quoteIdx % _quotes.length];
@@ -283,27 +367,39 @@ function cycleQuote() {
     el.textContent = typeof q === 'string' ? q : q.t;
     if (src) src.textContent = typeof q === 'string' ? '' : '—— ' + q.s;
     _quoteIdx++;
-    body.style.opacity = '1';
-    body.style.transform = 'translateY(0)';
-    container.classList.add('visible');
-  }, 500);
+
+    // Measure new height
+    mq.style.height = 'auto';
+    const newH = mq.offsetHeight;
+
+    // Animate from old to new height
+    mq.style.height = curH + 'px';
+    requestAnimationFrame(() => {
+      mq.style.height = newH + 'px';
+    });
+
+    // Fade in after height transition
+    setTimeout(() => {
+      mq.style.height = 'auto';
+      mq.style.opacity = '1';
+    }, 450);
+  }, 350);
 
   _quoteTimer = setTimeout(() => {
-    body.style.opacity = '0';
-    body.style.transform = 'translateY(-8px)';
+    mq.style.opacity = '0';
     _quoteTimer = setTimeout(() => cycleQuote(), 500);
-  }, 10000);
+  }, 9000);
 }
 
 async function waitForReport(workId) {
-  for (let i = 0; i < 30; i++) {
-    await new Promise(r => setTimeout(r, i === 0 ? 200 : 2000));
+  for (let i = 0; i < 15; i++) {
+    await new Promise(r => setTimeout(r, i === 0 ? 0 : 500));
     try {
       const data = await API.getReport(workId);
       if (data.report && data.report.ok) return true;
       if (data.status === 'failed') return true; // navigate to show error
     } catch (e) {
-      console.log('[LAS] 报告轮询 ' + (i + 1) + '/30: ' + (e.message || e));
+      console.log('[LAS] 报告轮询 ' + (i + 1) + '/15: ' + (e.message || e));
     }
   }
   return false; // exhausted — navigate anyway

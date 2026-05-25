@@ -11,6 +11,7 @@ venv/
 
 # 数据库
 data/
+*.db
 
 # IDE
 .vscode/
@@ -20,9 +21,13 @@ data/
 .claude/
 
 # 大体积归档/参考文件
+*.tar.gz
 01_已归档作品/
 参考文件/
 awesome-design-md/
+
+# Node
+node_modules/
 
 # 系统文件
 Thumbs.db

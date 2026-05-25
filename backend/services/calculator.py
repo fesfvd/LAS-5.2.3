@@ -47,7 +47,16 @@ TIER_MAP = [
     (0, "零价值", "∅"),
 ]
 
-BIAS_EXEMPT_GENRES = {"诗歌", "骈文", "赋", "先锋小说", "新兴语言实验文本", "议论性文体", "哲学散文", "碎片化思辨文本"}
+BIAS_EXEMPT_GENRES = {
+    "诗歌",
+    "骈文",
+    "赋",
+    "先锋小说",
+    "新兴语言实验文本",
+    "议论性文体",
+    "哲学散文",
+    "碎片化思辨文本",
+}
 
 
 def layer_for_dim(dim_id: int) -> str:
@@ -77,34 +86,59 @@ def verify_strategy(scores: dict, predicted_strategy: int) -> int:
     return strategy_map.get(best, predicted_strategy)
 
 
-def apply_originality_check(scores: dict, adjustments: list | None = None) -> dict:
-    """Apply originality penalty to high-scoring dimensions in original mode.
+def apply_originality_check(scores: dict, dimension_audit: list | None = None) -> dict:
+    """Apply originality penalty in original mode.
 
-    If `adjustments` is provided (from LLM's scoring_audit.originality_adjustments),
-    each entry's d_value is used for the corresponding dimension.
-    Otherwise falls back to auto-detection with D=1 (medium deviation) for
-    backward compatibility with V1 prompts.
+    LLM provides a `dimension_audit` array with d_value for all 16 dimensions.
+    Backend decides WHICH dimensions to adjust:
+      - Filter: only dimensions with original score >= 75
+      - Sort by score descending
+      - Take top 4 (1调1, 2调2, 3调3, 4调4, >4取最高4)
+      - Apply formula: new = round(original * GAP_RATIOS[d] - SUBS[d], 1)
+
+    Falls back to auto-detection with D=1 for backward compatibility (V1 prompts).
     """
     GAP_RATIOS = {0: 1.0, 0.5: 0.9487, 1: 0.90, 2: 0.81, 3: 0.729}
     SUBS = {0: 0, 0.5: 1, 1: 2, 2: 4, 3: 6}
     adjusted = dict(scores)
 
-    if adjustments:
-        for adj in adjustments:
-            dim_id = adj.get("dimension_id")
-            d_val = adj.get("d_value", 1)
-            if dim_id is None or dim_id not in scores:
-                continue
-            if d_val not in GAP_RATIOS:
-                logger.warning(f"apply_originality_check: 非标准 D 值 d_value={d_val!r} (dim={dim_id})，已回退为 D=1")
-            d_val = d_val if d_val in GAP_RATIOS else 1
-            original = scores[dim_id]
+    if dimension_audit:
+        # Build dim_id → d_value map from LLM's 16-dimension audit
+        d_map = {}
+        for entry in dimension_audit:
+            dim_id = entry.get("dimension_id")
+            d_val = entry.get("d_value", 1)
+            if dim_id is not None and dim_id in scores:
+                if d_val not in GAP_RATIOS:
+                    logger.warning(
+                        f"apply_originality_check: 非标准 D 值 d_value={d_val!r} (dim={dim_id})，已回退为 D=1"
+                    )
+                    d_val = 1
+                d_map[dim_id] = d_val
+            elif dim_id is not None:
+                logger.warning(
+                    f"apply_originality_check: dimension_audit 包含未知维度 id={dim_id!r}，已跳过"
+                )
+
+        # Backend decides: filter >= 75, sort by score desc, take top 4
+        eligible = [
+            (dim_id, scores[dim_id]) for dim_id in d_map if scores[dim_id] >= 75
+        ]
+        eligible.sort(
+            key=lambda x: (-x[1], x[0])
+        )  # score desc, then dim_id asc for tie-breaking
+        to_adjust = eligible[:4]
+
+        for dim_id, original in to_adjust:
+            d_val = d_map[dim_id]
             new = round(original * GAP_RATIOS[d_val] - SUBS[d_val], 1)
             adjusted[dim_id] = max(new, 0)
         return adjusted
 
     # Fallback: auto-detect (V1 compatible) — always uses D=1
-    high_dims = [(k, v) for k, v in sorted(scores.items(), key=lambda x: -x[1]) if v >= 75]
+    high_dims = [
+        (k, v) for k, v in sorted(scores.items(), key=lambda x: -x[1]) if v >= 75
+    ]
     if not high_dims:
         return adjusted
     to_adjust = min(len(high_dims), 4)
@@ -134,18 +168,32 @@ def apply_defect_exemption(scores: dict, exemptions: list | None = None) -> dict
             continue
         # Verify pre-condition: exempted dim must be ≤85
         if result[dim_id] > 85:
-            logger.warning("apply_defect_exemption: dim %d score %.1f > 85, 驳回豁免", dim_id, result[dim_id])
+            logger.warning(
+                "apply_defect_exemption: dim %d score %.1f > 85, 驳回豁免",
+                dim_id,
+                result[dim_id],
+            )
             continue
         # Verify pre-condition: linked master dim must be ≥105
         master_id = ex.get("linked_to_master_dimension_id")
         if master_id is None or master_id not in result or result[master_id] < 105:
-            logger.warning("apply_defect_exemption: master dim %d score %.1f < 105, 驳回豁免", master_id or 0, result.get(master_id, 0))
+            logger.warning(
+                "apply_defect_exemption: master dim %d score %.1f < 105, 驳回豁免",
+                master_id or 0,
+                result.get(master_id, 0),
+            )
             continue
 
         others = [v for k, v in result.items() if k != dim_id]
         avg = sum(others) / len(others) if others else result[dim_id]
-        logger.info("apply_defect_exemption: 正缺陷豁免 dim %d (%.1f→%.1f) via master dim %d (%.1f)",
-                    dim_id, result[dim_id], round(avg, 1), master_id, result[master_id])
+        logger.info(
+            "apply_defect_exemption: 正缺陷豁免 dim %d (%.1f→%.1f) via master dim %d (%.1f)",
+            dim_id,
+            result[dim_id],
+            round(avg, 1),
+            master_id,
+            result[master_id],
+        )
         result[dim_id] = round(avg, 1)
         exempted_count += 1
 
@@ -157,7 +205,9 @@ def apply_original_caps(scores: dict) -> dict:
     result = dict(scores)
     for dim_id in (15, 16):
         if dim_id in result and result[dim_id] > 60:
-            logger.info("apply_original_caps: dim %d capped %.1f → 60", dim_id, result[dim_id])
+            logger.info(
+                "apply_original_caps: dim %d capped %.1f → 60", dim_id, result[dim_id]
+            )
             result[dim_id] = 60.0
     return result
 
@@ -188,7 +238,9 @@ def compute_wcs(scores: dict, strategy: int, mode: str, genre: str) -> dict:
     if mode == "original":
         vals_14 = [scores[d] for d in range(1, 15)]
         mean_14 = sum(vals_14) / 14
-        sd_14 = math.sqrt(sum((v - mean_14) ** 2 for v in vals_14) / 14) if vals_14 else 0
+        sd_14 = (
+            math.sqrt(sum((v - mean_14) ** 2 for v in vals_14) / 14) if vals_14 else 0
+        )
         # 平庸惩罚: mf = 1 - 0.006×(75 - mean)，mean<65 且 sd≤8 时触发；mf 下界 0.75
         if mean_14 < 65 and sd_14 <= 8:
             mf = 1.0 - 0.006 * (75 - mean_14)

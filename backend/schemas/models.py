@@ -3,13 +3,16 @@ from pydantic import BaseModel, Field
 
 class RegisterRequest(BaseModel):
     username: str = Field(min_length=2, max_length=50)
-    email: str = Field(max_length=100, pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    email: str = Field(
+        max_length=100, pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    )
     password: str = Field(min_length=6, max_length=100)
+    invite_code: str = Field(min_length=1, max_length=32)
 
 
 class LoginRequest(BaseModel):
     username: str
-    password: str
+    password: str = Field(min_length=6, max_length=100)
 
 
 class TokenResponse(BaseModel):
@@ -36,6 +39,13 @@ class WorkResponse(BaseModel):
     latest_status: str | None = None
     latest_wcs_score: float | None = None
     latest_tier: str | None = None
+
+
+class WorksListResponse(BaseModel):
+    items: list[WorkResponse]
+    total: int
+    limit: int
+    offset: int
 
 
 class AnalyzeRequest(BaseModel):

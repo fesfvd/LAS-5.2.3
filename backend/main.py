@@ -1,20 +1,34 @@
 import logging
+import logging.handlers
 import os
 from contextlib import asynccontextmanager
+
+from sqlalchemy import text
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
+from fastapi.requests import Request
 
 from backend.config import DEV_MODE, CORS_ORIGINS
 from backend.models.orm import init_db
+from backend.middleware.rate_limit import check_rate_limit
 from backend.routers import auth, works
 
 logging.basicConfig(
     level=logging.DEBUG if DEV_MODE else logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(),
+        logging.handlers.RotatingFileHandler(
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "las.log"),
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=30,             # 保留 30 个备份 ≈ 300MB
+            encoding="utf-8",
+        ),
+    ],
 )
 logger = logging.getLogger("las")
 
@@ -40,9 +54,27 @@ _cors_kwargs = {
 if DEV_MODE:
     _cors_kwargs["allow_origin_regex"] = ".*"
 else:
-    _cors_kwargs["allow_origins"] = CORS_ORIGINS if CORS_ORIGINS else ["http://localhost:8000"]
+    _cors_kwargs["allow_origins"] = (
+        CORS_ORIGINS if CORS_ORIGINS else ["http://localhost:8000"]
+    )
 
 app.add_middleware(CORSMiddleware, **_cors_kwargs)
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+@app.middleware("http")
+async def rate_limiter(request, call_next):
+    check_rate_limit(request, None)  # uses client IP
+    return await call_next(request)
 
 app.include_router(auth.router)
 app.include_router(works.router)
@@ -50,13 +82,29 @@ app.include_router(works.router)
 frontend_dir = os.path.join(BASE_DIR, "frontend")
 app.mount("/css", StaticFiles(directory=os.path.join(frontend_dir, "css")), name="css")
 app.mount("/js", StaticFiles(directory=os.path.join(frontend_dir, "js")), name="js")
-app.mount("/templates", StaticFiles(directory=os.path.join(frontend_dir, "templates")), name="templates")
+app.mount(
+    "/templates",
+    StaticFiles(directory=os.path.join(frontend_dir, "templates")),
+    name="templates",
+)
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "5.2.3"}
+    import time
+    from backend.models.orm import _engine
+    try:
+        with _engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "version": "5.2.3",
+        "db": db_ok,
+    }
 
 
 @app.get("/")

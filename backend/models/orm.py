@@ -1,7 +1,20 @@
+import os
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Float, Text, DateTime, ForeignKey, JSON, create_engine
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Text,
+    DateTime,
+    create_engine,
+    event,
+)
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
 from backend.config import DB_PATH
@@ -23,6 +36,17 @@ class User(Base):
     works = relationship("Work", back_populates="user", cascade="all, delete-orphan")
 
 
+class InviteCode(Base):
+    __tablename__ = "invite_codes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    code = Column(String(32), unique=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    used_by = Column(String(36), nullable=True)
+    used_at = Column(DateTime, nullable=True)
+    is_used = Column(Boolean, default=False, nullable=False, index=True)
+
+
 class Work(Base):
     __tablename__ = "works"
 
@@ -36,7 +60,9 @@ class Work(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="works")
-    analyses = relationship("Analysis", back_populates="work", cascade="all, delete-orphan")
+    analyses = relationship(
+        "Analysis", back_populates="work", cascade="all, delete-orphan"
+    )
 
 
 class Analysis(Base):
@@ -50,18 +76,41 @@ class Analysis(Base):
     tier = Column(String(30), default="")
     tier_badge = Column(String(10), default="")
     report_json = Column(JSON, nullable=True)
-    prompt_tokens = Column(Float, nullable=True)
-    completion_tokens = Column(Float, nullable=True)
-    total_tokens = Column(Float, nullable=True)
+    prompt_tokens = Column(Integer, nullable=True)
+    completion_tokens = Column(Integer, nullable=True)
+    total_tokens = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     work = relationship("Work", back_populates="analyses")
 
 
-import os
-os.makedirs(os.path.dirname(DB_PATH) if os.path.dirname(DB_PATH) else ".", exist_ok=True)
 
-_engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
+os.makedirs(
+    os.path.dirname(DB_PATH) if os.path.dirname(DB_PATH) else ".", exist_ok=True
+)
+
+_engine = create_engine(
+    f"sqlite:///{DB_PATH}",
+    echo=False,
+    connect_args={"check_same_thread": False},
+    pool_size=5,
+    max_overflow=10,
+    pool_pre_ping=True,
+)
+
+
+@event.listens_for(_engine, "connect")
+def _set_sqlite_pragmas(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode = WAL")
+    cursor.execute("PRAGMA synchronous = NORMAL")
+    cursor.execute("PRAGMA busy_timeout = 5000")
+    cursor.execute("PRAGMA cache_size = -64000")
+    cursor.execute("PRAGMA wal_autocheckpoint = 1000")
+    cursor.execute("PRAGMA foreign_keys = ON")
+    cursor.close()
+
+
 SessionLocal = sessionmaker(bind=_engine)
 
 
