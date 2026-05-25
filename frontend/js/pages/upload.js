@@ -17,7 +17,7 @@ App.register('/upload', () => {
           </div>
           <div class="field-group">
             <label class="field-label">AUTHOR <span class="field-label-zh">作者</span></label>
-            <input class="input-underline" name="author" placeholder="经典模式可自动识别" maxlength="100">
+            <input class="input-underline" name="author" placeholder="佚名" maxlength="100">
           </div>
         </div>
 
@@ -30,7 +30,19 @@ App.register('/upload', () => {
             </div>
             <input type="hidden" name="mode" id="modeInput" value="original">
           </div>
-          <div style="flex:1"></div>
+          <div class="field-group">
+            <label class="field-label">MODEL <span class="field-label-zh">推理模型</span></label>
+            <div class="model-selector" id="modelSelector">
+              <button type="button" class="model-selector-trigger" id="modelTrigger">
+                <span id="modelLabel">V4 Flash</span>
+                <span class="chevron">&#9660;</span>
+              </button>
+              <div class="model-selector-dropdown" id="modelDropdown">
+                <div class="model-option" data-model="deepseek-v4-pro">DeepSeek V4 Pro</div>
+                <div class="model-option selected" data-model="deepseek-v4-flash">DeepSeek V4 Flash</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="textarea-group">
@@ -39,7 +51,7 @@ App.register('/upload', () => {
             <span class="mono text-[10px]" style="color:var(--muted)" id="wordCount">0 字</span>
           </div>
           <div class="upload-bar">
-            <input type="file" id="fileInput" accept=".txt,.md,.docx,.doc,.json,.csv,.xml,.html,.log,.py,.js,.ts,.java,.c,.cpp,.h,.rs,.go,.rb,.php,.lua,.yml,.yaml,.toml,.ini,.cfg,.tex,.rst,.text" hidden>
+            <input type="file" id="fileInput" accept=".txt,.md,.docx,.doc,.pdf,.json,.csv,.xml,.html" hidden>
             <button type="button" class="upload-btn" id="uploadBtn" style="display:inline-flex!important;align-items:center;padding:6px 16px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:#b8860b;cursor:pointer;font-size:0.78rem;font-family:'JetBrains Mono',monospace"><i class="fas fa-folder-open mr-1.5"></i>上传 TXT / MD / Word</button>
             <span class="upload-hint" id="uploadHint">或拖拽文件到文本框</span>
             <span class="upload-done" id="uploadDone" style="display:none"><i class="fas fa-file-alt mr-1"></i><span id="uploadName"></span><span class="upload-clear" id="uploadClear">×</span></span>
@@ -89,6 +101,24 @@ App.register('/upload', () => {
         textarea.placeholder = '粘贴全文，系统将进行多维标尺分析...';
         contentHint.textContent = '// 原创模式必须提供完整正文';
       }
+    });
+  });
+
+  // Model selector
+  window.__LAS_MODEL = 'deepseek-v4-flash';
+  const modelSel = document.getElementById('modelSelector');
+  const modelTrigger = document.getElementById('modelTrigger');
+  const modelLabel = document.getElementById('modelLabel');
+  const modelDropdown = document.getElementById('modelDropdown');
+  modelTrigger.addEventListener('click', (e) => { e.stopPropagation(); modelSel.classList.toggle('open'); });
+  document.addEventListener('click', () => modelSel.classList.remove('open'));
+  modelDropdown.querySelectorAll('.model-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      window.__LAS_MODEL = opt.dataset.model;
+      modelLabel.textContent = opt.dataset.model === 'deepseek-v4-pro' ? 'V4 Pro' : 'V4 Flash';
+      modelDropdown.querySelectorAll('.model-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      modelSel.classList.remove('open');
     });
   });
 
@@ -183,6 +213,7 @@ function bindSubmitHandler() {
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
     data.ancestor_dialogue = form.querySelector('[name="ancestor_dialogue"]').checked;
+    if (!data.author || !data.author.trim()) data.author = '佚名';
 
     if (data.mode === 'original' && !data.content.trim()) {
       errEl.classList.add('show');

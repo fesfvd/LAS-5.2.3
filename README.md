@@ -53,7 +53,7 @@ Windows 用户直接双击 `start.bat`。浏览器打开 `http://localhost:8000`
 ### 原创模式
 填写标题、作者（选填）、粘贴正文或上传文件。支持 **TXT / MD / Word (.docx)** 格式，拖拽至文本框或点击按钮上传。右下角实时显示字数统计。
 
-分析过程通过 SSE 流式传输 10 步进度（初始化 → 体裁识别 → 缺陷扫描 → 四层逐维评分 → 基准比对 → 均衡校验 → 综合计算），完成后自动跳转至报告页。
+分析过程通过 SSE 流式传输 10 步进度（初始化 → 体裁识别 → 缺陷扫描 → 四层逐维评分 → 基准比对 → 均衡校验 → 综合计算），完成后自动跳转至报告页。报告页支持导出为 PDF（一键打印）和 Word（.docx 格式）。
 
 ---
 
@@ -110,9 +110,9 @@ mf   = 1-0.006×(75-mean)       平庸惩罚（全面平庸无亮点）
 └──────────────┘         └──────────────────┘
 ```
 
-- **前端**：Vanilla JS SPA，hash 路由，Chart.js 雷达图，mammoth.js 文档解析，html2canvas 截图。经典模式（深红）与原创模式（紫色）双模板
-- **后端**：FastAPI + SQLAlchemy + SQLite，SSE 流式传输分析进度，3 层 JSON 容错修复（截断/转义/格式）
-- **AI**：DeepSeek V4，58KB 系统提示词（6 公理 + 13 步工作流 + 16 维锚定表 + 15 级标尺 + scoring_audit 自检），支持 V1/V2 提示词版本切换
+- **前端**：Vanilla JS SPA，hash 路由，Chart.js 雷达图，mammoth.js 文档解析，html2canvas 截图，docx 库导出 Word。经典模式（深红）与原创模式（紫色）双模板。文件上传支持 .txt/.md/.docx/.pdf 等 8 种格式，文本框可拖拽缩放
+- **后端**：FastAPI + SQLAlchemy + SQLite (WAL + PRAGMA 优化 + 连接池)，SSE 流式传输分析进度（心跳 15s 保活 + 读超时 25s），pydantic-settings 配置管理，ruff 格式化
+- **AI**：DeepSeek V4 Flash（默认）/ V4 Pro 可选，70KB 系统提示词（6 公理 + 13 步工作流 + 16 维锚定表 + 15 级标尺 + dimension_audit 全维 D 值 + 16 项自检），进度里程碑对齐 conclusion/divination 真实流程
 
 ---
 
@@ -121,8 +121,8 @@ mf   = 1-0.006×(75-mean)       平庸惩罚（全面平庸无亮点）
 ```
 ├── backend/
 │   ├── main.py              # FastAPI 入口
-│   ├── config.py            # 环境配置
-│   ├── models/orm.py        # SQLAlchemy 模型
+│   ├── config.py            # pydantic-settings 配置
+│   ├── models/orm.py        # SQLAlchemy 模型 (WAL + 连接池)
 │   ├── schemas/models.py    # Pydantic 模型
 │   ├── routers/             # API 路由
 │   │   ├── auth.py          # 注册/登录/JWT
@@ -135,7 +135,7 @@ mf   = 1-0.006×(75-mean)       平庸惩罚（全面平庸无亮点）
 │
 ├── frontend/
 │   ├── spa.html             # SPA 入口
-│   ├── quotes.json          # 302 条文学金句
+│   ├── quotes.json          # 402 条文学金句
 │   ├── css/app.css          # 全局样式
 │   ├── js/
 │   │   ├── api.js           # API 客户端

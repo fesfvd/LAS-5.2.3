@@ -11,13 +11,17 @@ logger = logging.getLogger("las.auth")
 DEV_USER_ID = "dev-local-user"
 
 
-def get_user(authorization: str = Header(None), db: Session = Depends(get_session)) -> User:
+def get_user(
+    authorization: str = Header(None), db: Session = Depends(get_session)
+) -> User:
     if DEV_MODE:
         logger.debug("DEV_MODE: 使用本地开发用户，跳过 JWT 认证")
         user = db.query(User).filter(User.id == DEV_USER_ID).first()
         if user:
             return user
-        user = User(id=DEV_USER_ID, username="dev", email="dev@local", password_hash="dev")
+        user = User(
+            id=DEV_USER_ID, username="dev", email="dev@local", password_hash="dev"
+        )
         db.add(user)
         db.commit()
         db.refresh(user)

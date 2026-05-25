@@ -33,7 +33,11 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
             "dimensions": {},
             "benchmarks": {},
             "lower_bounds": {},
-            "scoring": {"wcs": 0, "tier": "严重瑕疵", "layer_avgs": {"A": 0, "B": 0, "C": 0, "D": 0}},
+            "scoring": {
+                "wcs": 0,
+                "tier": "严重瑕疵",
+                "layer_avgs": {"A": 0, "B": 0, "C": 0, "D": 0},
+            },
         }
 
     scores = {d["id"]: d["score"] for d in dims_raw}
@@ -43,8 +47,10 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
 
     if mode == "original":
         sa = raw.get("scoring_audit", {})
-        llm_adjustments = sa.get("originality_adjustments", [])
-        scores = apply_originality_check(scores, llm_adjustments if llm_adjustments else None)
+        dim_audit = sa.get("dimension_audit") or sa.get(
+            "originality_adjustments"
+        )  # new field, fallback to old
+        scores = apply_originality_check(scores, dim_audit if dim_audit else None)
         scores = apply_defect_exemption(scores, sa.get("defect_exemptions"))
         scores = apply_original_caps(scores)
 
@@ -55,7 +61,9 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
         lid = layer_for_dim(d["id"])
         layer_scores[lid].append(d["score"])
 
-    layer_avgs = {k: round(sum(v) / len(v), 1) if v else 0 for k, v in layer_scores.items()}
+    layer_avgs = {
+        k: round(sum(v) / len(v), 1) if v else 0 for k, v in layer_scores.items()
+    }
 
     dims_map = {}
     for d in dims_raw:
