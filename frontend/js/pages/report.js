@@ -25,7 +25,7 @@ App.register('/report', async () => {
 
   showLoading('正在加载报告...');
 
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 8; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
     try {
       const data = await API.getReport(id);
@@ -43,11 +43,13 @@ App.register('/report', async () => {
         return;
       }
     } catch (err) {
-      console.log('[LAS] 报告加载 ' + (attempt + 1) + '/5: ' + (err.message || err));
+      console.log('[LAS] 报告加载 ' + (attempt + 1) + '/8: ' + (err.message || err));
     }
   }
 
-  showError('报告加载失败', '分析可能尚未完成，请稍后刷新页面重试。');
+  showError('报告加载失败', '分析可能尚未完成，请稍后刷新页面重试。',
+    null,
+    '<a href="javascript:location.reload()" class="btn mt-4" style="display:inline-block">重新加载</a>');
 });
 
 // ── Report rendering pipeline ──
@@ -68,33 +70,55 @@ async function renderFromTemplate(data, r, id) {
   const root = document.getElementById('spaApp');
   root.innerHTML = tpl;
 
-  // Screenshot button
-  const ssHTML = `
-    <div class="ss-float" id="ssFloat">
-      <button class="ss-btn" id="ssBtn" title="保存截图"><i class="fas fa-camera"></i></button>
+  // Export toolbar (screenshot / PDF / Word)
+  const exportHTML = `
+    <div class="export-bar" id="exportBar">
+      <button class="export-btn" id="ssBtn" title="保存截图"><i class="fas fa-camera"></i></button>
       <div class="ss-menu" id="ssMenu">
         <button class="ss-opt" data-scope="hero">仅首页</button>
         <button class="ss-opt" data-scope="full">全部报告</button>
       </div>
+      <button class="export-btn" id="pdfBtn" title="导出 PDF"><i class="fas fa-file-pdf"></i></button>
+      <button class="export-btn" id="wordBtn" title="导出 Word (.docx)"><i class="fas fa-file-word"></i></button>
     </div>`;
-  root.insertAdjacentHTML('beforeend', ssHTML);
-  document.getElementById('ssBtn').addEventListener('click', () => {
+  root.insertAdjacentHTML('beforeend', exportHTML);
+
+  // Screenshot — expand collapsibles, capture, restore
+  document.getElementById('ssBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
     document.getElementById('ssMenu').classList.toggle('open');
   });
   document.querySelectorAll('.ss-opt').forEach(btn => {
-    btn.addEventListener('click', async function () {
+    btn.addEventListener('click', async function (e) {
+      e.stopPropagation();
       document.getElementById('ssMenu').classList.remove('open');
       const scope = this.dataset.scope;
       const btnEl = document.getElementById('ssBtn');
       btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+      // Activate all .reveal elements (IntersectionObserver may not have fired for off-screen sections)
+      const revealEls = document.querySelectorAll('.reveal');
+      const savedReveal = [];
+      revealEls.forEach(el => { savedReveal.push(el.classList.contains('visible')); el.classList.add('visible'); el.style.opacity = '1'; el.style.transform = 'none'; });
+
+      // Expand all accordions/expand-rows before capture
+      const accordions = document.querySelectorAll('.accordion-content');
+      const expandRows = document.querySelectorAll('.expand-row');
+      const accordionIcons = document.querySelectorAll('.accordion-icon');
+      const savedAcc = [], savedEx = [], savedIcons = [];
+      accordions.forEach(el => { savedAcc.push(el.classList.contains('open')); el.classList.add('open'); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
+      expandRows.forEach(el => { savedEx.push(el.classList.contains('open')); el.classList.add('open'); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
+      accordionIcons.forEach(el => { savedIcons.push(el.classList.contains('open')); el.classList.add('open'); });
+
       try {
-        const target = scope === 'hero' ? document.querySelector('header, #reportHero, .report-header, [id^="hero"]') || root.querySelector('section:first-of-type') : root;
+        const main = document.querySelector('#spaApp main');
+        const target = scope === 'hero' ? (document.getElementById('hero') || (main && main.querySelector('section:first-of-type')) || root.querySelector('section:first-of-type')) : (main || root);
         const canvas = await html2canvas(target, {
           scale: 2,
           useCORS: true,
           backgroundColor: '#faf8f3',
           windowWidth: target.scrollWidth,
-          windowHeight: scope === 'hero' ? target.offsetHeight : target.scrollHeight,
+          windowHeight: scope === 'hero' ? Math.min(target.offsetHeight, 1200) : target.scrollHeight,
         });
         const link = document.createElement('a');
         link.download = `LAS_${(data.title||'report').slice(0,20)}_${scope}.png`;
@@ -103,8 +127,46 @@ async function renderFromTemplate(data, r, id) {
       } catch (e) {
         console.error('[LAS] 截图失败:', e);
       }
+      revealEls.forEach((el, i) => { if (!savedReveal[i]) { el.classList.remove('visible'); el.style.opacity = ''; el.style.transform = ''; } });
+      accordions.forEach((el, i) => { if (!savedAcc[i]) { el.classList.remove('open'); el.style.maxHeight = ''; el.style.overflow = ''; } });
+      expandRows.forEach((el, i) => { if (!savedEx[i]) { el.classList.remove('open'); el.style.maxHeight = ''; el.style.overflow = ''; } });
+      accordionIcons.forEach((el, i) => { if (!savedIcons[i]) el.classList.remove('open'); });
+
       btnEl.innerHTML = '<i class="fas fa-camera"></i>';
     });
+  });
+
+  // PDF — expand collapsibles, auto-name via document.title, restore after print
+  document.getElementById('pdfBtn').addEventListener('click', () => {
+    const accordions = document.querySelectorAll('.accordion-content');
+    const expandRows = document.querySelectorAll('.expand-row');
+    const accordionIcons = document.querySelectorAll('.accordion-icon');
+    const savedAcc = []; const savedEx = []; const savedIcons = [];
+
+    accordions.forEach(el => { savedAcc.push(el.classList.contains('open')); el.classList.add('open'); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
+    expandRows.forEach(el => { savedEx.push(el.classList.contains('open')); el.classList.add('open'); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
+    accordionIcons.forEach(el => { savedIcons.push(el.classList.contains('open')); el.classList.add('open'); });
+
+    const title = (data && data.title) ? data.title : 'Report';
+    const safeName = title.slice(0, 30).replace(/[\\/:*?"<>|]/g, '');
+    const origTitle = document.title;
+    document.title = 'LAS_' + safeName;
+
+    const onAfter = () => {
+      revealEls.forEach((el, i) => { if (!savedReveal[i]) { el.classList.remove('visible'); el.style.opacity = ''; el.style.transform = ''; } });
+      accordions.forEach((el, i) => { if (!savedAcc[i]) { el.classList.remove('open'); el.style.maxHeight = ''; el.style.overflow = ''; } });
+      expandRows.forEach((el, i) => { if (!savedEx[i]) { el.classList.remove('open'); el.style.maxHeight = ''; el.style.overflow = ''; } });
+      accordionIcons.forEach((el, i) => { if (!savedIcons[i]) el.classList.remove('open'); });
+      document.title = origTitle;
+      window.removeEventListener('afterprint', onAfter);
+    };
+    window.addEventListener('afterprint', onAfter);
+    window.print();
+  });
+
+  // Word (.docx via docx library)
+  document.getElementById('wordBtn').addEventListener('click', async () => {
+    await exportDocx(data);
   });
 
   initReport(root, { dimData, layerAvgs, wcs, tier });
@@ -318,7 +380,7 @@ function buildReportSections(data, r, fallbackId) {
         <div class="flex flex-wrap gap-3">
           ${ancestor.participants.map(p => `
             <span class="rounded-full px-3 py-1 text-xs" style="background:rgba(184,134,11,.08);color:#8b6914">
-              ${esc(p.name)}（《${esc(p.work || '')}》）
+              ${esc(p.name)}（《${esc(debracket(p.work || ''))}》）
             </span>
           `).join('')}
         </div>
@@ -360,7 +422,7 @@ function buildReportSections(data, r, fallbackId) {
         <div class="space-y-2">${extReadings.map(b =>
           `<div class="flex items-start gap-2 text-sm" style="color:var(--muted)">
             <span style="color:#8b5cf6;margin-top:2px"><i class="fas fa-book"></i></span>
-            <div><span class="font-semibold" style="color:var(--ink)">《${esc(b.title||'')}》</span> ${esc(b.author||'')}。${esc(b.reason||'')}</div>
+            <div><span class="font-semibold" style="color:var(--ink)">《${esc(debracket(b.title||''))}》</span> ${esc(b.author||'')}。${esc(b.reason||'')}</div>
           </div>`
         ).join('')}</div>
       </div>`;
@@ -372,7 +434,7 @@ function buildReportSections(data, r, fallbackId) {
     `<div class="glass-card rounded-lg p-3 text-sm" style="border-left:3px solid #dc2626">
       <p class="font-semibold text-xs mb-1" style="color:#dc2626">${esc(d.type || '')}</p>
       <p class="text-xs leading-relaxed" style="color:var(--muted)">${esc(d.detail || '')}</p>
-      ${d.bound_dimensions && d.bound_dimensions.length ? `<p class="text-[10px] mt-1" style="color:var(--muted)">绑定维度：${d.bound_dimensions.join(', ')}</p>` : ''}
+      ${Array.isArray(d.bound_dimensions) && d.bound_dimensions.length ? `<p class="text-[10px] mt-1" style="color:var(--muted)">绑定维度：${d.bound_dimensions.join(', ')}</p>` : ''}
     </div>`
   ).join('') : '';
 const extremeText = ds.triggered ? '已触发' : '无';
@@ -403,7 +465,7 @@ const extremeText = ds.triggered ? '已触发' : '无';
 
   // Lower bounds reference (original only)
   const lbs = r.lower_bounds || {};
-  const lowerBoundsHtml = (lbs.A || lbs.B || lbs.C || lbs.D) ? `<p class="text-[11px] mt-3" style="color:var(--muted)"><span class="text-muted/60">下限参照：</span>A层《${esc(lbs.A||'')}》 · B层《${esc(lbs.B||'')}》 · C层《${esc(lbs.C||'')}》 · D层《${esc(lbs.D||'')}》</p>` : '';
+  const lowerBoundsHtml = (lbs.A || lbs.B || lbs.C || lbs.D) ? `<p class="text-[11px] mt-3" style="color:var(--muted)"><span class="text-muted/60">下限参照：</span>A层《${esc(debracket(lbs.A||''))}》 · B层《${esc(debracket(lbs.B||''))}》 · C层《${esc(debracket(lbs.C||''))}》 · D层《${esc(debracket(lbs.D||''))}》</p>` : '';
 
   // Penalty calculation display (original only)
   const kVal = s.core_penalty_k !== undefined ? s.core_penalty_k : 1;
@@ -452,12 +514,14 @@ const extremeText = ds.triggered ? '已触发' : '无';
   // Literary fortune
   const div = ac.divination || {};
 
-  // Token usage
+  // Token usage (作品字数 + 生成报告；固定系统提示词 ~28K 不展示)
   const t = data.tokens || {};
   const tokenStr = (() => {
     if (!t.total) return '';
     const k = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'K' : String(v);
-    return '消耗 ' + k(t.total) + ' tokens（提示 ' + k(t.prompt) + ' + 生成 ' + k(t.completion) + '）';
+    const sysEst = 28000; // ~70KB system prompt estimate
+    const variable = Math.max(0, t.total - sysEst);
+    return '消耗 ' + k(variable) + ' tokens（作品 + 生成报告）';
   })();
 
 
@@ -885,4 +949,202 @@ function toggleRow(i) {
 
 function scrollTo(id) {
   document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function exportDocx(data) {
+  const T = window.docx;
+  if (!T) { console.error('[LAS] docx 库未加载'); return; }
+  const title = (data && data.title) ? data.title : 'Report';
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const safeName = title.slice(0, 30).replace(/[\\/:*?"<>|]/g, '');
+
+  // Clone entire report (not just <main>) to include fortune + footer
+  const root = document.querySelector('#spaApp');
+  if (!root) return;
+  const clone = root.cloneNode(true);
+  // Remove all nav / UI / interactive elements
+  clone.querySelectorAll([
+    '.nav-top','#stickyBar','#sectionNav','.side-nav','.mob-nav','#topBtn','.export-bar','#ssFloat',
+    'button','canvas','svg','.fas','.far','.ss-opt','.ss-menu','#ssMenu',
+    '.accordion-icon','.arr','.nav-pip',
+    '#tableSearch','#levelFilter','label',
+    'input','select'
+  ].join(',')).forEach(el => el.remove());
+  // Expand all collapsed content
+  clone.querySelectorAll('.accordion-content,.expand-row').forEach(el => { el.classList.add('open'); el.style.maxHeight = 'none'; el.style.opacity = '1'; });
+  // Remove expand-row wrapper TDs but keep inner content (to avoid nested table issues)
+  clone.querySelectorAll('.expand-row').forEach(el => { const parent = el.parentNode; while (el.firstChild) parent.insertBefore(el.firstChild, el); el.remove(); });
+
+  const children = [];
+  const u = (s) => (s || '').replace(/[\s\n\r]+/g, ' ').trim();
+
+  // ── Title ──
+  children.push(new T.Paragraph({
+    heading: T.HeadingLevel.TITLE, spacing: { after: 120 },
+    children: [new T.TextRun({ text: title, bold: true, size: 44, font: 'Noto Serif SC' })]
+  }));
+  children.push(new T.Paragraph({
+    spacing: { after: 200 },
+    children: [new T.TextRun({ text: 'LAS 文学分析报告 · ' + dateStr, size: 20, font: 'Noto Sans SC', color: '888888' })]
+  }));
+  children.push(new T.Paragraph({
+    spacing: { before: 80, after: 200 },
+    border: { bottom: { style: T.BorderStyle.SINGLE, size: 1, color: 'cccccc', space: 4 } },
+    children: []
+  }));
+
+  // ── Walk sections in document order ──
+  const sections = clone.querySelectorAll('section, #workInfo + *, #table + *, #coreBenchmarks + *, #deepAnalysis + *, #professional + *, #conclusion + *, #appendix + *, #hero + *');
+  const walked = new Set();
+
+  function addHeading(text, level) {
+    text = u(text); if (!text) return;
+    children.push(new T.Paragraph({
+      heading: level === 1 ? T.HeadingLevel.HEADING_1 : T.HeadingLevel.HEADING_2,
+      spacing: { before: level === 1 ? 360 : 280, after: 160 },
+      children: [new T.TextRun({ text, bold: true, size: level === 1 ? 36 : 30, font: 'Noto Serif SC' })]
+    }));
+  }
+
+  function addPara(text, opts = {}) {
+    text = u(text); if (!text) return;
+    children.push(new T.Paragraph({
+      spacing: { before: opts.before || 80, after: opts.after || 80 },
+      alignment: opts.center ? T.AlignmentType.CENTER : T.AlignmentType.LEFT,
+      children: [new T.TextRun({ text, size: opts.size || 21, font: opts.mono ? 'JetBrains Mono' : 'Noto Serif SC', italics: opts.italics || false, color: opts.color || '1a1a1a' })]
+    }));
+  }
+
+  function addTable(node) {
+    const rows = [];
+    const allRows = node.querySelectorAll('tr');
+    allRows.forEach((tr, ri) => {
+      const cells = [];
+      const tds = tr.querySelectorAll('th,td');
+      // Skip rows with only 1 cell that's a colspan placeholder or expand content
+      if (tds.length === 1 && tds[0].getAttribute('colspan')) {
+        // This is an expand row — add its text content as a paragraph after the table
+        const txt = u(tds[0].textContent);
+        if (txt) rows.push(null); // placeholder — will add after table
+        return;
+      }
+      tds.forEach((td, ci) => {
+        // Skip last column if it's the expand arrow (usually empty or has only a chevron)
+        const txt = u(td.textContent);
+        if (ci === tds.length - 1 && !txt) return;
+        cells.push(new T.TableCell({
+          width: { size: ci === 0 ? 2800 : 1400, type: T.WidthType.DXA },
+          children: [new T.Paragraph({
+            children: [new T.TextRun({ text: txt, size: 18, font: ri === 0 ? 'Noto Sans SC' : 'Noto Serif SC', bold: ri === 0 })]
+          })]
+        }));
+      });
+      if (cells.length) rows.push(new T.TableRow({ children: cells }));
+    });
+    if (rows.length) children.push(new T.Table({ rows: rows.filter(r => r !== null), width: { size: 100, type: T.WidthType.PERCENTAGE } }));
+    children.push(new T.Paragraph({ spacing: { before: 120 }, children: [] }));
+  }
+
+  function hasChildren(el) { return el && el.children && el.children.length > 0; }
+
+  function walkSection(el) {
+    if (!el || walked.has(el)) return;
+    walked.add(el);
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+
+    // Section headings (h2)
+    const h2 = el.querySelector('h2');
+    if (h2) addHeading(h2.textContent, 1);
+
+    // Sub-headings (h3)
+    el.querySelectorAll('h3').forEach(h => addHeading(h.textContent, 2));
+
+    // Tables
+    el.querySelectorAll('table').forEach(t => addTable(t));
+
+    // Blockquotes
+    el.querySelectorAll('blockquote').forEach(bq => {
+      const txt = u(bq.textContent);
+      if (txt) addPara(txt, { italics: true, before: 120, after: 120 });
+    });
+
+    // Collect remaining text paragraphs (not inside headings/tables/blockquotes)
+    el.querySelectorAll('p, li, .text-lg, .text-sm, .text-xs, .leading-relaxed, [class*="text-"]').forEach(p => {
+      if (p.closest('table') || p.closest('blockquote') || p.closest('h2') || p.closest('h3') || p.closest('thead') || p.closest('tbody')) return;
+      const txt = u(p.textContent);
+      if (!txt || txt.length < 2) return;
+      if (/^(仅首页|全部报告|保存截图|导出|PDF|Word|截图|返回顶部|•|·)$/.test(txt)) return;
+
+      // Detect sub-headings in LLM output (markdown / bracket / short topic lines)
+      let display = txt;
+      let isHeading = false;
+      if (/^###\s/.test(txt)) { display = txt.replace(/^###\s*/, ''); isHeading = true; }
+      else if (/^\*\*/.test(txt)) { display = txt.replace(/^\*\*|\*\*$/g, ''); isHeading = true; }
+      else if (/^【/.test(txt)) { display = txt.replace(/^【|】$/g, ''); isHeading = true; }
+      else if (txt.length <= 30 && /[：:]$/.test(txt) && !/[。！？]/.test(txt)) { isHeading = true; }
+      else if (txt.length <= 20 && /^[^\s，。！？,…\.]{2,20}$/.test(txt) && p.tagName === 'P') {
+        // Very short standalone phrase in its own paragraph — likely a sub-title
+        const next = p.nextElementSibling;
+        if (next && next.tagName === 'P' && u(next.textContent).length > 40) isHeading = true;
+      }
+
+      if (isHeading) {
+        addPara(display, { bold: true, size: 24, before: 240, after: 60 });
+      } else {
+        addPara(txt);
+      }
+    });
+  }
+
+  // Process all sections in order
+  clone.querySelectorAll('section').forEach(s => walkSection(s));
+
+  // ── Fortune (outside <main>, after sections but before footer) ──
+  const fortuneDiv = clone.querySelector('#spaApp > div:last-of-type > div.max-w-5xl:not(footer *)') ||
+                     Array.from(clone.querySelectorAll('div')).find(d => {
+                       const t = d.textContent || '';
+                       return t.includes('文学签文') || (t.includes('签文') && d.querySelector('.text-lg'));
+                     });
+  if (fortuneDiv) {
+    children.push(new T.Paragraph({ spacing: { before: 200 }, border: { bottom: { style: T.BorderStyle.SINGLE, size: 1, color: 'cccccc', space: 4 } }, children: [] }));
+    addHeading('文学签文', 1);
+    const texts = fortuneDiv.querySelectorAll('.text-lg, p');
+    texts.forEach(el => {
+      const txt = u(el.textContent);
+      if (txt && txt.length > 1 && txt !== '文学签文') {
+        const isCenter = el.classList.contains('text-lg') || el.closest('.text-center');
+        addPara(txt, { center: !!isCenter, size: el.classList.contains('text-lg') ? 24 : 21 });
+      }
+    });
+  }
+
+  // ── Footer ──
+  const footer = clone.querySelector('footer');
+  if (footer) {
+    children.push(new T.Paragraph({
+      spacing: { before: 400 }, border: { bottom: { style: T.BorderStyle.SINGLE, size: 1, color: 'cccccc', space: 4 } }, children: []
+    }));
+    const footerTexts = [];
+    footer.querySelectorAll('span,a').forEach(el => {
+      const t = u(el.textContent);
+      if (t && t.length > 1 && !footerTexts.includes(t)) footerTexts.push(t);
+    });
+    addPara(footerTexts.join(' · '), { size: 18, mono: true, color: '888888', center: true });
+  }
+
+  const doc = new T.Document({
+    title: title,
+    description: 'LAS 文学分析报告',
+    sections: [{
+      properties: { page: { margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } } },
+      children
+    }]
+  });
+
+  const blob = await T.Packer.toBlob(doc);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'LAS_' + safeName + '_' + dateStr + '.docx';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
