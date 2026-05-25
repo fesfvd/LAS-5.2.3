@@ -215,7 +215,15 @@ async function startStream(workId, model) {
 
   try {
     const res = await API.analyzeStream(workId, model || '', controller.signal);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      if (res.status === 429) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || '请求过于频繁，请 5 分钟后再试');
+      }
+      if (res.status === 401) throw new Error('请先登录');
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || '服务器异常 (HTTP ' + res.status + ')');
+    }
     if (statusText) statusText.textContent = 'EXECUTING...';
 
     let firstEvent = true;

@@ -73,7 +73,8 @@ async def add_security_headers(request, call_next):
 
 @app.middleware("http")
 async def rate_limiter(request, call_next):
-    check_rate_limit(request, None)  # uses client IP
+    if not DEV_MODE:
+        check_rate_limit(request, None)  # uses client IP
     return await call_next(request)
 
 app.include_router(auth.router)

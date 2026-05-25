@@ -213,7 +213,7 @@ function bindSubmitHandler() {
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
     data.ancestor_dialogue = form.querySelector('[name="ancestor_dialogue"]').checked;
-    if (!data.author || !data.author.trim()) data.author = '佚名';
+    if (data.mode === 'original' && (!data.author || !data.author.trim())) data.author = '佚名';
 
     if (data.mode === 'original' && !data.content.trim()) {
       errEl.classList.add('show');
