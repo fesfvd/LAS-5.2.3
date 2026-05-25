@@ -6,7 +6,7 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.models.orm import User, get_session
+from backend.models.orm import User, InviteCode, get_session
 from backend.schemas.models import RegisterRequest, LoginRequest, TokenResponse
 from backend.config import SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRE_HOURS
 
@@ -53,8 +53,30 @@ def register(req: RegisterRequest, db: Session = Depends(get_session)):
         raise HTTPException(400, "用户名已存在")
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(400, "邮箱已注册")
-    user = User(username=req.username, email=req.email, password_hash=hash_password(req.password))
+
+    # 验证邀请码
+    invite = (
+        db.query(InviteCode)
+        .filter(InviteCode.code == req.invite_code.strip().upper())
+        .first()
+    )
+    if not invite:
+        raise HTTPException(400, "邀请码无效")
+    if invite.is_used:
+        raise HTTPException(400, "邀请码已被使用")
+
+    user = User(
+        username=req.username,
+        email=req.email,
+        password_hash=hash_password(req.password),
+    )
     db.add(user)
+    db.flush()
+
+    invite.is_used = True
+    invite.used_by = user.id
+    invite.used_at = datetime.now(timezone.utc)
+
     db.commit()
     db.refresh(user)
     token = create_token(user.id, user.username)

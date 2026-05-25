@@ -4,31 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LAS — 文学分析系统</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>
 tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b8860b',crimson:'#8b0000',jade:'#2d6a4f',muted:'#8a8578',primary:'#b8860b',accent:'#8b0000',purple:'#6b21a8'},fontFamily:{serif:['Noto Serif SC','Georgia','serif'],sans:['Noto Sans SC','Helvetica','sans-serif'],mono:['JetBrains Mono','monospace']}}}}
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<link rel="stylesheet" href="/css/app.css?v=523">
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<link rel="stylesheet" href="/css/app.css?v=548">
 </head>
 <body>
 
 <nav class="nav-top" style="border-bottom:1px solid var(--rule)">
   <a class="brand serif" href="/" style="color:var(--gold);text-decoration:none;font-weight:700;font-size:1.1rem">LAS</a>
-  <span class="mono text-xs text-muted">v5.2.3</span>
+  <div style="flex:1"></div>
+  <a href="#/works" class="mono text-xs" style="color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:4px;transition:all .2s">作品</a>
+  <span id="navUser" style="display:none"></span>
+  <a href="#/login" class="mono text-xs" id="navLogin" style="color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:4px;transition:all .2s">登录</a>
 </nav>
 
 <div id="spaApp" style="min-height:100vh"></div>
 
-<script src="/js/api.js?v=523"></script>
-<script src="/js/app.js?v=523"></script>
-<script src="/js/pages/upload.js?v=523"></script>
-<script src="/js/pages/analyze.js?v=523"></script>
-<script src="/js/pages/report.js?v=523"></script>
+<script src="/js/api.js?v=548"></script>
+<script src="/js/app.js?v=548"></script>
+<script src="/js/pages/auth.js?v=548"></script>
+<script src="/js/pages/upload.js?v=548"></script>
+<script src="/js/pages/analyze.js?v=548"></script>
+<script src="/js/pages/report.js?v=548"></script>
+<script src="/js/pages/works.js?v=548"></script>
 <script>App.init();</script>
 </body>
 </html>

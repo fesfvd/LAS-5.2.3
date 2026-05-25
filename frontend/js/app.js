@@ -4,6 +4,7 @@ function esc(s) {
   div.textContent = String(s);
   return div.innerHTML;
 }
+function debracket(s) { return String(s||'').replace(/^《|》$/g, ''); }
 function nl2p(text) {
   if (!text) return '';
   return text.split('\n').filter(function(l) { return l.trim(); }).map(function(l) { return '<p class="mb-2 last:mb-0">' + l + '</p>'; }).join('');
@@ -28,8 +29,24 @@ const App = {
     this.state.params = { id: parts[1] || null };
     this.state.page = path;
 
+    this.updateNav();
+
     const handler = this.routes[path];
     if (handler) handler();
+  },
+
+  updateNav() {
+    const navLogin = document.getElementById('navLogin');
+    const navUser = document.getElementById('navUser');
+    if (!navLogin || !navUser) return;
+    if (API.isLoggedIn()) {
+      navLogin.style.display = 'none';
+      navUser.style.display = '';
+      navUser.innerHTML = `<a href="#/works" class="mono text-xs" style="color:var(--gold);text-decoration:none">${esc(localStorage.getItem('las_username') || '用户')}</a>`;
+    } else {
+      navLogin.style.display = '';
+      navUser.style.display = 'none';
+    }
   },
 
   init() {
