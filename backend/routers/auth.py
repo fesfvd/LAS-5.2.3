@@ -51,32 +51,56 @@ def get_current_user(token: str, db: Session) -> User:
 def register(req: RegisterRequest, db: Session = Depends(get_session)):
     if db.query(User).filter(User.username == req.username).first():
         raise HTTPException(400, "用户名已存在")
-    if db.query(User).filter(User.email == req.email).first():
+    if req.email and db.query(User).filter(User.email == req.email).first():
         raise HTTPException(400, "邮箱已注册")
 
-    # 验证邀请码
-    invite = (
-        db.query(InviteCode)
-        .filter(InviteCode.code == req.invite_code.strip().upper())
-        .first()
-    )
-    if not invite:
-        raise HTTPException(400, "邀请码无效")
-    if invite.is_used:
-        raise HTTPException(400, "邀请码已被使用")
+    code = req.invite_code.strip().upper() if req.invite_code else ""
+    if code:
+        invite = (
+            db.query(InviteCode)
+            .filter(InviteCode.code == code)
+            .first()
+        )
+        if not invite:
+            raise HTTPException(400, "邀请码无效")
+        if invite.is_used:
+            raise HTTPException(400, "邀请码已被使用")
+        role = "user"
+    else:
+        invite = None
+        role = "guest"
 
     user = User(
         username=req.username,
-        email=req.email,
+        email=req.email or "",
         password_hash=hash_password(req.password),
+        role=role,
     )
     db.add(user)
     db.flush()
 
-    invite.is_used = True
-    invite.used_by = user.id
-    invite.used_at = datetime.now(timezone.utc)
+    if invite:
+        invite.is_used = True
+        invite.used_by = user.id
+        invite.used_at = datetime.now(timezone.utc)
 
+    db.commit()
+    db.refresh(user)
+    token = create_token(user.id, user.username)
+    return TokenResponse(access_token=token, username=user.username)
+
+
+@router.post("/guest", response_model=TokenResponse)
+def guest_login(db: Session = Depends(get_session)):
+    import uuid as _uuid
+    guest_id = "guest_" + str(_uuid.uuid4())[:8]
+    user = User(
+        username=guest_id,
+        email="",
+        password_hash=hash_password(guest_id),
+        role="guest",
+    )
+    db.add(user)
     db.commit()
     db.refresh(user)
     token = create_token(user.id, user.username)

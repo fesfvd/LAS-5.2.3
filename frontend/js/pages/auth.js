@@ -22,7 +22,7 @@ function buildAuth(tab) {
         ${!isLogin ? `
         <div class="field-group">
           <label class="field-label">EMAIL <span class="field-label-zh">邮箱</span></label>
-          <input class="input-underline" name="email" type="email" placeholder="example@mail.com" required maxlength="100" autocomplete="email">
+          <input class="input-underline" name="email" type="email" placeholder="选填" maxlength="100" autocomplete="email">
         </div>
         ` : ''}
 
@@ -33,8 +33,9 @@ function buildAuth(tab) {
 
         ${!isLogin ? `
         <div class="field-group">
-          <label class="field-label">INVITE CODE <span class="field-label-zh">邀请码</span></label>
-          <input class="input-underline mono" name="invite_code" placeholder="LAS-XXXX-XXXX" required maxlength="32" style="text-transform:uppercase;letter-spacing:2px">
+          <label class="field-label">INVITE CODE <span class="field-label-zh">邀请码</span> <span style="color:var(--muted);font-size:10px;font-family:'Noto Sans SC',sans-serif;font-weight:400">（选填）</span></label>
+          <input class="input-underline mono" name="invite_code" placeholder="留空即为游客模式" maxlength="32" style="text-transform:uppercase;letter-spacing:2px">
+          <p class="text-xs" style="color:var(--muted);opacity:.6;margin-top:4px">无邀请码将注册为游客 · 每日限 3 次分析 · 仅可用快速模型</p>
         </div>
         ` : ''}
 
@@ -42,21 +43,49 @@ function buildAuth(tab) {
           <span class="submit-error" id="authError"></span>
         </div>
 
-        <div class="submit-action" style="justify-content:space-between">
+        <div class="submit-action" style="justify-content:space-between;align-items:center">
           <span class="text-xs" style="color:var(--muted)">
             ${isLogin
               ? '没有账号？<a href="#/register" style="color:var(--gold);text-decoration:none">注册</a>'
               : '已有账号？<a href="#/login" style="color:var(--gold);text-decoration:none">登录</a>'}
           </span>
-          <button type="submit" class="btn btn-primary">
-            ${isLogin ? 'LOG IN <span class="btn-zh">登录</span>' : 'REGISTER <span class="btn-zh">注册</span>'}
-          </button>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button type="button" id="guestBtn" class="btn" style="font-size:12px;padding:8px 16px;border-color:var(--rule-strong);color:var(--muted)">
+              GUEST <span class="btn-zh">游客</span>
+            </button>
+            <button type="submit" class="btn btn-primary">
+              ${isLogin ? 'LOG IN <span class="btn-zh">登录</span>' : 'REGISTER <span class="btn-zh">注册</span>'}
+            </button>
+          </div>
         </div>
       </form>
     </div>`;
 
   const form = document.getElementById('authForm');
   const errEl = document.getElementById('authError');
+  const guestBtn = document.getElementById('guestBtn');
+
+  function showError(msg) {
+    errEl.textContent = '> ERROR: ' + msg;
+    errEl.classList.add('show');
+  }
+
+  guestBtn.addEventListener('click', async () => {
+    errEl.textContent = '';
+    errEl.classList.remove('show');
+    guestBtn.disabled = true;
+    guestBtn.textContent = '...';
+    try {
+      const res = await API._post('/auth/guest');
+      API.setToken(res.access_token);
+      localStorage.setItem('las_username', res.username);
+      App.navigate('#/upload');
+    } catch (err) {
+      showError(err.message);
+      guestBtn.disabled = false;
+      guestBtn.innerHTML = 'GUEST <span class="btn-zh">游客</span>';
+    }
+  });
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
@@ -65,6 +94,7 @@ function buildAuth(tab) {
 
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
+    if (data.invite_code) data.invite_code = data.invite_code.toUpperCase().replace(/\s/g, '');
 
     try {
       if (isLogin) {
@@ -72,15 +102,13 @@ function buildAuth(tab) {
         API.setToken(res.access_token);
         localStorage.setItem('las_username', res.username);
       } else {
-        data.invite_code = (data.invite_code || '').toUpperCase().replace(/\s/g, '');
         const res = await API.register(data);
         API.setToken(res.access_token);
         localStorage.setItem('las_username', res.username);
       }
       App.navigate('#/upload');
     } catch (err) {
-      errEl.textContent = '> ERROR: ' + err.message;
-      errEl.classList.add('show');
+      showError(err.message);
     }
   });
 }

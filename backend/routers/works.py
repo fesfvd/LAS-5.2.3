@@ -170,7 +170,23 @@ async def start_analysis(
     if not work:
         raise HTTPException(404, "作品不存在")
 
-    analysis = Analysis(work_id=work.id, model=req.model or "default", status="running")
+    if user.role == "guest":
+        from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+        today = _dt.now(_tz.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        count = (
+            db.query(Analysis)
+            .join(Work, Analysis.work_id == Work.id)
+            .filter(Work.user_id == user.id, Analysis.created_at >= today)
+            .count()
+        )
+        if count >= 3:
+            raise HTTPException(429, "游客每日限 3 次分析，请使用邀请码注册正式账号")
+
+    model_used = req.model or ""
+    if user.role == "guest" and model_used and "flash" not in model_used.lower():
+        model_used = ""  # fallback to default (flash)
+
+    analysis = Analysis(work_id=work.id, model=model_used or "default", status="running")
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
@@ -180,7 +196,7 @@ async def start_analysis(
         work.author or "",
         work.content,
         work.mode,
-        req.model,
+        model_used,
         ancestor_dialogue=work.ancestor_dialogue == "true",
     )
 
