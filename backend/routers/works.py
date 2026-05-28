@@ -176,7 +176,7 @@ async def start_analysis(
         count = (
             db.query(Analysis)
             .join(Work, Analysis.work_id == Work.id)
-            .filter(Work.user_id == user.id, Analysis.created_at >= today)
+            .filter(Work.user_id == user.id, Analysis.created_at >= today, Analysis.created_at.isnot(None))
             .count()
         )
         if count >= 3:

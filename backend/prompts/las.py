@@ -8,23 +8,21 @@ _CLASSIC = os.path.join(_HERE, "las-classic.MD")
 _LEGACY = os.path.join(_HERE, "LAS v5.2.3 json-mode.MD")
 _V1 = os.path.join(_HERE, "LAS v5.2.3 beta v0.md")
 
-with open(_SHARED, "r", encoding="utf-8") as f:
-    SHARED_PROMPT = f.read()
+_cache = {}
 
-with open(_ORIGINAL, "r", encoding="utf-8") as f:
-    ORIGINAL_MODE = f.read()
 
-with open(_CLASSIC, "r", encoding="utf-8") as f:
-    CLASSIC_MODE = f.read()
+def _load(path):
+    if path not in _cache:
+        with open(path, "r", encoding="utf-8") as f:
+            _cache[path] = f.read()
+    return _cache[path]
 
 
 def get_system_prompt(version: str = "", mode: str = "original") -> str:
     if version == "v1":
-        with open(_V1, "r", encoding="utf-8") as f:
-            return f.read()
+        return _load(_V1)
     if version == "legacy":
-        with open(_LEGACY, "r", encoding="utf-8") as f:
-            return f.read()
+        return _load(_LEGACY)
     if mode == "classic":
-        return SHARED_PROMPT + "\n\n" + CLASSIC_MODE
-    return SHARED_PROMPT + "\n\n" + ORIGINAL_MODE
+        return _load(_SHARED) + "\n\n" + _load(_CLASSIC)
+    return _load(_SHARED) + "\n\n" + _load(_ORIGINAL)

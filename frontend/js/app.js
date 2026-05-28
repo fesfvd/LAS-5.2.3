@@ -106,7 +106,8 @@ var App = {
     this.state.page = path;
 
     var handler = this.routes[path];
-    var isBrowserNav = _isHashChange;
+
+    if (_transitionPhase !== 'idle') return; // ignore browser nav during transition
 
     if (_isHashChange) {
       _isHashChange = false;
@@ -115,7 +116,7 @@ var App = {
     }
 
     // Click navigation — trigger transition
-    if (_transitionPhase === 'idle' && handler) {
+    if (handler) {
       var chapter = CHAPTER[path] || ['', ''];
       _startTransition('#' + hash, chapter[0], chapter[1]);
       return;

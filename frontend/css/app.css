@@ -24,7 +24,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 @keyframes transSlideAway{from{transform:translateY(0)}to{transform:translateY(-100%)}}
 @keyframes brandReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-@media(prefers-reduced-motion:reduce){#transitionOverlay{display:none!important}}
+@media(prefers-reduced-motion:reduce){#transitionOverlay{display:none!important}#spaApp{animation:pageIn .15s ease forwards}}
 
 @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -163,7 +163,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .ancestor-toggle input:checked~.toggle-track{border-color:var(--gold)}
 .ancestor-toggle input:checked~.toggle-track .toggle-dot{transform:translateX(16px);background:var(--gold)}
 .spinner{border:2px solid var(--rule);border-top-color:var(--gold);border-radius:50%;width:20px;height:20px;animation:spin .8s linear infinite}
-.pulse-bar{max-width:420px;margin:0 auto;height:3px;border-radius:3px;background:rgba(184,134,11,.1);overflow:hidden;position:relative}
+.pulse-bar{max-width:100%;width:420px;margin:0 auto;height:3px;border-radius:3px;background:rgba(184,134,11,.1);overflow:hidden;position:relative}
 .pulse-bar::after{content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,rgba(184,134,11,.4),transparent);animation:pulseScan 1.8s ease-in-out infinite}
 @keyframes pulseScan{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
 .nav-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);z-index:50}
