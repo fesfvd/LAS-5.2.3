@@ -1,6 +1,6 @@
 function esc(s) {
   if (s === null || s === undefined) return '';
-  const div = document.createElement('div');
+  var div = document.createElement('div');
   div.textContent = String(s);
   return div.innerHTML;
 }
@@ -10,70 +10,91 @@ function nl2p(text) {
   return text.split('\n').filter(function(l) { return l.trim(); }).map(function(l) { return '<p class="mb-2 last:mb-0">' + l + '</p>'; }).join('');
 }
 
-// ── Transition overlay quotes ──
+// ── Transition state machine ──
 
-var _transitionQuotes = [];
-var _transitionReady = false;
+var CHAPTER = {
+  '/upload':  ['作品提交', 'SUBMISSION'],
+  '/works':   ['作品管理', 'WORKSPACE'],
+  '/report':  ['分析报告', 'REPORT'],
+  '/analyze': ['分析中',   'ANALYSIS'],
+  '/login':   ['登录',     'AUTH'],
+  '/register':['注册',     'REGISTER']
+};
 
-(function() {
-  fetch('/static/quotes.json')
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(data) {
-      if (data && data.length) {
-        _transitionQuotes = data;
-        _transitionReady = true;
-      }
-    })
-    .catch(function() {});
-})();
+var _transitionPhase = 'idle';
+var _pendingRoute = null;
+var _isHashChange = false;
 
-function _pickQuote() {
-  if (!_transitionQuotes.length) return { t: '观古今于须臾，抚四海于一瞬', s: '文赋' };
-  var q = _transitionQuotes[Math.floor(Math.random() * _transitionQuotes.length)];
-  return typeof q === 'string' ? { t: q, s: '' } : q;
+function _buildOverlay(zh, en) {
+  var overlay = document.getElementById('transitionOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'transitionOverlay';
+    overlay.innerHTML =
+      '<div class="trans-inner">' +
+        '<p class="trans-label mono">Chapter &mdash;</p>' +
+        '<h2 class="trans-title serif"></h2>' +
+        '<p class="trans-sub mono"></p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('.trans-title').textContent = zh;
+  overlay.querySelector('.trans-sub').textContent = en;
+  overlay.classList.remove('exit');
+  return overlay;
 }
 
-function _showTransition(callback) {
-  var existing = document.getElementById('transitionOverlay');
-  if (existing) existing.remove();
+function _startTransition(targetHash, zh, en) {
+  if (_transitionPhase !== 'idle') return;
 
-  var q = _pickQuote();
-  var text = (q.t || '').slice(0, 60);
-
-  var overlay = document.createElement('div');
-  overlay.id = 'transitionOverlay';
-  overlay.innerHTML =
-    '<div class="trans-bg">' +
-      '<div class="trans-quote"><span>' + esc(text) + '</span></div>' +
-      (q.s ? '<div class="trans-source">—— ' + esc(q.s) + '</div>' : '') +
-    '</div>';
-  document.body.appendChild(overlay);
-
-  // Force reflow then animate in
+  // Phase: enter — slide overlay up from bottom
+  _transitionPhase = 'enter';
+  var overlay = _buildOverlay(zh, en);
   void overlay.offsetWidth;
-  overlay.classList.add('show');
+  overlay.classList.add('enter');
 
   setTimeout(function() {
-    callback();
-    // Keep overlay visible briefly after page renders
-    setTimeout(function() {
-      overlay.classList.remove('show');
-      setTimeout(function() { overlay.remove(); }, 400);
-    }, 200);
-  }, 250);
+    // Phase: covered — switch page underneath
+    _transitionPhase = 'covered';
+    window.location.hash = targetHash;
+    _isHashChange = true;
+    App._render(App.state.page, App.routes[App.state.page]);
+
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        // Phase: exit — slide overlay up and away
+        _transitionPhase = 'exit';
+        overlay.classList.remove('enter');
+        overlay.classList.add('exit');
+
+        setTimeout(function() {
+          _transitionPhase = 'idle';
+          overlay.classList.remove('exit');
+          _pendingRoute = null;
+        }, 300);
+      });
+    });
+  }, 350);
 }
 
 // ── App router ──
 
-const App = {
+var App = {
   state: { page: '', params: {} },
   routes: {},
 
   register: function(name, handler) { this.routes[name] = handler; },
 
   navigate: function(hash) {
-    window.location.hash = hash;
-    this._route();
+    if (_transitionPhase !== 'idle') return;
+    _pendingRoute = hash;
+
+    var raw = hash.slice(2);
+    var parts = raw.replace(/^\/+/, '').split('/');
+    var base = '/' + (parts[0] || 'upload');
+    var chapter = CHAPTER[base] || ['', ''];
+
+    _startTransition(hash, chapter[0], chapter[1]);
   },
 
   _route: function() {
@@ -84,17 +105,24 @@ const App = {
     this.state.params = { id: parts[1] || null };
     this.state.page = path;
 
-    var self = this;
     var handler = this.routes[path];
-    var isFastPage = path === '/login' || path === '/register';
+    var isBrowserNav = _isHashChange;
 
-    if (_transitionReady && !isFastPage) {
-      _showTransition(function() {
-        self._render(path, handler);
-      });
-    } else {
+    if (_isHashChange) {
+      _isHashChange = false;
       this._render(path, handler);
+      return;
     }
+
+    // Click navigation — trigger transition
+    if (_transitionPhase === 'idle' && handler) {
+      var chapter = CHAPTER[path] || ['', ''];
+      _startTransition('#' + hash, chapter[0], chapter[1]);
+      return;
+    }
+
+    // Fallback: direct render (initial load)
+    this._render(path, handler);
   },
 
   _render: function(path, handler) {

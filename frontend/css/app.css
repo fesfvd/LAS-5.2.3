@@ -11,16 +11,20 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 @keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 #spaApp.page-enter{animation:pageIn .35s cubic-bezier(.4,0,.2,1) forwards}
 
-/* ── transition overlay (vertical calligraphy) ── */
-#transitionOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--paper);opacity:0;transition:opacity .3s ease;pointer-events:none}
-#transitionOverlay.show{opacity:1}
-.trans-bg{text-align:center;max-width:90vw;padding:40px}
-.trans-quote{display:inline-block;writing-mode:vertical-rl;text-orientation:mixed;font-family:'Noto Serif SC',Georgia,serif;font-size:clamp(1.4rem,4vw,2.4rem);font-weight:700;line-height:2.2;letter-spacing:.12em;color:var(--ink);max-height:70vh;overflow:hidden;position:relative;padding:24px 0}
-.trans-quote::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:2px;height:24px;background:var(--gold)}
-.trans-quote::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:2px;height:24px;background:var(--gold)}
-.trans-source{margin-top:16px;font-family:'Noto Serif SC',Georgia,serif;font-size:14px;color:var(--muted);letter-spacing:.06em}
+/* ── transition overlay (slide state machine) ── */
+#transitionOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--ink);transform:translateY(100%);pointer-events:none}
+#transitionOverlay.enter{animation:transSlideUp .35s cubic-bezier(.22,.61,.36,1) forwards}
+#transitionOverlay.exit{animation:transSlideAway .3s cubic-bezier(.55,.06,.68,.19) forwards}
+.trans-inner{text-align:center}
+.trans-label{font-size:11px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;margin-bottom:16px;opacity:0;animation:brandReveal .3s ease forwards}
+.trans-title{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.05;letter-spacing:.04em;color:var(--paper);margin-bottom:8px;opacity:0;animation:brandReveal .3s .05s ease forwards}
+.trans-sub{font-size:12px;color:var(--muted);letter-spacing:3px;opacity:0;animation:brandReveal .3s .1s ease forwards}
 
-@media(prefers-reduced-motion:reduce){#transitionOverlay{display:none}}
+@keyframes transSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes transSlideAway{from{transform:translateY(0)}to{transform:translateY(-100%)}}
+@keyframes brandReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+@media(prefers-reduced-motion:reduce){#transitionOverlay{display:none!important}}
 
 @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
