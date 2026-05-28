@@ -51,9 +51,9 @@ App.register('/analyze', () => {
           <hr class="rule" style="margin:24px 0">
 
           <div id="dynamicContent">
-            <div id="analyzeLoader" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 0;gap:20px">
-              <div class="spinner" style="width:36px;height:36px;border-width:2.5px"></div>
-              <p class="mono text-xs" style="color:var(--muted);letter-spacing:1px">正在连接分析引擎...</p>
+            <div id="analyzeLoader" style="padding:40px 0">
+              <div class="pulse-bar"></div>
+              <p class="mono text-xs" style="color:var(--muted);letter-spacing:1px;text-align:center;margin-top:16px">正在连接分析引擎...</p>
             </div>
           </div>
 
