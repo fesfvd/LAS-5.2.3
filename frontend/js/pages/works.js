@@ -64,7 +64,7 @@ App.register('/works', async () => {
       let url = '/api/works?limit=' + limit + '&offset=' + offset
               + '&sort_by=' + sortBy + '&sort_order=' + sortOrder;
       if (currentMode) url += '&mode=' + currentMode;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: API._headers() });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       renderList(data.items, data.total);
