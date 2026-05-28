@@ -19,7 +19,14 @@ from backend.config import (
 from backend.prompts.las import get_system_prompt
 
 logger = logging.getLogger("las.llm")
-_client = AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+    return _client
 
 
 def build_user_prompt(
@@ -77,7 +84,7 @@ async def analyze_stream(
     async def _stream() -> AsyncIterator[dict]:
         nonlocal full_text
         logger.info("LLM 调用开始 model=%s title=%s len=%d", m, title, len(content))
-        stream = await _client.chat.completions.create(
+        stream = await _get_client().chat.completions.create(
             model=m,
             max_tokens=LLM_MAX_TOKENS,
             temperature=LLM_TEMPERATURE,
