@@ -97,8 +97,8 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .analyze-container{max-width:720px;margin:0 auto;padding:32px 24px 24px;display:flex;flex-direction:column;height:100%}
 .analyze-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-shrink:0}
 .progress-percent{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink)}
-@keyframes breathe-ring{0%,100%{opacity:0.25;filter:drop-shadow(0 0 2px rgba(184,134,11,0.2))}50%{opacity:0.65;filter:drop-shadow(0 0 6px rgba(184,134,11,0.35))}}
-@keyframes fade-dash{0%,100%{opacity:0.3}50%{opacity:1}}
+@keyframes breathe-ring{0%,100%{opacity:0.15;filter:drop-shadow(0 0 2px rgba(184,134,11,0.15))}50%{opacity:0.9;filter:drop-shadow(0 0 12px rgba(184,134,11,0.4))}}
+@keyframes fade-dash{0%,100%{opacity:0.15}50%{opacity:0.9}}
 .progress-ring-container.waiting .progress-arc{animation:breathe-ring 2s ease-in-out infinite}
 .progress-ring-container.waiting .progress-percent{animation:fade-dash 1.5s ease-in-out infinite}
 .model-selector{position:relative;flex-shrink:0;margin-left:12px}
@@ -137,7 +137,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .progress-ring-container svg{display:block}
 .progress-ring-container .progress-bg{stroke:rgba(26,26,26,0.05)}
 .progress-ring-container .progress-arc{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .3s ease}
-.progress-ring-container.waiting .progress-arc{animation:breathe-ring 2s ease-in-out infinite;filter:drop-shadow(0 0 3px rgba(184,134,11,0.15))}
+.progress-ring-container.waiting .progress-arc{animation:breathe-ring 2s ease-in-out infinite}
 
 /* ── Terminal refinements ── */
 
