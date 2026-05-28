@@ -1,5 +1,5 @@
 App.register('/upload', () => {
-  document.title = '提交作品 — LAS';
+  document.title = '提交作品 — LAS 文学分析';
   const root = document.getElementById('spaApp');
   root.innerHTML = `
     <div class="submit-container">

@@ -1,5 +1,5 @@
 App.register('/works', async () => {
-  document.title = '作品列表 — LAS';
+  document.title = '作品列表 — LAS 文学分析';
   const root = document.getElementById('spaApp');
   root.innerHTML = `
     <div class="submit-container">
