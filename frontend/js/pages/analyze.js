@@ -50,7 +50,11 @@ App.register('/analyze', () => {
 
           <hr class="rule" style="margin:24px 0">
 
-          <div id="dynamicContent"></div>
+          <div id="dynamicContent">
+            <div id="analyzeLoader" style="display:flex;align-items:center;justify-content:center;padding:32px 0">
+              <div class="spinner" style="width:24px;height:24px;border-width:2px"></div>
+            </div>
+          </div>
 
           <hr class="rule" style="margin:24px 0">
 
@@ -287,6 +291,8 @@ async function startStream(workId, model) {
           if (event.type === 'heartbeat') continue;
           if (firstEvent) {
             firstEvent = false;
+            const loader = document.getElementById('analyzeLoader');
+            if (loader) { loader.style.opacity = '0'; loader.style.transition = 'opacity .4s'; setTimeout(() => loader.remove(), 400); }
             const elapsed = Date.now() - _pageEnter;
             const minDelay = Math.max(0, 800 - elapsed);
             setTimeout(() => {
@@ -305,8 +311,9 @@ async function startStream(workId, model) {
           } else if (event.type === 'done') {
             receivedDone = true;
             onComplete();
-            const ok = await waitForReport(workId);
-            if (!ok) console.warn('[LAS] 报告未及时就绪，仍尝试导航');
+            if (statusText) { statusText.textContent = '报告生成中...'; statusText.style.color = 'var(--gold)'; }
+            await waitForReport(workId);
+            if (statusText) statusText.textContent = '报告就绪，正在加载...';
             App.navigate('#/report/' + workId);
             return;
           }
@@ -400,15 +407,16 @@ function cycleQuote() {
 }
 
 async function waitForReport(workId) {
-  for (let i = 0; i < 15; i++) {
-    await new Promise(r => setTimeout(r, i === 0 ? 0 : 500));
+  for (let i = 0; ; i++) {
+    const delay = i === 0 ? 0 : i <= 5 ? 500 : i <= 20 ? 1000 : 2000;
+    await new Promise(r => setTimeout(r, delay));
     try {
       const data = await API.getReport(workId);
-      if (data.report && data.report.ok) return true;
-      if (data.status === 'failed') return true; // navigate to show error
+      if (data.report && data.report.ok) return;
+      if (data.status === 'failed') return;
     } catch (e) {
-      console.log('[LAS] 报告轮询 ' + (i + 1) + '/15: ' + (e.message || e));
+      if (i <= 3 || i % 5 === 0) console.log('[LAS] 报告轮询 ' + (i + 1) + ': ' + (e.message || e));
     }
   }
-  return false; // exhausted — navigate anyway
+}
 }

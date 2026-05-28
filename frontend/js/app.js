@@ -29,6 +29,14 @@ const App = {
     this.state.params = { id: parts[1] || null };
     this.state.page = path;
 
+    // Page transition
+    const app = document.getElementById('spaApp');
+    if (app) {
+      app.classList.remove('page-enter');
+      void app.offsetWidth; // force reflow
+      app.classList.add('page-enter');
+    }
+
     this.updateNav();
 
     const handler = this.routes[path];
