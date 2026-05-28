@@ -12,12 +12,12 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 #spaApp.page-enter{animation:pageIn .35s cubic-bezier(.4,0,.2,1) forwards}
 
 /* ── transition overlay (slide state machine) ── */
-#transitionOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--ink);transform:translateY(100%);pointer-events:none}
+#transitionOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--paper);transform:translateY(100%);pointer-events:none}
 #transitionOverlay.enter{animation:transSlideUp .35s cubic-bezier(.22,.61,.36,1) forwards}
 #transitionOverlay.exit{animation:transSlideAway .3s cubic-bezier(.55,.06,.68,.19) forwards}
 .trans-inner{text-align:center}
-.trans-label{font-size:11px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;margin-bottom:16px;opacity:0;animation:brandReveal .3s ease forwards}
-.trans-title{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.05;letter-spacing:.04em;color:var(--paper);margin-bottom:8px;opacity:0;animation:brandReveal .3s .05s ease forwards}
+.trans-label{font-size:11px;color:var(--gold);letter-spacing:4px;text-transform:uppercase;margin-bottom:16px;opacity:0;animation:brandReveal .3s ease forwards}
+.trans-title{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;line-height:1.05;letter-spacing:.04em;color:var(--ink);margin-bottom:8px;opacity:0;animation:brandReveal .3s .05s ease forwards}
 .trans-sub{font-size:12px;color:var(--muted);letter-spacing:3px;opacity:0;animation:brandReveal .3s .1s ease forwards}
 
 @keyframes transSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
