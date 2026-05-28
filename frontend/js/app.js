@@ -24,6 +24,7 @@ var CHAPTER = {
 var _transitionPhase = 'idle';
 var _pendingRoute = null;
 var _isHashChange = false;
+var _initialLoad = true;
 
 function _buildOverlay(zh, en) {
   var overlay = document.getElementById('transitionOverlay');
@@ -107,10 +108,17 @@ var App = {
 
     var handler = this.routes[path];
 
-    if (_transitionPhase !== 'idle') return; // ignore browser nav during transition
+    if (_transitionPhase !== 'idle') return;
 
     if (_isHashChange) {
       _isHashChange = false;
+      this._render(path, handler);
+      return;
+    }
+
+    // Initial load — direct render without transition
+    if (_initialLoad) {
+      _initialLoad = false;
       this._render(path, handler);
       return;
     }
@@ -122,7 +130,6 @@ var App = {
       return;
     }
 
-    // Fallback: direct render (initial load)
     this._render(path, handler);
   },
 

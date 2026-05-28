@@ -243,7 +243,15 @@ function bindSubmitHandler() {
 
     try {
       const work = await API.createWork(data);
-      setTimeout(() => App.navigate('#/analyze/' + work.id), 2400);
+      setTimeout(function() {
+        try { App.navigate('#/analyze/' + work.id); } catch(e) {}
+        // 兜底：300ms 后转场还没触发就直接跳
+        setTimeout(function() {
+          if (window.location.hash.indexOf('/analyze/') === -1) {
+            window.location.hash = '#/analyze/' + work.id;
+          }
+        }, 300);
+      }, 2400);
     } catch (err) {
       overlay.classList.remove('show');
       formBody.style.opacity = '';
