@@ -54,7 +54,7 @@ async def analyze_stream(
     ancestor_dialogue: bool = False,
 ) -> Tuple[dict, AsyncIterator[dict]]:
     m = model or LLM_MODEL
-    system_prompt = get_system_prompt(PROMPT_VERSION)
+    system_prompt = get_system_prompt(PROMPT_VERSION, mode)
     user_prompt = build_user_prompt(title, author, content, mode, ancestor_dialogue)
     result_holder = {"data": None, "usage": None}
     full_text = ""
