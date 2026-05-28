@@ -12,5 +12,7 @@ data/
 SKILL/
 .claude/
 *.md
+!backend/prompts/*.md
+!backend/prompts/*.MD
 Thumbs.db
 .DS_Store
