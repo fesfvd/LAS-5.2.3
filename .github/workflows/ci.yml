@@ -12,6 +12,8 @@ env:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      LAS_DEV: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -28,5 +30,3 @@ jobs:
 
       - name: Test (pytest)
         run: python -m pytest backend/tests/ -v
-        env:
-          LAS_DEV: "true"
