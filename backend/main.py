@@ -9,7 +9,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
-from fastapi.requests import Request
 
 from backend.config import DEV_MODE, CORS_ORIGINS
 from backend.models.orm import init_db
@@ -93,7 +92,6 @@ app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/api/health")
 def health():
-    import time
     from backend.models.orm import _engine
     try:
         with _engine.connect() as conn:

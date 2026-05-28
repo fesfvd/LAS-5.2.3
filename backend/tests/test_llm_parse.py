@@ -1,6 +1,4 @@
 """Tests for llm.py JSON parsing pipeline."""
-import json
-import pytest
 from backend.services.llm import _extract_json, _repair_truncated, _parse_json
 
 

@@ -1,5 +1,4 @@
 """Tests for calculator.py — the scoring engine."""
-import pytest
 from backend.services.calculator import (
     layer_for_dim,
     calc_tier,
@@ -8,7 +7,6 @@ from backend.services.calculator import (
     apply_defect_exemption,
     apply_original_caps,
     compute_wcs,
-    BIAS_EXEMPT_GENRES,
 )
 
 

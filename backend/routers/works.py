@@ -171,7 +171,7 @@ async def start_analysis(
         raise HTTPException(404, "作品不存在")
 
     if user.role == "guest":
-        from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+        from datetime import datetime as _dt, timezone as _tz
         today = _dt.now(_tz.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         count = (
             db.query(Analysis)

@@ -34,7 +34,7 @@ def check_rate_limit(request: Request, user_id: str | None) -> None:
                     429,
                     detail=f"请求过于频繁，请 {window // 60} 分钟后再试"
                     if window >= 60
-                    else f"请求过于频繁，请稍后再试",
+                    else "请求过于频繁，请稍后再试",
                 )
             _buckets[key].append(now)
             return
