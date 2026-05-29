@@ -21,8 +21,8 @@ function buildAuth(tab) {
 
         ${!isForgot ? `
         <div class="field-group">
-          <label class="field-label">USERNAME <span class="field-label-zh">用户名</span></label>
-          <input class="input-underline" name="username" placeholder="2-50 个字符" required maxlength="50" autocomplete="username">
+          <label class="field-label">${isLogin ? 'ACCOUNT' : 'USERNAME'} <span class="field-label-zh">${isLogin ? '用户名/邮箱' : '用户名'}</span></label>
+          <input class="input-underline" name="username" placeholder="${isLogin ? '用户名或邮箱' : '2-50 个字符'}" required maxlength="${isLogin ? 100 : 50}" autocomplete="${isLogin ? 'username email' : 'username'}">
         </div>` : ''}
 
         ${(isRegister || isForgot) ? `

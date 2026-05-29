@@ -216,7 +216,11 @@ class LoginRequestV2(BaseModel):
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequestV2, db: Session = Depends(get_session)):
-    user = db.query(User).filter(User.username == req.username).first()
+    login_id = req.username.strip()
+    if "@" in login_id:
+        user = db.query(User).filter(User.email == login_id.lower()).first()
+    else:
+        user = db.query(User).filter(User.username == login_id).first()
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(400, "用户名或密码错误")
     token = create_token(user.id, user.username, req.remember)
