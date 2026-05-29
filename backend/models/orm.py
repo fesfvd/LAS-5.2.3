@@ -35,7 +35,21 @@ class User(Base):
     role = Column(String(16), default="user", nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    email_verified = Column(Boolean, default=False)
+
     works = relationship("Work", back_populates="user", cascade="all, delete-orphan")
+
+
+class VerificationCode(Base):
+    __tablename__ = "verification_codes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(100), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    purpose = Column(String(20), nullable=False, index=True)  # "register" / "reset" / "bind"
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class InviteCode(Base):

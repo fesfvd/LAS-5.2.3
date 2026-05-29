@@ -26,6 +26,12 @@ class _Settings(BaseSettings):
     llm_max_tokens: int = 32000
     llm_temperature: float = 0.4
 
+    smtp_host: str = "smtp.163.com"
+    smtp_port: int = 465
+    smtp_user: str = ""
+    smtp_pass: str = ""
+    smtp_from: str = ""
+
     dev: bool = False
     cors_origins: str = ""
     prompt_version: str = "v2"
@@ -49,6 +55,12 @@ LLM_API_KEY = _cfg.llm_api_key
 LLM_BASE_URL = _cfg.llm_base_url
 LLM_MAX_TOKENS = _cfg.llm_max_tokens
 LLM_TEMPERATURE = _cfg.llm_temperature
+
+SMTP_HOST = _cfg.smtp_host
+SMTP_PORT = _cfg.smtp_port
+SMTP_USER = _cfg.smtp_user
+SMTP_PASS = _cfg.smtp_pass
+SMTP_FROM = _cfg.smtp_from
 
 DEV_MODE = _cfg.dev
 CORS_ORIGINS = _cfg.cors_origin_list

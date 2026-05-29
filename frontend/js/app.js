@@ -162,7 +162,7 @@ var App = {
     if (API.isLoggedIn()) {
       navLogin.style.display = 'none';
       navUser.style.display = '';
-      navUser.innerHTML = '<a href="#/works" class="mono text-xs" style="color:var(--gold);text-decoration:none">' + esc(localStorage.getItem('las_username') || '用户') + '</a>';
+      navUser.innerHTML = '<a href="#/profile" class="mono text-xs" style="color:var(--gold);text-decoration:none">' + esc(localStorage.getItem('las_username') || '用户') + '</a>';
     } else {
       navLogin.style.display = '';
       navUser.style.display = 'none';

@@ -7,6 +7,7 @@ class RegisterRequest(BaseModel):
         max_length=100, pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     )
     password: str = Field(min_length=6, max_length=100)
+    code: str = Field(default="", max_length=6)
     invite_code: str = Field(default="", max_length=32)
 
 

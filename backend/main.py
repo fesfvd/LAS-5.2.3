@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, Response
 from backend.config import DEV_MODE, CORS_ORIGINS
 from backend.models.orm import init_db
 from backend.middleware.rate_limit import check_rate_limit
-from backend.routers import auth, works
+from backend.routers import auth, works, users
 
 logging.basicConfig(
     level=logging.DEBUG if DEV_MODE else logging.INFO,
@@ -80,6 +80,7 @@ async def rate_limiter(request, call_next):
 
 app.include_router(auth.router)
 app.include_router(works.router)
+app.include_router(users.router)
 
 frontend_dir = os.path.join(BASE_DIR, "frontend")
 app.mount("/css", StaticFiles(directory=os.path.join(frontend_dir, "css")), name="css")
