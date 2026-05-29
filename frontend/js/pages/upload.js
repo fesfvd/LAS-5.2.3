@@ -222,6 +222,12 @@ function bindSubmitHandler() {
     }
     errEl.classList.remove('show');
 
+    // Disable submit button during submission
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var origHTML = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'SUBMITTING <span class="btn-zh">提交中...</span>';
+
     // Show overlay with animated logs
     const formBody = form;
     formBody.style.opacity = '0.3';
@@ -245,14 +251,16 @@ function bindSubmitHandler() {
       const work = await API.createWork(data);
       setTimeout(function() {
         try { App.navigate('#/analyze/' + work.id); } catch(e) {}
-        // 兜底：300ms 后转场还没触发就直接跳
+        // 兜底：500ms 后转场还没触发就直接跳
         setTimeout(function() {
           if (window.location.hash.indexOf('/analyze/') === -1) {
             window.location.hash = '#/analyze/' + work.id;
           }
-        }, 300);
+        }, 500);
       }, 2400);
     } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origHTML;
       overlay.classList.remove('show');
       formBody.style.opacity = '';
       formBody.style.filter = '';

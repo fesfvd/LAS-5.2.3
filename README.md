@@ -157,7 +157,7 @@ mf   = 1-0.006×(75-mean)       平庸惩罚（全面平庸无亮点）
 │
 ├── SKILL/                   # Claude Code 自定义技能
 ├── scripts/                 # 工具脚本
-├── lascd.html               # 首页（LAS 体系介绍）
+├── frontend/index.html      # 首页（LAS 体系介绍）
 ├── DESIGN.md                 # 设计语言规范（awesome-design-md 格式）
 ├── start.bat                # Windows 启动脚本
 ├── Dockerfile

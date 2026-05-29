@@ -57,7 +57,12 @@ App.register('/works', async () => {
 
   async function loadPage(offset) {
     const list = document.getElementById('worksList');
-    list.innerHTML = '<div class="spinner mx-auto" style="margin-top:40px"></div>';
+    list.style.opacity = '0';
+    list.style.transition = 'opacity .2s ease';
+    setTimeout(function() {
+      list.innerHTML = '<div class="spinner mx-auto" style="margin-top:40px"></div>';
+      list.style.opacity = '1';
+    }, 180);
 
     try {
       const [sortBy, sortOrder] = currentSort.split('-');
@@ -67,11 +72,19 @@ App.register('/works', async () => {
       const res = await fetch(url, { headers: API._headers() });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      renderList(data.items, data.total);
+      list.style.opacity = '0';
+      setTimeout(function() {
+        renderList(data.items, data.total);
+        list.style.opacity = '1';
+      }, 160);
       currentOffset = offset;
       renderPager(data.total, offset);
     } catch (e) {
-      list.innerHTML = '<p class="text-sm" style="color:var(--crimson);text-align:center;padding:40px 0">加载失败: ' + esc(e.message || '') + '</p>';
+      list.style.opacity = '0';
+      setTimeout(function() {
+        list.innerHTML = '<p class="text-sm" style="color:var(--crimson);text-align:center;padding:40px 0">加载失败: ' + esc(e.message || '') + '</p>';
+        list.style.opacity = '1';
+      }, 160);
     }
   }
 

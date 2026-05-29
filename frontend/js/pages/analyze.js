@@ -61,7 +61,10 @@ App.register('/analyze', () => {
 
           <div style="display:flex;align-items:center;justify-content:space-between">
             <span class="analyze-status-line" id="statusText" style="color:var(--muted)">序列启动中...</span>
-            <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
+            <div style="display:flex;align-items:center;gap:14px">
+              <button id="cancelAnalyze" class="mono text-xs" style="display:none;padding:5px 14px;border:1px solid var(--rule-strong);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace">ESC 取消</button>
+              <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
+            </div>
           </div>
 
           <hr class="rule" style="margin:24px 0">
@@ -92,6 +95,20 @@ App.register('/analyze', () => {
 
   // Build all step DOM elements immediately
   buildAllSteps();
+
+  // Cancel button
+  var cancelBtn = document.getElementById('cancelAnalyze');
+  cancelBtn.addEventListener('click', function() {
+    if (window.__LAS_ANALYZE_CTRL) { window.__LAS_ANALYZE_CTRL.abort(); }
+    if (_stepTimer) clearInterval(_stepTimer);
+    if (_cursorTimer) clearInterval(_cursorTimer);
+    if (_quoteTimer) clearTimeout(_quoteTimer);
+    _quoteActive = false;
+    _completed = true;
+    App.navigate('#/works');
+  });
+  cancelBtn.addEventListener('mouseenter', function() { this.style.borderColor = 'var(--crimson)'; this.style.color = 'var(--crimson)'; });
+  cancelBtn.addEventListener('mouseleave', function() { this.style.borderColor = 'var(--rule-strong)'; this.style.color = 'var(--muted)'; });
 
   startStream(id, window.__LAS_MODEL || '');
   startQuoteCarousel();
@@ -169,11 +186,16 @@ function startCursorPulse(el) {
   }, 600);
 }
 
+var _lastPct = -1;
 function updateRing() {
   const circle = document.getElementById('progressCircle');
   const text = document.getElementById('progressText');
   if (!circle || !text) return;
+  // Never regress — if DOM was recreated mid-stream, restore from last known value
+  if (text.textContent === '--') { text.textContent = (_lastPct >= 0 ? _lastPct : 0) + '%'; return; }
   const pct = Math.min(100, Math.round((_shownStepIndex + 1) / WORKFLOW.length * 100));
+  if (pct <= _lastPct) return;
+  _lastPct = pct;
   const offset = CIRCUMFERENCE - (CIRCUMFERENCE * pct / 100);
   circle.style.strokeDashoffset = offset;
   text.textContent = pct + '%';
@@ -292,6 +314,8 @@ async function startStream(workId, model) {
           if (event.type === 'heartbeat') continue;
           if (firstEvent) {
             firstEvent = false;
+            var cancelBtn = document.getElementById('cancelAnalyze');
+            if (cancelBtn) cancelBtn.style.display = 'inline-block';
             const loader = document.getElementById('analyzeLoader');
             if (loader) { loader.style.opacity = '0'; loader.style.transition = 'opacity .4s'; setTimeout(() => loader.remove(), 400); }
             const elapsed = Date.now() - _pageEnter;
@@ -394,10 +418,11 @@ function cycleQuote() {
       mq.style.height = newH + 'px';
     });
 
-    // Fade in after height transition
+    // Fade in after height transition, then release overflow
     setTimeout(() => {
       mq.style.height = 'auto';
       mq.style.opacity = '1';
+      mq.classList.add('anim-done');
     }, 450);
   }, 350);
 
@@ -419,5 +444,4 @@ async function waitForReport(workId) {
       if (i <= 3 || i % 5 === 0) console.log('[LAS] 报告轮询 ' + (i + 1) + ': ' + (e.message || e));
     }
   }
-}
 }

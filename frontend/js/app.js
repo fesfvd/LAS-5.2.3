@@ -59,7 +59,14 @@ function _startTransition(targetHash, zh, en) {
     _transitionPhase = 'covered';
     window.location.hash = targetHash;
     _isHashChange = true;
-    App._render(App.state.page, App.routes[App.state.page]);
+    // Use targetHash to resolve handler — App.state.page may be stale
+    // when navigate() is called from _route() unknown-route fallback
+    var tRaw = targetHash.slice(1);
+    var tParts = tRaw.replace(/^\/+/, '').split('/');
+    var tPath = '/' + (tParts[0] || 'upload');
+    App.state.page = tPath;
+    App.state.params = { id: tParts[1] || null };
+    App._render(tPath, App.routes[tPath]);
 
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
@@ -130,10 +137,12 @@ var App = {
       return;
     }
 
-    this._render(path, handler);
+    // Unknown route — redirect to upload
+    this.navigate('#/upload');
   },
 
   _render: function(path, handler) {
+    if (!handler) { window.location.hash = '#/upload'; return; }
     var app = document.getElementById('spaApp');
     if (app) {
       app.classList.remove('page-enter');

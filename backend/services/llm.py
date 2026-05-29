@@ -113,8 +113,8 @@ async def analyze_stream(
                     if is_id:
                         n = int(kw.split(":")[1].strip('" '))
                         hit = re.search(
-                            r'"id"\s*:\s*' + str(n), delta.content
-                        ) or re.search(r'"id"\s*:\s*' + str(n), full_text)
+                            r'"id"\s*:\s*' + str(n) + r'(?!\d)', delta.content
+                        ) or re.search(r'"id"\s*:\s*' + str(n) + r'(?!\d)', full_text)
                     else:
                         hit = kw in delta.content or kw in full_text
                     if not hit:

@@ -9,7 +9,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 .rule-gold{border:none;border-top:2px solid var(--gold);margin:0;width:3rem}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-#spaApp.page-enter{animation:pageIn .35s cubic-bezier(.4,0,.2,1) forwards}
+#spaApp.page-enter{animation:pageIn .35s cubic-bezier(.4,0,.2,1)}
 
 /* ── transition overlay (slide state machine) ── */
 #transitionOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--paper);transform:translateY(100%);pointer-events:none}
@@ -24,7 +24,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 @keyframes transSlideAway{from{transform:translateY(0)}to{transform:translateY(-100%)}}
 @keyframes brandReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-@media(prefers-reduced-motion:reduce){#transitionOverlay{display:none!important}#spaApp{animation:pageIn .15s ease forwards}}
+@media(prefers-reduced-motion:reduce){#transitionOverlay{display:none!important}#spaApp{animation:pageIn .15s ease}}
 
 @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -88,6 +88,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .filter-chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:0.5px}
 .filter-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.06)}
 .filter-chip:hover:not(.active){border-color:var(--rule-strong);color:var(--ink)}
+.filter-chip:active,.pager-btn:active,.mode-btn:active{transform:scale(.96)}
 
 .pager-btn{min-width:32px;height:32px;border-radius:6px;border:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;transition:all .2s}
 .pager-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.05)}
@@ -124,7 +125,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 
 /* ── Analyze page · unified glass-card ── */
 
-.analyze-page{background-color:var(--paper);min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+.analyze-page{background-color:var(--paper);min-height:100vh;display:flex;flex-direction:column;justify-content:safe center;padding-top:6vh}
 .analyze-container{max-width:680px;margin:0 auto;padding:80px 20px;width:100%}
 .analyze-container{opacity:0;transform:translateY(8px);animation:card-enter .6s ease forwards}
 @keyframes card-enter{to{opacity:1;transform:translateY(0)}}
@@ -149,6 +150,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 /* ── Literary muses (quote) ── */
 
 .muse-quote{font-family:'Noto Serif SC',Georgia,serif;font-size:18px;font-weight:500;font-style:italic;line-height:1.625;letter-spacing:0.03em;color:var(--ink);margin:20px auto;max-width:520px;text-align:center;overflow:hidden;transition:opacity .5s ease,height .4s ease}
+.muse-quote.anim-done{overflow:visible}
 .quote-bracket{color:rgba(184,134,11,0.6);font-size:1.2em;font-family:'Noto Serif SC',Georgia,serif}
 .muse-source{font-family:'Noto Serif SC',Georgia,serif;font-size:14px;font-weight:400;color:var(--gold);letter-spacing:0.03em;font-style:normal}
 
@@ -169,6 +171,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 @keyframes pulseScan{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
 .nav-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);z-index:50}
 .nav-top .brand{font-weight:700;font-size:1.1rem;color:var(--gold);cursor:pointer}
+.nav-top a:hover{color:var(--gold)!important}
 /* score ring */
 .score-ring{position:relative;width:120px;height:120px}
 .score-ring circle{fill:none;stroke-width:7;stroke-linecap:round}
@@ -251,6 +254,10 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .ss-menu.open{opacity:1;pointer-events:auto;transform:translateX(0)}
 .ss-opt{padding:8px 18px;border:1px solid var(--rule-strong);background:var(--paper);color:var(--ink);cursor:pointer;font-size:0.78rem;border-radius:8px;white-space:nowrap;transition:all .2s;font-family:'Noto Sans SC',sans-serif}
 .ss-opt:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.04)}
+
+/* focus ring */
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.input-underline:focus-visible{outline:none;border-bottom-color:var(--gold)}
 
 /* print */
 @media print{

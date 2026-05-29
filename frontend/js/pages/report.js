@@ -18,7 +18,7 @@ App.register('/report', async () => {
         ${detail ? `<p class="text-sm text-muted mb-4">${esc(detail)}</p>` : ''}
         ${rawPreview ? '<div class="card" style="max-width:600px;margin:0 auto;text-align:left"><p class="text-xs text-muted">LLM 原始输出片段:</p><pre class="text-xs text-muted mt-2" style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto">' + esc(rawPreview) + '</pre></div>' : ''}
         ${extra || ''}
-        <a href="/app" class="btn mt-6" style="display:inline-block">返回首页</a>
+        <a href="javascript:App.navigate('#/upload')" class="btn mt-6" style="display:inline-block">返回首页</a>
       </section>
     </main>`;
   };

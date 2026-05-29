@@ -108,7 +108,7 @@ def health():
 
 @app.get("/")
 async def serve_index():
-    return FileResponse(os.path.join(BASE_DIR, "lascd.html"))
+    return FileResponse(os.path.join(BASE_DIR, "frontend", "index.html"))
 
 
 @app.get("/app")
