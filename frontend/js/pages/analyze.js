@@ -186,13 +186,15 @@ function startCursorPulse(el) {
   }, 600);
 }
 
-var _lastPct = -1;
+var _lastPct = 0;
 function updateRing() {
   const circle = document.getElementById('progressCircle');
   const text = document.getElementById('progressText');
   if (!circle || !text) return;
-  // Never regress — if DOM was recreated mid-stream, restore from last known value
-  if (text.textContent === '--') { text.textContent = (_lastPct >= 0 ? _lastPct : 0) + '%'; return; }
+  // Guard against external DOM writes (e.g. legacy firstEvent setTimeout)
+  if (text.textContent === '0%' && _lastPct > 0) { text.textContent = _lastPct + '%'; }
+  // Restore if DOM was recreated mid-stream
+  if (text.textContent === '--') { text.textContent = _lastPct + '%'; return; }
   const pct = Math.min(100, Math.round((_shownStepIndex + 1) / WORKFLOW.length * 100));
   if (pct <= _lastPct) return;
   _lastPct = pct;
@@ -323,8 +325,7 @@ async function startStream(workId, model) {
             setTimeout(() => {
               const ring = document.getElementById('progressRing');
               if (ring) ring.classList.remove('waiting');
-              const pctText = document.getElementById('progressText');
-              if (pctText) pctText.textContent = '0%';
+              // updateRing() handles the percentage — don't overwrite it here
             }, minDelay);
           }
           if (event.type === 'progress') {
