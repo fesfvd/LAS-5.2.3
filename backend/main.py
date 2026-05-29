@@ -138,6 +138,7 @@ async def favicon():
 class QuoteBody(BaseModel):
     quote: str
     source: str = ""
+    mode: str = "classic"
 
 
 @app.post("/api/quotes")
@@ -148,7 +149,7 @@ async def contribute_quote(data: QuoteBody):
             quotes = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         quotes = []
-    quotes.append({"t": data.quote.strip(), "s": data.source.strip()})
+    quotes.append({"t": data.quote.strip(), "s": data.source.strip(), "m": data.mode})
     with open(quote_file, "w", encoding="utf-8") as f:
         json.dump(quotes, f, ensure_ascii=False, indent=2)
     return {"ok": True, "count": len(quotes)}
