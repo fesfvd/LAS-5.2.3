@@ -141,7 +141,7 @@ def init_db():
                 conn.commit()
             except Exception:
                 pass  # column already exists
-        for col, dtype in [("role", "VARCHAR(20)"), ("created_at", "DATETIME")]:
+        for col, dtype in [("role", "VARCHAR(20)"), ("created_at", "DATETIME"), ("email_verified", "BOOLEAN DEFAULT 0")]:
             try:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
                 conn.commit()
