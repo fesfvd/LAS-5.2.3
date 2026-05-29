@@ -21,6 +21,7 @@ App.register('/analyze', () => {
 
   _shownStepIndex = -1;
   _completed = false;
+  _lastPct = 0;
   _pageEnter = Date.now();
   if (_stepTimer) { clearInterval(_stepTimer); _stepTimer = null; }
   if (_cursorTimer) { clearInterval(_cursorTimer); _cursorTimer = null; }

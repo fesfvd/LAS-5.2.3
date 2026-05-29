@@ -183,14 +183,23 @@ async function renderFromTemplate(data, r, id) {
       var qmode = data.mode || 'classic';
       contributeBox.style.display = '';
       document.getElementById('contributeBtn').addEventListener('click', function() {
-        this.disabled = true;
-        this.textContent = '提交中...';
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = '提交中...';
         API._post('/quotes', { quote: qt, source: qsrc, mode: qmode }).then(function() {
+          btn.style.display = 'none';
+          document.getElementById('contributeDismiss').style.display = 'none';
           var msg = document.getElementById('contributeMsg');
           msg.textContent = '已添加到句子库，感谢分享';
           msg.style.display = '';
-          document.getElementById('contributeDismiss').style.display = 'none';
+          setTimeout(function() {
+            contributeBox.style.opacity = '0';
+            contributeBox.style.transition = 'opacity .4s';
+            setTimeout(function() { contributeBox.style.display = 'none'; }, 400);
+          }, 2000);
         }).catch(function() {
+          btn.disabled = false;
+          btn.textContent = '贡献到句子库';
           var msg = document.getElementById('contributeMsg');
           msg.textContent = '添加失败，请稍后重试';
           msg.style.color = 'var(--crimson)';
