@@ -51,10 +51,10 @@ App.register('/profile', async () => {
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;color:var(--muted)">
-        <div><span class="text-xs mono" style="color:var(--ink)">邮箱</span><br>${esc(u.email || '未绑定')} ${u.email_verified ? '<span style="color:var(--jade);font-size:11px">✓已验证</span>' : '<span style="color:var(--crimson);font-size:11px">未验证</span>'}</div>
-        <div><span class="text-xs mono" style="color:var(--ink)">注册时间</span><br>${(u.created_at||'').slice(0,10)}</div>
-        <div><span class="text-xs mono" style="color:var(--ink)">分析次数</span><br>${u.analysis_count}</div>
-        <div><span class="text-xs mono" style="color:var(--ink)">最高分</span><br>${u.best_score ? u.best_score.toFixed(1) + ' · ' + esc(u.best_tier || '') : '暂无'}</div>
+        <div><span class="text-xs" style="color:var(--ink);font-weight:500">邮箱</span><br>${esc(u.email || '未绑定')} ${u.email_verified ? '<span style="color:var(--jade);font-size:11px">✓已验证</span>' : '<span style="color:var(--crimson);font-size:11px">未验证</span>'}</div>
+        <div><span class="text-xs" style="color:var(--ink);font-weight:500">注册时间</span><br>${(u.created_at||'').slice(0,10)}</div>
+        <div><span class="text-xs" style="color:var(--ink);font-weight:500">分析次数</span><br>${u.analysis_count}</div>
+        <div><span class="text-xs" style="color:var(--ink);font-weight:500">最高分</span><br>${u.best_score ? u.best_score.toFixed(1) + ' · ' + esc(u.best_tier || '') : '暂无'}</div>
       </div>
     </div>
 
@@ -79,7 +79,7 @@ App.register('/profile', async () => {
       <form id="emailForm">
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input class="input-underline" name="email" type="email" placeholder="新邮箱地址" required maxlength="100" style="flex:1">
-          <button type="button" id="bindSendCode" class="mono text-xs" style="padding:8px 14px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap">发送验证码</button>
+          <button type="button" id="bindSendCode" style="font-size:12px;padding:8px 14px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap">发送验证码</button>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <input class="input-underline mono" name="code" placeholder="6 位验证码" maxlength="6" style="width:140px;letter-spacing:4px">

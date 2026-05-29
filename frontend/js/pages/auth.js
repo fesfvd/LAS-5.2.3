@@ -30,7 +30,7 @@ function buildAuth(tab) {
           <label class="field-label">EMAIL <span class="field-label-zh">邮箱</span></label>
           <div style="display:flex;gap:8px">
             <input class="input-underline" name="email" type="email" placeholder="${isForgot ? '输入注册时的邮箱' : '必填，用于验证和找回密码'}" required maxlength="100" autocomplete="email" style="flex:1">
-            <button type="button" id="sendCodeBtn" class="mono text-xs" style="padding:8px 14px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;transition:all .2s">发送验证码</button>
+            <button type="button" id="sendCodeBtn" style="font-size:12px;padding:8px 14px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;transition:all .2s">发送验证码</button>
           </div>
         </div>
         <div class="field-group" id="codeGroup" style="display:none">
