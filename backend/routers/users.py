@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -18,13 +18,6 @@ logger = logging.getLogger("las.users")
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 
-def get_user(token: str = Depends(...), db: Session = Depends(get_session)) -> User:
-    """Dependency: extract user from Authorization header"""
-    from fastapi import Header
-    # token is actually the raw Authorization header value
-    return get_current_user(token, db)
-
-
 class ChangePasswordBody(BaseModel):
     current_password: str
     new_password: str
@@ -37,15 +30,6 @@ class ChangeEmailBody(BaseModel):
 
 class ChangeUsernameBody(BaseModel):
     username: str
-
-
-@router.get("/me")
-def profile(token: str = Depends(lambda: None), db: Session = Depends(get_session)):
-    """Get current user profile. Uses Authorization header."""
-    from fastapi import Header, Request
-    import inspect
-    # We need to get the Authorization header manually since Depends injection is complex
-    return {"ok": True, "detail": "Use GET /me with Authorization header"}
 
 
 @router.get("/me")
