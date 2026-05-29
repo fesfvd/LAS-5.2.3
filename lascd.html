@@ -427,20 +427,23 @@ C 思想与意义层 45% &middot; D 审美与影响层 25%
 <h2 class="serif" style="font-size:24px;font-weight:700;line-height:1.2;letter-spacing:.03em;margin-bottom:24px">示例报告</h2>
 <p class="text-sm" style="color:var(--muted);margin-bottom:32px;line-height:1.8">以下为 LAS 对《百年孤独》的真实分析结果。提交你的作品，即可获得同等深度的十六维标尺报告。</p>
 
-<div class="glass-card" style="padding:32px;margin-bottom:20px">
+<div class="glass-card demo-report" style="padding:32px 32px 24px;margin-bottom:20px;cursor:pointer;position:relative;overflow:hidden">
+  <button class="demo-trigger" onclick="var c=this.parentElement;c.classList.toggle('open');this.querySelector('i').style.transform=c.classList.contains('open')?'rotate(180deg)':''" style="position:absolute;top:16px;right:20px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;transition:color .2s;z-index:2" title="展开完整报告"><i class="fas fa-chevron-down" style="transition:transform .3s"></i></button>
+
+  <!-- Summary card (always visible) -->
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:280px">
+    <div style="flex:1;min-width:260px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
         <span class="serif" style="font-size:24px;font-weight:700;color:var(--ink)">《百年孤独》</span>
         <span style="font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:9999px;color:var(--crimson);background:rgba(139,0,0,.06);white-space:nowrap;letter-spacing:.5px;text-transform:uppercase">CLASSIC</span>
       </div>
       <p class="text-xs" style="color:var(--muted);margin-bottom:4px">加夫列尔·加西亚·马尔克斯 · 魔幻现实主义 · 1967</p>
-      <p class="text-sm serif" style="color:var(--ink);line-height:1.8;margin-bottom:20px;font-style:italic">"以神话笔法写尽拉美命运的魔幻史诗。"</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:360px">
-        <div style="padding:12px;background:rgba(139,0,0,.04);border:1px solid rgba(139,0,0,.08);border-radius:8px"><span class="text-xs" style="color:var(--muted)">A 语言与形式</span><br><span class="mono" style="font-size:20px;font-weight:700;color:var(--crimson)">113.5</span></div>
-        <div style="padding:12px;background:rgba(45,106,79,.04);border:1px solid rgba(45,106,79,.08);border-radius:8px"><span class="text-xs" style="color:var(--muted)">B 叙事与内容</span><br><span class="mono" style="font-size:20px;font-weight:700;color:var(--jade)">112.5</span></div>
-        <div style="padding:12px;background:rgba(184,134,11,.04);border:1px solid rgba(184,134,11,.08);border-radius:8px"><span class="text-xs" style="color:var(--muted)">C 思想与意义</span><br><span class="mono" style="font-size:20px;font-weight:700;color:var(--gold)">111.2</span></div>
-        <div style="padding:12px;background:rgba(26,26,26,.03);border:1px solid rgba(26,26,26,.06);border-radius:8px"><span class="text-xs" style="color:var(--muted)">D 审美与影响</span><br><span class="mono" style="font-size:20px;font-weight:700;color:var(--ink)">122.2</span></div>
+      <p class="text-sm serif" style="color:var(--ink);line-height:1.8;font-style:italic">"以神话笔法写尽拉美命运的魔幻史诗。"</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;margin-top:16px">
+        <div style="padding:10px 12px;background:rgba(139,0,0,.04);border:1px solid rgba(139,0,0,.08);border-radius:8px"><span class="text-xs" style="color:var(--muted)">A 语言与形式</span><br><span class="mono" style="font-size:18px;font-weight:700;color:var(--crimson)">113.5</span></div>
+        <div style="padding:10px 12px;background:rgba(45,106,79,.04);border:1px solid rgba(45,106,79,.08);border-radius:8px"><span class="text-xs" style="color:var(--muted)">B 叙事与内容</span><br><span class="mono" style="font-size:18px;font-weight:700;color:var(--jade)">112.5</span></div>
+        <div style="padding:10px 12px;background:rgba(184,134,11,.04);border:1px solid rgba(184,134,11,.08);border-radius:8px"><span class="text-xs" style="color:var(--muted)">C 思想与意义</span><br><span class="mono" style="font-size:18px;font-weight:700;color:var(--gold)">111.2</span></div>
+        <div style="padding:10px 12px;background:rgba(26,26,26,.03);border:1px solid rgba(26,26,26,.06);border-radius:8px"><span class="text-xs" style="color:var(--muted)">D 审美与影响</span><br><span class="mono" style="font-size:18px;font-weight:700;color:var(--ink)">122.2</span></div>
       </div>
     </div>
     <div style="text-align:center;flex-shrink:0">
@@ -450,9 +453,61 @@ C 思想与意义层 45% &middot; D 审美与影响层 25%
       </div>
       <p class="serif" style="font-size:14px;font-weight:700;color:var(--crimson)">传世经典</p>
       <p class="text-xs" style="color:var(--muted)">📜 前 24%</p>
+      <p class="text-xs" style="color:var(--muted);opacity:.6;margin-top:16px">点击展开完整报告 <i class="fas fa-chevron-down" style="font-size:9px"></i></p>
     </div>
   </div>
+
+  <!-- Expandable full report -->
+  <div class="demo-detail" style="max-height:0;overflow:hidden;transition:max-height .5s ease">
+    <hr class="rule-strong" style="margin:24px 0">
+    <h3 class="serif" style="font-size:18px;font-weight:600;line-height:1.3;letter-spacing:.03em;margin-bottom:16px">作品概况</h3>
+    <p class="text-sm" style="color:var(--muted);line-height:2">《百年孤独》是哥伦比亚作家加夫列尔·加西亚·马尔克斯的代表作，发表于1967年，被视为魔幻现实主义文学的巅峰之作。小说虚构马孔多小镇，以布恩迪亚家族七代人的兴衰史暗喻拉丁美洲百年殖民、内战、独裁与现代化进程。马尔克斯杂糅古希腊悲剧、印第安神话与《圣经》典故，运用循环叙事、预叙与戏谑语调，将鬼魂、飞毯、黄花雨等超自然元素嵌入写实的家族编年。作品出版后迅速引发全球轰动，获1982年诺贝尔文学奖，其开创的魔幻现实主义影响遍及全球文学创作。</p>
+
+    <hr class="rule" style="margin:20px 0">
+    <h3 class="serif" style="font-size:18px;font-weight:600;line-height:1.3;letter-spacing:.03em;margin-bottom:16px">突出优势</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+      <div class="glass-card" style="padding:14px 16px;background:rgba(139,0,0,.03);border-color:rgba(139,0,0,.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span class="text-xs serif" style="font-weight:600;color:var(--ink)">风格独创性</span>
+          <span class="mono" style="font-size:18px;font-weight:700;color:var(--crimson)">125.0</span>
+        </div>
+        <p class="text-xs" style="color:var(--muted);line-height:1.7">百年孤独的风格不可复制，直接定义魔幻现实主义，与《堂吉诃德》同为风格原点，达到不朽丰碑级。</p>
+      </div>
+      <div class="glass-card" style="padding:14px 16px;background:rgba(139,0,0,.03);border-color:rgba(139,0,0,.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span class="text-xs serif" style="font-weight:600;color:var(--ink)">文学影响</span>
+          <span class="mono" style="font-size:18px;font-weight:700;color:var(--crimson)">125.0</span>
+        </div>
+        <p class="text-xs" style="color:var(--muted);line-height:1.7">定义了魔幻现实主义流派，影响遍及全球，与《堂吉诃德》同属不朽丰碑。</p>
+      </div>
+      <div class="glass-card" style="padding:14px 16px;background:rgba(139,0,0,.03);border-color:rgba(139,0,0,.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span class="text-xs serif" style="font-weight:600;color:var(--ink)">语言艺术性</span>
+          <span class="mono" style="font-size:18px;font-weight:700;color:var(--crimson)">120.0</span>
+        </div>
+        <p class="text-xs" style="color:var(--muted);line-height:1.7">巴洛克式繁复与魔幻感构成了文学史上极具辨识度的语言质地。</p>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin:20px 0">
+    <h3 class="serif" style="font-size:18px;font-weight:600;line-height:1.3;letter-spacing:.03em;margin-bottom:16px">核心基准对标</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      <div style="padding:12px;border:1px solid var(--rule);border-radius:8px"><span class="mono text-xs" style="color:var(--gold);letter-spacing:2px">A</span><br><span class="text-xs serif" style="font-weight:600;color:var(--ink)">《佩德罗·巴拉莫》</span><br><span class="text-xs" style="color:var(--muted)">语言艺术性 · 不朽丰碑</span></div>
+      <div style="padding:12px;border:1px solid var(--rule);border-radius:8px"><span class="mono text-xs" style="color:var(--jade);letter-spacing:2px">B</span><br><span class="text-xs serif" style="font-weight:600;color:var(--ink)">《喧嚣与骚动》</span><br><span class="text-xs" style="color:var(--muted)">叙事技巧 · 不朽丰碑</span></div>
+      <div style="padding:12px;border:1px solid var(--rule);border-radius:8px"><span class="mono text-xs" style="color:var(--gold);letter-spacing:2px">C</span><br><span class="text-xs serif" style="font-weight:600;color:var(--ink)">《战争与和平》</span><br><span class="text-xs" style="color:var(--muted)">主题深度 · 不朽丰碑</span></div>
+      <div style="padding:12px;border:1px solid var(--rule);border-radius:8px"><span class="mono text-xs" style="color:var(--ink);letter-spacing:2px">D</span><br><span class="text-xs serif" style="font-weight:600;color:var(--ink)">《堂吉诃德》</span><br><span class="text-xs" style="color:var(--muted)">风格独创性 · 不朽丰碑</span></div>
+    </div>
+
+    <hr class="rule" style="margin:20px 0">
+    <h3 class="serif" style="font-size:18px;font-weight:600;line-height:1.3;letter-spacing:.03em;margin-bottom:16px">综合结论</h3>
+    <p class="text-sm serif" style="color:var(--muted);line-height:2">《百年孤独》以其独创的魔幻现实主义风格、循环叙事的建筑美与对拉美历史的神话式书写，在世界文学中占据了不可替代的位置。它最高光的维度是风格独创性与文学影响（均达不朽丰碑），以叙述语调定义了整个流派。作品如同羊皮纸上的预言——读者每一次重读都会发现新的意指层。它是一把度量20世纪文学想象力的标尺。</p>
+  </div>
 </div>
+
+<style>
+.demo-report.open .demo-detail{max-height:4000px!important}
+.demo-report .demo-trigger:hover{color:var(--gold)!important}
+</style>
 
 <div style="text-align:center;margin-top:24px">
   <a href="/app" class="hero-cta serif" style="display:inline-flex;margin-right:12px">提交作品</a>
