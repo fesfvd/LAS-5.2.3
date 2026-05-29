@@ -36,7 +36,8 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 .reveal.visible{opacity:1;transform:translateY(0)}
 
 .btn{padding:12px 32px;border:1px solid var(--gold);color:var(--gold);font-size:.85rem;letter-spacing:3px;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);background:transparent;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
-.btn:hover{background:var(--gold);color:var(--paper);transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,134,11,.15)}
+.btn:hover{background:var(--gold);color:var(--paper);transform:translateY(-1px)}
+.btn:active{transform:scale(.97);transition:transform .1s ease}
 .btn-primary{background:var(--gold);color:var(--paper);font-weight:500}
 .btn-primary:hover{background:transparent;color:var(--gold)}
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
