@@ -573,7 +573,7 @@ const extremeText = ds.triggered ? '已触发' : '无';
     WORK_TITLE: esc(data.title),
     WORK_AUTHOR: esc(data.author || ''),
     WORK_TAGS: tags,
-    LAS_ID: esc(ac.report_id || 'LAS-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+(fallbackId||'').slice(0,3)),
+    LAS_ID: (data.analysis_id ? 'LAS-' + data.analysis_id : 'LAS-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+String(id||'').slice(0,3)),
     WORK_TYPE: esc(meta.genre || ''),
     WCS_SCORE: (s.wcs || 0).toFixed(2),
     WORK_LEVEL: esc(s.tier || ''),
