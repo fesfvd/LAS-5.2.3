@@ -118,6 +118,13 @@ async def serve_spa():
     return resp
 
 
+@app.get("/privacy")
+async def serve_privacy():
+    resp = FileResponse(os.path.join(frontend_dir, "privacy.html"))
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
 @app.get("/favicon.ico")
 async def favicon():
     ico = os.path.join(frontend_dir, "favicon.ico")

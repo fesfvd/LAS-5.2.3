@@ -39,6 +39,13 @@ function buildAuth(tab) {
         </div>
         ` : ''}
 
+        ${!isLogin ? `
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.6">
+          <input type="checkbox" id="agreeTerms" required style="margin-top:3px;accent-color:var(--gold)">
+          <span>我已阅读并同意 <a href="/privacy" target="_blank" style="color:var(--gold)">用户协议 & 隐私政策</a></span>
+        </label>
+        ` : ''}
+
         <div class="submit-options" style="justify-content:flex-end">
           <span class="submit-error" id="authError"></span>
         </div>
