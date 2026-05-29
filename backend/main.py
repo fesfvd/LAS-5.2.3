@@ -1,3 +1,4 @@
+import json
 import logging
 import logging.handlers
 import os
@@ -5,7 +6,8 @@ from contextlib import asynccontextmanager
 
 from sqlalchemy import text
 
-from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
@@ -131,3 +133,22 @@ async def favicon():
     if not os.path.exists(ico):
         return Response(status_code=204)
     return FileResponse(ico)
+
+
+class QuoteBody(BaseModel):
+    quote: str
+    source: str = ""
+
+
+@app.post("/api/quotes")
+async def contribute_quote(data: QuoteBody):
+    quote_file = os.path.join(frontend_dir, "quotes.json")
+    try:
+        with open(quote_file, "r", encoding="utf-8") as f:
+            quotes = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        quotes = []
+    quotes.append({"t": data.quote.strip(), "s": data.source.strip()})
+    with open(quote_file, "w", encoding="utf-8") as f:
+        json.dump(quotes, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "count": len(quotes)}

@@ -170,6 +170,34 @@ async function renderFromTemplate(data, r, id) {
   });
 
   initReport(root, { dimData, layerAvgs, wcs, tier });
+
+  // ── Quote contribution ──
+  var contributeBox = document.getElementById('contributeBox');
+  if (contributeBox && !localStorage.getItem('las_contribute_dismissed')) {
+    var qt = (r.analysis_content && r.analysis_content.golden_quote) || '';
+    qt = qt.replace(/^[“”"「『]|[“”"」』]$/g, '');
+    var qsrc = (data.title || '') + ' ' + (data.author || '');
+    contributeBox.style.display = '';
+    document.getElementById('contributeBtn').addEventListener('click', function() {
+      this.disabled = true;
+      this.textContent = '提交中...';
+      API._post('/quotes', { quote: qt, source: qsrc }).then(function() {
+        var msg = document.getElementById('contributeMsg');
+        msg.textContent = '✔ 已添加到句子库，感谢分享！';
+        msg.style.display = '';
+        document.getElementById('contributeDismiss').style.display = 'none';
+      }).catch(function() {
+        var msg = document.getElementById('contributeMsg');
+        msg.textContent = '添加失败，请稍后重试';
+        msg.style.color = 'var(--crimson)';
+        msg.style.display = '';
+      });
+    });
+    document.getElementById('contributeDismiss').addEventListener('click', function() {
+      contributeBox.style.display = 'none';
+      localStorage.setItem('las_contribute_dismissed', '1');
+    });
+  }
 }
 
 function buildReportSections(data, r, fallbackId) {
