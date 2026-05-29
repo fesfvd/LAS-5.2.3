@@ -105,13 +105,18 @@ App.register('/works', async () => {
                         w.latest_status === 'done' ? '<span style="color:var(--jade);font-size:11px">✓</span>' : '';
       const dateStr = w.created_at ? w.created_at.slice(0, 10) : '';
 
+      const isFailed = w.latest_status === 'failed';
+      const isDone = w.latest_status === 'done';
+      const isRunning = w.latest_status === 'running';
+
       html += `
-        <div class="glass-card work-item" style="padding:16px 20px;margin-bottom:8px;cursor:pointer;transition:all .2s" data-id="${esc(w.id)}">
+        <div class="glass-card work-item" style="padding:16px 20px;margin-bottom:8px;${isDone ? 'cursor:pointer;' : ''}transition:all .2s;${isFailed ? 'opacity:.6;' : ''}" data-id="${esc(w.id)}">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
                 <span class="serif" style="font-size:16px;font-weight:700;letter-spacing:0.03em;color:var(--ink)">${esc(w.title)}</span>
                 <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;padding:1px 7px;border-radius:9999px;color:${isClassic ? 'var(--crimson)' : 'var(--purple)'};background:${isClassic ? 'rgba(139,0,0,0.06)' : 'rgba(107,33,168,0.06)'};white-space:nowrap;letter-spacing:0.5px;text-transform:uppercase">${isClassic ? 'CLASSIC' : 'ORIGINAL'}</span>
+                ${isFailed ? '<span style="font-size:11px;color:var(--semantic-error);font-family:\'Noto Sans SC\',sans-serif">分析失败</span>' : ''}
                 ${w.ancestor_dialogue ? '<span style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;padding:1px 7px;border-radius:9999px;background:rgba(184,134,11,0.08);color:var(--gold);white-space:nowrap;letter-spacing:0.5px">SAGE</span>' : ''}
               </div>
               <div style="display:flex;align-items:center;gap:12px">
@@ -126,8 +131,8 @@ App.register('/works', async () => {
                 <p class="mono" style="font-size:10px;color:var(--muted);margin-top:2px">${badge} ${esc(w.latest_tier || '—')}</p>
               </div>
               <div style="display:flex;gap:4px">
-                ${w.latest_status === 'done' ? `<button class="work-btn view" data-id="${esc(w.id)}" title="查看报告"><i class="fas fa-file-alt"></i></button>` : ''}
-                ${w.latest_status === 'done' ? `<button class="work-btn redo" data-id="${esc(w.id)}" title="重新分析"><i class="fas fa-redo"></i></button>` : ''}
+                ${isDone ? `<button class="work-btn view" data-id="${esc(w.id)}" title="查看报告"><i class="fas fa-file-alt"></i></button>` : ''}
+                ${(isDone || isFailed) ? `<button class="work-btn redo" data-id="${esc(w.id)}" title="重新分析"><i class="fas fa-redo"></i></button>` : ''}
                 <button class="work-btn del" data-id="${esc(w.id)}" title="删除"><i class="fas fa-trash"></i></button>
               </div>
             </div>
@@ -140,7 +145,10 @@ App.register('/works', async () => {
     list.querySelectorAll('.work-item').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
-        App.navigate('#/report/' + card.dataset.id);
+        // Only navigate for completed analyses (cards with redo button)
+        if (e.currentTarget.querySelector('.redo')) {
+          App.navigate('#/report/' + card.dataset.id);
+        }
       });
     });
 
