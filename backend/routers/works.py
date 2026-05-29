@@ -137,6 +137,7 @@ def get_report(
         "wcs_score": latest.wcs_score,
         "tier": latest.tier,
         "badge": latest.tier_badge,
+        "report_number": latest.report_number,
         "analysis_id": latest.id,
         "status": latest.status,
         "tokens": {
@@ -186,7 +187,10 @@ async def start_analysis(
     if user.role == "guest" and model_used and "flash" not in model_used.lower():
         model_used = ""  # fallback to default (flash)
 
-    analysis = Analysis(work_id=work.id, model=model_used or "default", status="running")
+    # Assign sequential report number
+    last = db.query(Analysis.report_number).filter(Analysis.report_number.isnot(None)).order_by(Analysis.report_number.desc()).first()
+    next_no = (last[0] + 1) if last else 1
+    analysis = Analysis(work_id=work.id, model=model_used or "default", status="running", report_number=next_no)
     db.add(analysis)
     db.commit()
     db.refresh(analysis)

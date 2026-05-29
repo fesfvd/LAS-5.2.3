@@ -14,6 +14,7 @@ from sqlalchemy import (
     DateTime,
     create_engine,
     event,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
@@ -71,6 +72,7 @@ class Analysis(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     work_id = Column(String(36), ForeignKey("works.id"), nullable=False, index=True)
+    report_number = Column(Integer, nullable=True, index=True)
     model = Column(String(50), default="")
     status = Column(String(20), default="pending")
     wcs_score = Column(Float, nullable=True)
@@ -117,6 +119,20 @@ SessionLocal = sessionmaker(bind=_engine)
 
 def init_db():
     Base.metadata.create_all(_engine)
+    # Migration: add columns added after initial deploy
+    with _engine.connect() as conn:
+        for col, dtype in [("report_number", "INTEGER"), ("role", "VARCHAR(20)"), ("created_at", "DATETIME")]:
+            try:
+                conn.execute(text(f"ALTER TABLE analyses ADD COLUMN {col} {dtype}"))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
+        for col, dtype in [("role", "VARCHAR(20)"), ("created_at", "DATETIME")]:
+            try:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
+                conn.commit()
+            except Exception:
+                pass
 
 
 def get_session():
