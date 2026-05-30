@@ -43,13 +43,13 @@ function buildAuth(tab) {
         ${!isForgot ? `
         <div class="field-group">
           <label class="field-label">PASSWORD <span class="field-label-zh">密码</span></label>
-          <input class="input-underline" name="password" type="password" placeholder="${isLogin ? '输入密码' : '至少 6 位'}" required minlength="6" maxlength="100" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
+          <div style="position:relative"><input class="input-underline" name="password" type="password" placeholder="${isLogin ? '输入密码' : '至少 6 位'}" required minlength="6" maxlength="100" autocomplete="${isLogin ? 'current-password' : 'new-password'}" style="width:100%;padding-right:36px"><button type="button" class="pwd-toggle" style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;font-size:16px" onclick="var i=this.parentNode.querySelector('input');i.type=i.type==='password'?'text':'password'"><i class="far fa-eye"></i></button></div>
         </div>` : ''}
 
         ${isForgot ? `
         <div class="field-group" id="newPwdGroup" style="display:none">
           <label class="field-label">NEW PASSWORD <span class="field-label-zh">新密码</span></label>
-          <input class="input-underline" name="new_password" type="password" placeholder="至少 6 位" minlength="6" maxlength="100" autocomplete="new-password">
+          <div style="position:relative"><input class="input-underline" name="new_password" type="password" placeholder="至少 6 位" minlength="6" maxlength="100" autocomplete="new-password" style="width:100%;padding-right:36px"><button type="button" class="pwd-toggle" style="position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;font-size:16px" onclick="var i=this.parentNode.querySelector('input');i.type=i.type==='password'?'text':'password'"><i class="far fa-eye"></i></button></div>
         </div>` : ''}
 
         ${isRegister ? `
@@ -68,7 +68,7 @@ function buildAuth(tab) {
         ${isRegister ? `
         <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1.6">
           <input type="checkbox" id="agreeTerms" required style="margin-top:3px;accent-color:var(--gold)">
-          <span>我已阅读并同意 <a href="/privacy" target="_blank" style="color:var(--gold)">用户协议 & 隐私政策</a></span>
+          <span>我已阅读并同意 <a href="#/privacy" style="color:var(--gold)">用户协议 & 隐私政策</a></span>
         </label>` : ''}
 
         <div class="submit-options" style="justify-content:flex-end">
@@ -101,7 +101,7 @@ function buildAuth(tab) {
   const guestBtn = document.getElementById('guestBtn');
 
   function showError(msg) {
-    errEl.textContent = '> ERROR: ' + msg;
+    errEl.textContent = '⚠ ERROR: ' + msg;
     errEl.classList.add('show');
   }
 

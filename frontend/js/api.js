@@ -50,6 +50,15 @@ const API = {
 
   // Works
   getWorks() { return this._fetch('/works'); },
+  getWorksPaginated(params) {
+    const qs = new URLSearchParams();
+    qs.set('limit', params.limit || 20);
+    qs.set('offset', params.offset || 0);
+    qs.set('sort_by', params.sort_by || 'date');
+    qs.set('sort_order', params.sort_order || 'desc');
+    if (params.mode) qs.set('mode', params.mode);
+    return this._fetch('/works?' + qs.toString());
+  },
   createWork(data) { return this._post('/works', data); },
   getWork(id) { return this._fetch(`/works/${id}`); },
   deleteWork(id) { return this._delete(`/works/${id}`); },

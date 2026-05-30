@@ -56,7 +56,7 @@ App.register('/upload', () => {
             <span class="upload-hint" id="uploadHint">或拖拽文件到文本框</span>
             <span class="upload-done" id="uploadDone" style="display:none"><i class="fas fa-file-alt mr-1"></i><span id="uploadName"></span><span class="upload-clear" id="uploadClear">×</span></span>
           </div>
-          <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="粘贴全文，或点击上方按钮上传文件..." required></textarea>
+          <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="粘贴全文，或点击上方按钮上传文件...（上限 50 万字）" required maxlength="500000"></textarea>
           <p class="mono text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint">// 原创模式必须提供完整正文</p>
         </div>
 
@@ -68,7 +68,7 @@ App.register('/upload', () => {
               <span class="mono text-xs tracking-wider" style="color:var(--gold)">ANCESTOR <span style="font-family:'Noto Sans SC';font-size:11px">先贤灵境</span></span>
             </div>
           </label>
-          <span class="submit-error" id="uploadError">> ERROR: 正文不能为空</span>
+          <span class="submit-error" id="uploadError">> ⚠ ERROR: 正文不能为空</span>
         </div>
 
         <div class="submit-action">
@@ -111,7 +111,8 @@ App.register('/upload', () => {
   const modelLabel = document.getElementById('modelLabel');
   const modelDropdown = document.getElementById('modelDropdown');
   modelTrigger.addEventListener('click', (e) => { e.stopPropagation(); modelSel.classList.toggle('open'); });
-  document.addEventListener('click', () => modelSel.classList.remove('open'));
+  var _docClickHandler = function() { modelSel.classList.remove('open'); };
+  document.addEventListener('click', _docClickHandler);
   modelDropdown.querySelectorAll('.model-option').forEach(opt => {
     opt.addEventListener('click', () => {
       window.__LAS_MODEL = opt.dataset.model;
@@ -180,7 +181,7 @@ App.register('/upload', () => {
 
     function onErr() {
       const errEl = document.getElementById('uploadError');
-      errEl.textContent = '> ERROR: 文件读取失败';
+      errEl.textContent = '> ⚠ ERROR: 文件读取失败';
       errEl.classList.add('show');
       setTimeout(() => errEl.classList.remove('show'), 3000);
     }
@@ -228,11 +229,26 @@ function bindSubmitHandler() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'SUBMITTING <span class="btn-zh">提交中...</span>';
 
-    // Show overlay with animated logs
+    // Show overlay with animated logs + cancel
     const formBody = form;
     formBody.style.opacity = '0.3';
     formBody.style.filter = 'blur(2px)';
     formBody.style.pointerEvents = 'none';
+    // Add cancel button to overlay
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.className = 'mono text-xs';
+    cancelBtn.style.cssText = 'margin-top:24px;padding:6px 20px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:JetBrains Mono,monospace';
+    cancelBtn.addEventListener('click', function() {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origHTML;
+      overlay.classList.remove('show');
+      formBody.style.opacity = '';
+      formBody.style.filter = '';
+      formBody.style.pointerEvents = '';
+      cancelBtn.remove();
+    });
+    overlay.appendChild(cancelBtn);
     setTimeout(() => overlay.classList.add('show'), 300);
 
     const logs = [
@@ -269,7 +285,7 @@ function bindSubmitHandler() {
         const el = document.getElementById(log.el);
         if (el) el.textContent = '';
       });
-      errEl.textContent = '> ERROR: ' + err.message;
+      errEl.textContent = '> ⚠ ERROR: ' + err.message;
       errEl.classList.add('show');
     }
   };

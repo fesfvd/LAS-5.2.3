@@ -10,17 +10,34 @@ App.register('/report', async () => {
     </section></main>`;
   };
 
-  const showError = (title, detail, rawPreview, extra) => {
+  const showError = (title, detail, rawPreview, extra, errCode) => {
+    var copyPayload = JSON.stringify({
+      title: title,
+      detail: detail || '',
+      rawPreview: rawPreview || '',
+      errorCode: errCode || '',
+      analysisId: id,
+      time: new Date().toISOString(),
+      ua: navigator.userAgent
+    }, null, 2);
     root.innerHTML = `<main class="max-w-3xl mx-auto px-6" style="padding-top:80px;padding-bottom:80px">
       <section class="text-center fade-up d1">
-        <p class="mono text-xs text-muted tracking-[4px] mb-2 uppercase">Report Error</p>
+        <p class="mono text-xs text-muted tracking-[4px] mb-2 uppercase">Report Error${errCode ? ' [' + esc(errCode) + ']' : ''}</p>
         <h1 class="serif text-2xl font-bold mb-3" style="color:var(--crimson)">${esc(title)}</h1>
         ${detail ? `<p class="text-sm text-muted mb-4">${esc(detail)}</p>` : ''}
         ${rawPreview ? '<div class="card" style="max-width:600px;margin:0 auto;text-align:left"><p class="text-xs text-muted">LLM 原始输出片段:</p><pre class="text-xs text-muted mt-2" style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto">' + esc(rawPreview) + '</pre></div>' : ''}
         ${extra || ''}
-        <a href="javascript:App.navigate('#/upload')" class="btn mt-6" style="display:inline-block">返回首页</a>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px">
+          <a href="javascript:App.navigate('#/upload')" class="btn" style="display:inline-block">返回首页</a>
+          <button id="copyErrorBtn" class="btn" style="display:inline-block;border-color:var(--rule-strong);color:var(--muted);font-size:0.75rem;letter-spacing:1px" onclick="navigator.clipboard.writeText(this.dataset.payload).then(function(){var b=document.getElementById('copyErrorBtn');b.textContent='已复制';setTimeout(function(){b.textContent='复制错误信息'},2000)});">复制错误信息</button>
+        </div>
       </section>
     </main>`;
+    // Inject payload after DOM is set
+    setTimeout(function() {
+      var btn = document.getElementById('copyErrorBtn');
+      if (btn) btn.dataset.payload = copyPayload;
+    }, 50);
   };
 
   showLoading('正在加载报告...');
@@ -32,14 +49,25 @@ App.register('/report', async () => {
       const r = data.report;
 
       if (r && r.ok) {
-        await renderFromTemplate(data, r, id);
+        try {
+          var tplOk = await renderFromTemplate(data, r, id);
+          if (tplOk === null) {
+            showError('报告模板加载失败', '请检查网络连接后重试。', null, '', 'E005');
+          }
+        } catch (renderErr) {
+          console.error('[LAS] 报告渲染异常:', renderErr);
+          showError('报告渲染失败', renderErr.message || '渲染引擎异常，请稍后重试。', null, '', 'E005');
+        }
         return;
       }
       if (r && !r.ok) {
         const errMsg = r.error || '未知错误';
         const rawPreview = r.raw_preview || r.raw || '';
-        showError('报告生成失败', '状态: ' + (data.status || '?') + ' — ' + errMsg, rawPreview,
-          '<p class="text-xs text-muted mt-6">analysis_id: ' + esc(data.analysis_id || '?') + '</p>');
+        const errCode = r.error_code || '';
+        showError('报告生成失败', '状态: ' + (data.status || '?') + ' [' + esc(errCode) + '] ' + esc(errMsg), rawPreview,
+          '<p class="text-xs text-muted mt-6">analysis_id: ' + esc(data.analysis_id || '?') + '</p>'
+          + (r.error_detail ? '<p class="text-xs text-muted mt-2">' + esc(r.error_detail) + '</p>' : ''),
+          errCode);
         return;
       }
     } catch (err) {
@@ -49,7 +77,9 @@ App.register('/report', async () => {
 
   showError('报告加载失败', '分析可能尚未完成，请稍后刷新页面重试。',
     null,
-    '<a href="javascript:location.reload()" class="btn mt-4" style="display:inline-block">重新加载</a>');
+    '<a href="javascript:location.reload()" class="btn mt-4" style="display:inline-block">重新加载</a>'
+    + '<a href="javascript:App.navigate(\'#/works\')" class="btn mt-4" style="display:inline-block;margin-left:12px;border-color:var(--rule-strong);color:var(--muted)">返回作品列表</a>',
+    'E002');
 });
 
 // ── Report rendering pipeline ──
@@ -58,8 +88,8 @@ async function renderFromTemplate(data, r, id) {
   const mode = data.mode || 'original';
   const isOriginal = mode === 'original';
   const tplUrl = isOriginal ? '/templates/original.html' : '/templates/classic.html';
-  let res; try { res = await fetch(tplUrl); } catch (e) { console.error('[LAS] 模板加载失败:', e); return; }
-  if (!res.ok) { console.error('[LAS] 模板HTTP错误:', res.status); return; }
+  let res; try { res = await fetch(tplUrl); } catch (e) { console.error('[LAS] 模板加载失败:', e); return null; }
+  if (!res.ok) { console.error('[LAS] 模板HTTP错误:', res.status); return null; }
   let tpl = await res.text();
 
   const { sections, dimData, layerAvgs, wcs, tier } = buildReportSections(data, r, id);
@@ -111,6 +141,7 @@ async function renderFromTemplate(data, r, id) {
       accordionIcons.forEach(el => { savedIcons.push(el.classList.contains('open')); el.classList.add('open'); });
 
       try {
+        if (typeof html2canvas === 'undefined') { console.error('[LAS] html2canvas 未加载'); btnEl.innerHTML = '<i class="fas fa-camera"></i>'; return; }
         const main = document.querySelector('#spaApp main');
         const target = scope === 'hero' ? (document.getElementById('hero') || (main && main.querySelector('section:first-of-type')) || root.querySelector('section:first-of-type')) : (main || root);
         const canvas = await html2canvas(target, {
@@ -141,8 +172,10 @@ async function renderFromTemplate(data, r, id) {
     const accordions = document.querySelectorAll('.accordion-content');
     const expandRows = document.querySelectorAll('.expand-row');
     const accordionIcons = document.querySelectorAll('.accordion-icon');
-    const savedAcc = []; const savedEx = []; const savedIcons = [];
+    const revealEls = document.querySelectorAll('.reveal');
+    const savedAcc = []; const savedEx = []; const savedIcons = []; const savedReveal = [];
 
+    revealEls.forEach(el => { savedReveal.push(el.classList.contains('visible')); el.classList.add('visible'); el.style.opacity = '1'; el.style.transform = 'none'; });
     accordions.forEach(el => { savedAcc.push(el.classList.contains('open')); el.classList.add('open'); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
     expandRows.forEach(el => { savedEx.push(el.classList.contains('open')); el.classList.add('open'); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
     accordionIcons.forEach(el => { savedIcons.push(el.classList.contains('open')); el.classList.add('open'); });
@@ -447,8 +480,8 @@ function buildReportSections(data, r, fallbackId) {
     ['文脉拾遗', 'fa-scroll', app.context, 'var(--crimson)'],
     ['风物志', 'fa-mountain', app.customs, 'var(--jade)'],
     ['字里行间', 'fa-pen-fancy', app.between_lines, 'var(--gold)'],
-    ['余音', 'fa-music', app.echoes, '#d97706'],
-    ['联结', 'fa-link', app.connections, '#3b82f6'],
+    ['余音', 'fa-music', app.echoes, 'var(--gold)'],
+    ['联结', 'fa-link', app.connections, 'var(--jade)'],
   ];
   let appHtml = appItems.filter(([, , t]) => t).map(([title, icon, text, color]) =>
     `<div class="glass-card rounded-xl p-5">
@@ -460,10 +493,10 @@ function buildReportSections(data, r, fallbackId) {
   if (extReadings.length) {
     appHtml += `
       <div class="glass-card rounded-xl p-5">
-        <h3 class="text-sm font-bold serif-text mb-3 flex items-center"><i class="fas fa-book mr-2" style="color:#8b5cf6"></i>延伸阅读</h3>
+        <h3 class="text-sm font-bold serif-text mb-3 flex items-center"><i class="fas fa-book mr-2" style="color:var(--purple)"></i>延伸阅读</h3>
         <div class="space-y-2">${extReadings.map(b =>
           `<div class="flex items-start gap-2 text-sm" style="color:var(--muted)">
-            <span style="color:#8b5cf6;margin-top:2px"><i class="fas fa-book"></i></span>
+            <span style="color:var(--purple);margin-top:2px"><i class="fas fa-book"></i></span>
             <div><span class="font-semibold" style="color:var(--ink)">《${esc(debracket(b.title||''))}》</span> ${esc(b.author||'')}。${esc(b.reason||'')}</div>
           </div>`
         ).join('')}</div>
@@ -473,8 +506,8 @@ function buildReportSections(data, r, fallbackId) {
   // Verification data (original only)
   const defects = ds.defects || [];
   const defectsHtml = defects.length ? defects.map(d =>
-    `<div class="glass-card rounded-lg p-3 text-sm" style="border-left:3px solid #dc2626">
-      <p class="font-semibold text-xs mb-1" style="color:#dc2626">${esc(d.type || '')}</p>
+    `<div class="glass-card rounded-lg p-3 text-sm" style="background:var(--card-tint-error);border:1px solid rgba(220,38,38,.1)">
+      <p class="font-semibold text-xs mb-1" style="color:var(--semantic-error)">${esc(d.type || '')}</p>
       <p class="text-xs leading-relaxed" style="color:var(--muted)">${esc(d.detail || '')}</p>
       ${Array.isArray(d.bound_dimensions) && d.bound_dimensions.length ? `<p class="text-[10px] mt-1" style="color:var(--muted)">绑定维度：${d.bound_dimensions.join(', ')}</p>` : ''}
     </div>`
@@ -633,7 +666,9 @@ const extremeText = ds.triggered ? '已触发' : '无';
 
 function applyTemplate(tpl, sections) {
   for (const [key, value] of Object.entries(sections)) {
-    tpl = tpl.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), String(value));
+    var safe = String(value ?? '');
+    if (typeof value === 'string') safe = value.replace(/\$/g, '$$$$');
+    tpl = tpl.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), safe);
   }
   const residual = tpl.match(/\{\{[A-Z_]+\}\}/g);
   if (residual) console.warn('[LAS] 未替换的占位符:', [...new Set(residual)].join(', '));
@@ -669,8 +704,8 @@ function initReport(root, { dimData, layerAvgs, wcs, tier }) {
     if (summary) {
       const banner = document.createElement('div');
       banner.className = 'glass-card';
-      banner.style.cssText = 'padding:20px;margin-bottom:24px;border-left:3px solid var(--gold)';
-      banner.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px">'
+      banner.style.cssText = 'padding:20px;margin-bottom:24px';
+      banner.innerHTML = '<div style="background:var(--card-tint-gold);padding:16px;border-radius:8px">'
         + '<span style="font-size:24px;flex-shrink:0">&#9888;</span>'
         + '<div><p class="serif" style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">无法完成十六维标尺评定</p>'
         + '<p class="text-sm" style="color:var(--muted);line-height:1.8">该作品经缺陷扫描与极端情况预审，被判定为<strong style="color:var(--ink)">未达到可评定的最低文学完成度</strong>（缺陷明显/严重瑕疵区间）。以下展示 LLM 对该作品的定性分析与诊断，供参考。</p></div></div>';
@@ -754,6 +789,7 @@ function initRadarChart(dimData, LC, primaryColor) {
   const chartPoint = isPurple ? 'rgba(107,33,168,0.7)' : 'rgba(139,0,0,0.7)';
   const tooltipBorder = isPurple ? 'rgba(107,33,168,0.1)' : 'rgba(139,0,0,0.1)';
 
+  if (typeof Chart === 'undefined') { console.error('[LAS] Chart.js 未加载'); return; }
   const chart = new Chart(ctx, {
     type: 'radar',
     data: {
@@ -898,6 +934,8 @@ function initNav(isOriginal) {
 
   document.querySelectorAll('.nav-pip').forEach(p => p.addEventListener('click', () => scrollTo(p.dataset.target)));
 
+  // Clean up previous observers to prevent accumulation
+  if (window.__LAS_NAV_OBSERVER) window.__LAS_NAV_OBSERVER.disconnect();
   const sObs = new IntersectionObserver(es => {
     es.forEach(e => {
       if (e.isIntersecting) document.querySelectorAll('.nav-pip').forEach(p => p.classList.toggle('active', p.dataset.target === e.target.id));
@@ -932,7 +970,9 @@ function initSectionNav(isOriginal) {
     container.appendChild(btn);
   });
 
-  const sObs = new IntersectionObserver(es => {
+  // Clean up previous observer
+  if (window.__LAS_SECTION_OBSERVER) window.__LAS_SECTION_OBSERVER.disconnect();
+  const sObs2 = new IntersectionObserver(es => {
     es.forEach(e => {
       if (e.isIntersecting) {
         container.querySelectorAll('.section-nav-btn').forEach(b => {
@@ -944,13 +984,16 @@ function initSectionNav(isOriginal) {
 
   secs.forEach(id => {
     const el = document.getElementById(id);
-    if (el) sObs.observe(el);
+    if (el) sObs2.observe(el);
   });
+  window.__LAS_SECTION_OBSERVER = sObs2;
 }
 
 function initScroll() {
   const bar = document.getElementById('stickyBar'), hero = document.getElementById('hero'), sn = document.getElementById('sectionNav');
-  window.addEventListener('scroll', () => {
+  // Clean up previous scroll listener to prevent accumulation
+  if (window.__LAS_SCROLL_HANDLER) window.removeEventListener('scroll', window.__LAS_SCROLL_HANDLER);
+  window.__LAS_SCROLL_HANDLER = function() {
     if (bar && hero) { const show = hero.getBoundingClientRect().bottom < 0; bar.classList.toggle('show', show); if (sn) sn.classList.toggle('show', show); }
     const btn = document.getElementById('topBtn');
     if (btn) {
@@ -958,14 +1001,18 @@ function initScroll() {
       btn.style.opacity = show ? '1' : '0';
       btn.style.pointerEvents = show ? 'auto' : 'none';
     }
-  }, { passive: true });
+  };
+  window.addEventListener('scroll', window.__LAS_SCROLL_HANDLER, { passive: true });
 }
 
 function initReveal() {
+  if (window.__LAS_REVEAL_OBSERVER) window.__LAS_REVEAL_OBSERVER.disconnect();
+  if (window.__LAS_BAR_OBSERVER) window.__LAS_BAR_OBSERVER.disconnect();
   const rObs = new IntersectionObserver(es => {
     es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: 0.08 });
   document.querySelectorAll('.reveal').forEach(el => rObs.observe(el));
+  window.__LAS_REVEAL_OBSERVER = rObs;
 
   const bObs = new IntersectionObserver(es => {
     es.forEach(e => {

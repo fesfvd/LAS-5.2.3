@@ -20,6 +20,8 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
         return {
             "ok": False,
             "error": raw.get("error", "LLM analysis failed"),
+            "error_code": "E001",
+            "error_detail": "LLM 返回了非 OK 结果，可能原因：API 调用失败、提示词与响应不匹配、模型输出截断",
             "raw_preview": raw.get("raw", "")[:1000],
         }
 
@@ -29,6 +31,7 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
             "ok": True,
             "metadata": raw.get("metadata", {}),
             "defect_scan": raw.get("defect_scan", {}),
+            "scoring_audit": raw.get("scoring_audit"),
             "analysis_content": raw.get("analysis_content", {}),
             "dimensions": {},
             "benchmarks": {},

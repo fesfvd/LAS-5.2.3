@@ -57,32 +57,27 @@ App.register('/works', async () => {
 
   async function loadPage(offset) {
     const list = document.getElementById('worksList');
-    list.style.opacity = '0';
-    list.style.transition = 'opacity .2s ease';
-    setTimeout(function() {
+    list.style.transition = 'opacity .15s ease';
+    // Dim existing content during load instead of replacing with spinner (avoids flash)
+    if (list.children.length > 0) {
+      list.style.opacity = '0.5';
+    } else {
       list.innerHTML = '<div class="spinner mx-auto" style="margin-top:40px"></div>';
-      list.style.opacity = '1';
-    }, 180);
+    }
 
     try {
       const [sortBy, sortOrder] = currentSort.split('-');
-      let url = '/api/works?limit=' + limit + '&offset=' + offset
-              + '&sort_by=' + sortBy + '&sort_order=' + sortOrder;
-      if (currentMode) url += '&mode=' + currentMode;
-      const res = await fetch(url, { headers: API._headers() });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      list.style.opacity = '0';
-      setTimeout(function() {
-        renderList(data.items, data.total);
-        list.style.opacity = '1';
-      }, 160);
+      const params = { limit, offset, sort_by: sortBy, sort_order: sortOrder };
+      if (currentMode) params.mode = currentMode;
+      const data = await API.getWorksPaginated(params);
+      renderList(data.items, data.total);
+      list.style.opacity = '1';
       currentOffset = offset;
       renderPager(data.total, offset);
     } catch (e) {
       list.style.opacity = '0';
       setTimeout(function() {
-        list.innerHTML = '<p class="text-sm" style="color:var(--crimson);text-align:center;padding:40px 0">加载失败: ' + esc(e.message || '') + '</p>';
+        list.innerHTML = '<p class="text-sm" style="text-align:center;padding:40px 0">⚠ 加载失败: <span style="color:var(--semantic-error)">' + esc(e.message || '') + '</span></p>';
         list.style.opacity = '1';
       }, 160);
     }
@@ -121,15 +116,29 @@ App.register('/works', async () => {
       const isFailed = w.latest_status === 'failed';
       const isDone = w.latest_status === 'done';
       const isRunning = w.latest_status === 'running';
+      const isNone = !w.latest_status;
+      const isRejected = isDone && w.latest_wcs_score != null && w.latest_wcs_score === 0;
+
+      // Status badge
+      let statusBadge = '';
+      if (isRunning) {
+        statusBadge = '<span style="font-size:11px;color:#d97706;font-family:\'Noto Sans SC\',sans-serif">分析中…</span>';
+      } else if (isFailed) {
+        statusBadge = '<span style="font-size:11px;color:var(--semantic-error);font-family:\'Noto Sans SC\',sans-serif">分析失败</span>';
+      } else if (isRejected) {
+        statusBadge = '<span style="font-size:11px;color:var(--semantic-warning);font-family:\'Noto Sans SC\',sans-serif">未达标</span>';
+      } else if (isNone) {
+        statusBadge = '<span style="font-size:11px;color:var(--muted);font-family:\'Noto Sans SC\',sans-serif">未分析</span>';
+      }
 
       html += `
-        <div class="glass-card work-item" style="padding:16px 20px;margin-bottom:8px;${isDone ? 'cursor:pointer;' : ''}transition:all .2s;${isFailed ? 'opacity:.6;' : ''}" data-id="${esc(w.id)}">
+        <div class="glass-card work-item" style="padding:16px 20px;margin-bottom:8px;${(isDone && !isRejected) ? 'cursor:pointer;' : ''}transition:all .2s;${(isFailed || isRejected) ? 'opacity:.6;' : ''}" data-id="${esc(w.id)}">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
                 <span class="serif" style="font-size:16px;font-weight:700;letter-spacing:0.03em;color:var(--ink)">${esc(w.title)}</span>
                 <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;padding:1px 7px;border-radius:9999px;color:${isClassic ? 'var(--crimson)' : 'var(--purple)'};background:${isClassic ? 'rgba(139,0,0,0.06)' : 'rgba(107,33,168,0.06)'};white-space:nowrap;letter-spacing:0.5px;text-transform:uppercase">${isClassic ? 'CLASSIC' : 'ORIGINAL'}</span>
-                ${isFailed ? '<span style="font-size:11px;color:var(--semantic-error);font-family:\'Noto Sans SC\',sans-serif">分析失败</span>' : ''}
+                ${statusBadge}
                 ${w.ancestor_dialogue ? '<span style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;padding:1px 7px;border-radius:9999px;background:rgba(184,134,11,0.08);color:var(--gold);white-space:nowrap;letter-spacing:0.5px">SAGE</span>' : ''}
               </div>
               <div style="display:flex;align-items:center;gap:12px">
@@ -140,12 +149,13 @@ App.register('/works', async () => {
             </div>
             <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
               <div style="text-align:right">
-                <span class="mono" style="font-size:24px;font-weight:700;line-height:1;color:var(--ink)">${score}</span>
+                ${isRejected ? '<span class="mono" style="font-size:14px;font-weight:700;line-height:1;color:var(--semantic-warning)">未达标</span>'
+                  : `<span class="mono" style="font-size:24px;font-weight:700;line-height:1;color:var(--ink)">${score}</span>`}
                 <p class="mono" style="font-size:10px;color:var(--muted);margin-top:2px">${badge} ${esc(w.latest_tier || '—')}</p>
               </div>
               <div style="display:flex;gap:4px">
                 ${isDone ? `<button class="work-btn view" data-id="${esc(w.id)}" title="查看报告"><i class="fas fa-file-alt"></i></button>` : ''}
-                ${(isDone || isFailed) ? `<button class="work-btn redo" data-id="${esc(w.id)}" title="重新分析"><i class="fas fa-redo"></i></button>` : ''}
+                ${(isDone || isFailed || isRejected) ? `<button class="work-btn redo" data-id="${esc(w.id)}" title="重新分析"><i class="fas fa-redo"></i></button>` : ''}
                 <button class="work-btn del" data-id="${esc(w.id)}" title="删除"><i class="fas fa-trash"></i></button>
               </div>
             </div>
@@ -178,9 +188,23 @@ App.register('/works', async () => {
     list.querySelectorAll('.del').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (!confirm('确认删除此作品？此操作不可撤销。')) return;
-        try { await API.deleteWork(btn.dataset.id); loadPage(currentOffset); }
-        catch (err) { alert('删除失败: ' + (err.message || '')); }
+        // Custom modal instead of native confirm()
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center';
+        overlay.innerHTML = '<div class="glass-card" style="max-width:360px;text-align:center;padding:32px">'
+          + '<p class="serif text-lg font-bold mb-3" style="color:var(--ink)">确认删除</p>'
+          + '<p class="text-sm mb-6" style="color:var(--muted)">此操作不可撤销，确定删除此作品？</p>'
+          + '<div style="display:flex;gap:12px;justify-content:center">'
+          + '<button class="mono text-xs" id="modalCancel" style="padding:8px 24px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;font-family:JetBrains Mono,monospace">取消</button>'
+          + '<button class="mono text-xs" id="modalConfirm" style="padding:8px 24px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer;font-family:JetBrains Mono,monospace">删除</button>'
+          + '</div></div>';
+        document.body.appendChild(overlay);
+        overlay.querySelector('#modalCancel').addEventListener('click', function() { overlay.remove(); });
+        overlay.querySelector('#modalConfirm').addEventListener('click', async function() {
+          overlay.remove();
+          try { await API.deleteWork(btn.dataset.id); loadPage(currentOffset); }
+          catch (err) { alert('删除失败: ' + (err.message || '')); }
+        });
       });
     });
   }
@@ -190,6 +214,7 @@ App.register('/works', async () => {
     const pages = Math.ceil(total / limit);
     if (pages <= 1) { pager.style.display = 'none'; return; }
     pager.style.display = 'flex';
+    pager.textContent = '';
     for (let i = 0; i < pages; i++) {
       const off = i * limit;
       const btn = document.createElement('button');

@@ -63,7 +63,7 @@ App.register('/analyze', () => {
           <div style="display:flex;align-items:center;justify-content:space-between">
             <span class="analyze-status-line" id="statusText" style="color:var(--muted)">序列启动中...</span>
             <div style="display:flex;align-items:center;gap:14px">
-              <button id="cancelAnalyze" class="mono text-xs" style="display:none;padding:5px 14px;border:1px solid var(--rule-strong);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace">ESC 取消</button>
+              <button id="cancelAnalyze" class="mono text-xs" style="display:inline-block;padding:5px 14px;border:1px solid var(--rule-strong);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace">ESC 取消</button>
               <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
             </div>
           </div>
@@ -104,6 +104,7 @@ App.register('/analyze', () => {
     if (_stepTimer) clearInterval(_stepTimer);
     if (_cursorTimer) clearInterval(_cursorTimer);
     if (_quoteTimer) clearTimeout(_quoteTimer);
+    if (_elapsedTimer) clearInterval(_elapsedTimer);
     _quoteActive = false;
     _completed = true;
     App.navigate('#/works');
@@ -267,7 +268,17 @@ async function startStream(workId, model) {
 
     const IDLE_WARN = 60000;    // 60s no event → warn
     const IDLE_GIVEUP = 300000;  // 5min no event → give up
-    const READ_TIMEOUT = 25000;  // 25s per read() call (heartbeat every 15s)
+    const READ_TIMEOUT = 45000;  // 45s per read() call (heartbeat every 15s, 3x margin)
+    const FIRST_BYTE_WARN = 30000; // 30s no first token → show progress hint
+
+    // Show elapsed timer
+    var _startTime = Date.now();
+    var _elapsedTimer = setInterval(function() {
+      var elapsed = Math.floor((Date.now() - _startTime) / 1000);
+      if (statusText && elapsed > 10 && !firstEvent) {
+        statusText.textContent = '等待 LLM 响应... (' + elapsed + 's)';
+      }
+    }, 5000);
 
     while (true) {
       let result;
@@ -282,8 +293,18 @@ async function startStream(workId, model) {
           const idle = Date.now() - lastEventTime;
           if (idle >= IDLE_GIVEUP) {
             console.warn('[LAS] 流读取超时超过 5 分钟，已放弃');
+            if (_elapsedTimer) clearInterval(_elapsedTimer);
             if (statusText) { statusText.textContent = '分析超时，请重试'; statusText.style.color = 'var(--semantic-warning)'; }
             return;
+          }
+          // First byte warning: no data at all within FIRST_BYTE_WARN
+          if (firstEvent && idle >= FIRST_BYTE_WARN && !document.getElementById('firstByteWarn')) {
+            var w2 = document.createElement('p');
+            w2.id = 'firstByteWarn';
+            w2.className = 'analyze-status-line';
+            w2.style.cssText = 'color:var(--semantic-warning);margin-top:4px';
+            w2.textContent = 'LLM 尚未返回数据，可能文本较长或模型负载较高，请耐心等待...';
+            document.getElementById('dynamicContent').parentNode.appendChild(w2);
           }
           if (idle >= IDLE_WARN && !document.getElementById('idleWarn')) {
             const w = document.createElement('p');
@@ -317,6 +338,7 @@ async function startStream(workId, model) {
           if (event.type === 'heartbeat') continue;
           if (firstEvent) {
             firstEvent = false;
+            if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
             var cancelBtn = document.getElementById('cancelAnalyze');
             if (cancelBtn) cancelBtn.style.display = 'inline-block';
             const loader = document.getElementById('analyzeLoader');
@@ -368,7 +390,17 @@ async function startStream(workId, model) {
   } catch (err) {
     if (err.name === 'AbortError') { console.log('[LAS] 分析流已取消'); return; }
     console.error('[LAS] 分析流异常:', err);
-    if (statusText) statusText.textContent = '连接失败，请重试';
+    if (statusText) { statusText.textContent = '连接失败，请重试'; statusText.style.color = 'var(--semantic-error)'; }
+    var retryBtn = document.createElement('button');
+    retryBtn.textContent = '重新连接';
+    retryBtn.className = 'mono text-xs';
+    retryBtn.style.cssText = 'margin-left:12px;padding:4px 12px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;transition:all .2s;font-family:JetBrains Mono,monospace';
+    retryBtn.addEventListener('click', function() {
+      if (retryBtn.parentNode) retryBtn.remove();
+      startStream(workId, model);
+    });
+    if (statusText && statusText.parentNode) statusText.parentNode.insertBefore(retryBtn, statusText.nextSibling);
+    if (_elapsedTimer) clearInterval(_elapsedTimer);
   } finally {
     window.__LAS_ANALYZE_CTRL = null;
   }

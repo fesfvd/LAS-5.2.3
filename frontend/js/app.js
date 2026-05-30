@@ -20,7 +20,8 @@ var CHAPTER = {
   '/login':   ['登录',     'AUTH'],
   '/register':['注册',     'REGISTER'],
   '/profile': ['个人中心', 'PROFILE'],
-  '/forgot':  ['忘记密码', 'RESET']
+  '/forgot':  ['忘记密码', 'RESET'],
+  '/privacy': ['隐私政策', 'PRIVACY']
 };
 
 var _transitionPhase = 'idle';
@@ -174,6 +175,42 @@ var App = {
   init: function() {
     var self = this;
     window.addEventListener('hashchange', function() { self._route(); });
+    // Offline detection
+    window.addEventListener('offline', function() {
+      var banner = document.getElementById('offlineBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'offlineBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2000;background:var(--crimson);color:var(--on-crimson);text-align:center;padding:8px;font-size:14px;font-family:Noto Sans SC,sans-serif';
+        banner.textContent = '网络连接已断开，部分功能不可用';
+        document.body.prepend(banner);
+      }
+    });
+    window.addEventListener('online', function() {
+      var banner = document.getElementById('offlineBanner');
+      if (banner) banner.remove();
+    });
     this._route();
   }
 };
+
+// Privacy route
+App.register('/privacy', function() {
+  var root = document.getElementById('spaApp');
+  root.innerHTML = '<main class="max-w-3xl mx-auto px-6" style="padding-top:80px;padding-bottom:80px">'
+    + '<section class="glass-card" style="max-width:640px;margin:0 auto">'
+    + '<h1 class="serif text-2xl font-bold mb-6" style="color:var(--ink)">用户协议 & 隐私政策</h1>'
+    + '<div class="text-sm" style="color:var(--muted);line-height:2">'
+    + '<p class="mb-4">LAS 文学分析系统尊重并保护您的隐私。</p>'
+    + '<p class="mb-2 font-bold" style="color:var(--ink)">信息收集</p>'
+    + '<p class="mb-4">我们仅收集您主动提交的作品文本和基本账号信息（用户名、邮箱），用于提供文学分析服务。不会收集您的浏览历史、位置信息或其他个人敏感数据。</p>'
+    + '<p class="mb-2 font-bold" style="color:var(--ink)">信息使用</p>'
+    + '<p class="mb-4">您的作品内容仅用于生成分析报告，不会被用于训练 AI 模型、出售给第三方或公开披露。分析完成后，您可随时删除作品及其关联数据。</p>'
+    + '<p class="mb-2 font-bold" style="color:var(--ink)">数据安全</p>'
+    + '<p class="mb-4">我们采用行业标准的安全措施保护您的数据。密码经加密存储，邮箱仅用于账号验证与找回。</p>'
+    + '<p class="mb-2 font-bold" style="color:var(--ink)">联系我们</p>'
+    + '<p>如有隐私相关问题，请联系：lasystem@163.com</p>'
+    + '</div>'
+    + '<a href="javascript:history.back()" class="btn mt-8" style="display:inline-block">返回</a>'
+    + '</section></main>';
+});

@@ -76,13 +76,13 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
 
-.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
 .reveal.visible{opacity:1;transform:translateY(0)}
 .reveal-delay-1{transition-delay:.1s}.reveal-delay-2{transition-delay:.2s}.reveal-delay-3{transition-delay:.3s}.reveal-delay-4{transition-delay:.4s}
 
-.axiom-card{padding:20px 24px;border-left:3px solid var(--gold);border:1px solid var(--rule);border-left:3px solid var(--gold);position:relative;overflow:hidden;transition:border-left-color .3s,background .3s}
+.axiom-card{padding:20px 24px;border:1px solid var(--rule);position:relative;overflow:hidden;transition:border-color .3s,background .3s}
 .axiom-card::before{content:attr(data-axiom);position:absolute;top:-10px;right:10px;font-size:6rem;font-weight:700;color:var(--gold);opacity:.04;line-height:1;pointer-events:none}
-.axiom-card:hover{border-left-color:var(--crimson);background:rgba(26,26,26,.01)}
+.axiom-card:hover{border-color:var(--rule-strong);background:rgba(26,26,26,.01)}
 .axiom-letter{font-size:.7rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px}
 .axiom-name{font-size:1.1rem;font-weight:600;margin-bottom:8px;color:var(--ink)}
 .axiom-desc{font-size:.88rem;color:var(--muted);line-height:1.9}
@@ -91,9 +91,9 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 
 .dim-card{padding:16px 20px;border:1px solid var(--rule);position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s cubic-bezier(.4,0,.2,1),background .25s cubic-bezier(.4,0,.2,1);cursor:default}
 .dim-card::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;transition:width .35s cubic-bezier(.4,0,.2,1)}
-.dim-card[data-layer="A"]::after{background:var(--gold)}
+.dim-card[data-layer="A"]::after{background:var(--crimson)}
 .dim-card[data-layer="B"]::after{background:var(--jade)}
-.dim-card[data-layer="C"]::after{background:var(--crimson)}
+.dim-card[data-layer="C"]::after{background:var(--gold)}
 .dim-card[data-layer="D"]::after{background:var(--ink)}
 .dim-card:hover{background:rgba(26,26,26,.015);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.04)}
 .dim-card:hover::after{width:5px}
@@ -202,8 +202,8 @@ footer a:hover{color:var(--crimson)}
 .dim-card.tapped .dim-weight-seg{height:6px}
 .dim-card.tapped::after{width:5px}
 /* Demo report styles */
-.glass-card{background:rgba(250,248,245,.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--rule);border-radius:12px;transition:all .25s ease}
-.glass-card:hover{border-color:rgba(184,134,11,.15)}
+.glass-card{background:rgba(255,255,255,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--rule);border-radius:12px;transition:border-color .2s cubic-bezier(.4,0,.2,1)}
+.glass-card:hover{border-color:var(--rule-strong)}
 .bar-track{height:6px;border-radius:3px;background:rgba(26,26,26,.04);overflow:hidden}
 .bar-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
 .accordion-content.open{max-height:4000px!important}

@@ -41,6 +41,23 @@ async def lifespan(app: FastAPI):
     logger.info("LAS v5.2.3 启动中...")
     os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
     init_db()
+    # Clean up zombie analyses (stuck in "running" for >30 min)
+    from backend.models.orm import SessionLocal, Analysis
+    from datetime import datetime, timedelta, timezone
+    session = SessionLocal()
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+        zombies = session.query(Analysis).filter(
+            Analysis.status == "running",
+            Analysis.created_at < cutoff
+        ).all()
+        if zombies:
+            for a in zombies:
+                a.status = "failed"
+            session.commit()
+            logger.info(f"已清理 {len(zombies)} 个超时分析记录")
+    finally:
+        session.close()
     logger.info("数据库初始化完成")
     yield
 

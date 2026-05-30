@@ -225,6 +225,8 @@ async def start_analysis(
                     report = {
                         "ok": False,
                         "error": f"报告构建异常: {e}",
+                        "error_code": "E003",
+                        "error_detail": "后端评分计算或数据处理时发生异常，原始 LLM 输出已保存",
                         "raw_preview": str(raw)[:500],
                     }
                 try:
@@ -253,7 +255,7 @@ async def start_analysis(
                         e,
                         traceback.format_exc(),
                     )
-                    analysis.report_json = {"ok": False, "error": f"报告保存异常: {e}"}
+                    analysis.report_json = {"ok": False, "error": f"报告保存异常: {e}", "error_code": "E004", "error_detail": "报告数据写入数据库失败，可能是磁盘空间不足或数据库锁冲突"}
                     analysis.status = "failed"
                     try:
                         db.commit()
