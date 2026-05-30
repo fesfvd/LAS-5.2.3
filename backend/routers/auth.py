@@ -282,6 +282,9 @@ def upgrade_account(
     user.role = "user"
     db.commit()
     return {"ok": True, "role": "user", "message": "已升级为正式用户"}
+
+
+class ForgotPasswordBody(BaseModel):
     email: str
 
 
