@@ -55,6 +55,35 @@ def get_profile(authorization: str | None = Header(None), db: Session = Depends(
         .first()
     )
 
+    # Total works and average score
+    total_works = db.query(Work).filter(Work.user_id == user.id).count()
+    avg_row = (
+        db.query(Analysis.wcs_score)
+        .join(Work, Analysis.work_id == Work.id)
+        .filter(Work.user_id == user.id, Analysis.wcs_score.isnot(None))
+        .all()
+    )
+    avg_score = round(sum(r.wcs_score for r in avg_row) / len(avg_row), 1) if avg_row else None
+
+    # Recent 5 works
+    recent = (
+        db.query(Work, Analysis.status, Analysis.wcs_score, Analysis.tier)
+        .outerjoin(Analysis, Analysis.work_id == Work.id)
+        .filter(Work.user_id == user.id)
+        .order_by(Work.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    recent_works = [{
+        "id": rw[0].id,
+        "title": rw[0].title,
+        "mode": rw[0].mode,
+        "created_at": rw[0].created_at.isoformat() if rw[0].created_at else "",
+        "status": rw[1] or "none",
+        "score": round(rw[2], 1) if rw[2] is not None else None,
+        "tier": rw[3] or "",
+    } for rw in recent]
+
     return {
         "ok": True,
         "user": {
@@ -67,6 +96,9 @@ def get_profile(authorization: str | None = Header(None), db: Session = Depends(
             "analysis_count": analysis_count,
             "best_score": best.wcs_score if best else None,
             "best_tier": best.tier if best else None,
+            "total_works": total_works,
+            "avg_score": avg_score,
+            "recent_works": recent_works,
         },
     }
 
@@ -135,3 +167,17 @@ def change_username(
     user.username = username
     db.commit()
     return {"ok": True, "username": username}
+
+
+@router.delete("/me")
+def delete_account(
+    authorization: str | None = Header(None),
+    db: Session = Depends(get_session),
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "请先登录")
+    user = get_current_user(authorization.split(" ", 1)[1], db)
+    user.is_deleted = True
+    user.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"ok": True, "message": "账号已标记删除，7 天内可联系恢复"}

@@ -51,6 +51,15 @@ function _buildOverlay(zh, en) {
 function _startTransition(targetHash, zh, en) {
   if (_transitionPhase !== 'idle') return;
 
+  // Safety: force reset after 800ms in case animation stalls
+  var safety = setTimeout(function() {
+    if (_transitionPhase !== 'idle') {
+      _transitionPhase = 'idle';
+      var ov = document.getElementById('transitionOverlay');
+      if (ov) { ov.classList.remove('enter', 'exit'); }
+    }
+  }, 800);
+
   // Phase: enter — slide overlay up from bottom
   _transitionPhase = 'enter';
   var overlay = _buildOverlay(zh, en);
@@ -79,9 +88,15 @@ function _startTransition(targetHash, zh, en) {
         overlay.classList.add('exit');
 
         setTimeout(function() {
+          clearTimeout(safety);
           _transitionPhase = 'idle';
           overlay.classList.remove('exit');
-          _pendingRoute = null;
+          // Replay queued navigation
+          if (_pendingRoute) {
+            var queued = _pendingRoute;
+            _pendingRoute = null;
+            window.location.hash = queued;
+          }
         }, 300);
       });
     });
@@ -118,8 +133,13 @@ var App = {
 
     var handler = this.routes[path];
 
-    if (_transitionPhase !== 'idle') return;
+    // Queue navigation if transition is in progress — replay when idle
+    if (_transitionPhase !== 'idle') {
+      _pendingRoute = '#' + hash;
+      return;
+    }
 
+    // Handled by _startTransition — directly render underneath
     if (_isHashChange) {
       _isHashChange = false;
       this._render(path, handler);
@@ -133,7 +153,7 @@ var App = {
       return;
     }
 
-    // Click navigation — trigger transition
+    // All navigations go through transition for consistency
     if (handler) {
       var chapter = CHAPTER[path] || ['', ''];
       _startTransition('#' + hash, chapter[0], chapter[1]);
@@ -146,16 +166,27 @@ var App = {
 
   _render: function(path, handler) {
     if (!handler) { window.location.hash = '#/upload'; return; }
-    var app = document.getElementById('spaApp');
-    if (app) {
-      app.classList.remove('page-enter');
-      void app.offsetWidth;
-      app.classList.add('page-enter');
-    }
-
     this.updateNav();
 
-    if (handler) handler();
+    var app = document.getElementById('spaApp');
+    // Animate frame: remove old class, let handler populate DOM, then re-add
+    if (app) app.classList.remove('page-enter');
+
+    var result = handler ? handler() : null;
+    // Wait for async handler to populate DOM before animating
+    var self = this;
+    function animateIn() {
+      if (app) {
+        void app.offsetWidth;
+        app.classList.add('page-enter');
+      }
+    }
+    if (result && typeof result.then === 'function') {
+      result.then(animateIn);
+    } else {
+      // Sync handler or no content — animate on next frame
+      requestAnimationFrame(animateIn);
+    }
   },
 
   updateNav: function() {

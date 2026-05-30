@@ -56,6 +56,16 @@ async def lifespan(app: FastAPI):
                 a.status = "failed"
             session.commit()
             logger.info(f"已清理 {len(zombies)} 个超时分析记录")
+        # Clean up soft-deleted accounts older than 7 days
+        from backend.models.orm import User as UserModel
+        purge_cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        purged = session.query(UserModel).filter(
+            UserModel.is_deleted == True,
+            UserModel.deleted_at < purge_cutoff
+        ).delete()
+        if purged:
+            session.commit()
+            logger.info(f"已清理 {purged} 个过期注销账号")
     finally:
         session.close()
     logger.info("数据库初始化完成")

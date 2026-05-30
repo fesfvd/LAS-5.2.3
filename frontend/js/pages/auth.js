@@ -26,6 +26,11 @@ function buildAuth(tab) {
         </div>` : ''}
 
         ${(isRegister || isForgot) ? `
+        ${isForgot ? `
+        <div class="field-group">
+          <label class="field-label">USERNAME <span class="field-label-zh">用户名</span></label>
+          <input class="input-underline" name="username" placeholder="输入注册时的用户名" required maxlength="50" autocomplete="username">
+        </div>` : ''}
         <div class="field-group">
           <label class="field-label">EMAIL <span class="field-label-zh">邮箱</span></label>
           <div style="display:flex;gap:8px">
@@ -191,12 +196,14 @@ function buildAuth(tab) {
         App.navigate('#/upload');
       } else if (isForgot) {
         var emailVal = (data.email || '').trim();
+        var usernameVal = (data.username || '').trim();
         var codeVal = (data.code || '').trim();
         var newPwd = (data.new_password || '').trim();
+        if (!usernameVal) { showError('请输入用户名'); return; }
         if (!codeSent) { showError('请先发送验证码'); return; }
         if (codeVal.length !== 6) { showError('请输入 6 位验证码'); return; }
         if (newPwd.length < 6) { showError('新密码至少 6 位'); return; }
-        await API._post('/auth/reset-password', { email: emailVal, code: codeVal, new_password: newPwd });
+        await API._post('/auth/reset-password', { email: emailVal, username: usernameVal, code: codeVal, new_password: newPwd });
         alert('密码已重置，请登录');
         App.navigate('#/login');
       } else {

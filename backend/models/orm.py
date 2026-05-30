@@ -36,6 +36,8 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     email_verified = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)
 
     works = relationship("Work", back_populates="user", cascade="all, delete-orphan")
 
@@ -142,6 +144,12 @@ def init_db():
             except Exception:
                 pass  # column already exists
         for col, dtype in [("role", "VARCHAR(20)"), ("created_at", "DATETIME"), ("email_verified", "BOOLEAN DEFAULT 0")]:
+            try:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
+                conn.commit()
+            except Exception:
+                pass
+        for col, dtype in [("is_deleted", "BOOLEAN DEFAULT 0"), ("deleted_at", "DATETIME")]:
             try:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
                 conn.commit()

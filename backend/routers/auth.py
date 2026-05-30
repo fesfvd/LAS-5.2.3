@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -15,6 +15,23 @@ from backend.services.email import send_code
 
 logger = logging.getLogger("las.auth")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+# ── Login rate limiter ──
+import threading
+_login_attempts: dict[str, list[datetime]] = {}
+_rate_lock = threading.Lock()
+
+
+def _check_login_rate(key: str, max_attempts: int = 5, window_min: int = 15) -> bool:
+    """Return False if rate limit exceeded."""
+    now = datetime.now(timezone.utc)
+    with _rate_lock:
+        attempts = [t for t in _login_attempts.get(key, []) if t > now - timedelta(minutes=window_min)]
+        _login_attempts[key] = attempts
+        if len(attempts) >= max_attempts:
+            return False
+        attempts.append(now)
+        return True
 
 
 def hash_password(pw: str) -> str:
@@ -44,6 +61,8 @@ def get_current_user(token: str, db: Session) -> User:
         user = db.query(User).filter(User.id == payload["sub"]).first()
         if not user:
             raise HTTPException(401, "用户不存在")
+        if user.is_deleted:
+            raise HTTPException(401, "账号已注销")
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(401, "Token 已过期")
@@ -223,17 +242,46 @@ class LoginRequestV2(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequestV2, db: Session = Depends(get_session)):
     login_id = req.username.strip()
+    rate_key = login_id.lower()
+    if not _check_login_rate(rate_key):
+        raise HTTPException(429, "尝试次数过多，请 15 分钟后再试")
     if "@" in login_id:
         user = db.query(User).filter(User.email == login_id.lower()).first()
     else:
         user = db.query(User).filter(User.username == login_id).first()
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(400, "用户名或密码错误")
+    if user.is_deleted:
+        raise HTTPException(400, "该账号已注销")
     token = create_token(user.id, user.username, req.remember)
     return TokenResponse(access_token=token, username=user.username)
 
 
-class ForgotPasswordBody(BaseModel):
+class UpgradeBody(BaseModel):
+    invite_code: str
+
+
+@router.post("/upgrade")
+def upgrade_account(
+    req: UpgradeBody,
+    authorization: str | None = Header(None),
+    db: Session = Depends(get_session),
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "请先登录")
+    user = get_current_user(authorization.split(" ", 1)[1], db)
+    if user.role != "guest":
+        raise HTTPException(400, "当前账号已是正式用户")
+    inv_code = req.invite_code.strip().upper()
+    invite = db.query(InviteCode).filter(InviteCode.code == inv_code, InviteCode.is_used == False).first()
+    if not invite:
+        raise HTTPException(400, "邀请码无效或已被使用")
+    invite.is_used = True
+    invite.used_by = user.id
+    invite.used_at = datetime.now(timezone.utc)
+    user.role = "user"
+    db.commit()
+    return {"ok": True, "role": "user", "message": "已升级为正式用户"}
     email: str
 
 
@@ -245,6 +293,7 @@ def forgot_password(req: ForgotPasswordBody):
 
 class ResetPasswordBody(BaseModel):
     email: str
+    username: str
     code: str
     new_password: str
 
@@ -255,6 +304,8 @@ def reset_password(req: ResetPasswordBody, db: Session = Depends(get_session)):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(400, "该邮箱未注册")
+    if user.username != req.username.strip():
+        raise HTTPException(400, "用户名不匹配")
 
     if not _verify_code(db, email, req.code, "reset"):
         raise HTTPException(400, "验证码无效或已过期")

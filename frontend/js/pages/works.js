@@ -13,7 +13,28 @@ App.register('/works', async () => {
 
       <hr class="rule" style="margin:16px 0">
 
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0 6px">
+        <input class="input-underline" id="worksSearch" placeholder="搜索作品名称..." style="flex:1;min-width:160px;max-width:280px;font-size:14px">
+        <select id="scoreMin" style="font-size:12px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);font-family:'JetBrains Mono',monospace;cursor:pointer">
+          <option value="">最低分</option>
+          <option value="0">≥ 0</option><option value="30">≥ 30</option><option value="60">≥ 60</option><option value="90">≥ 90</option><option value="120">≥ 120</option>
+        </select>
+        <select id="scoreMax" style="font-size:12px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);font-family:'JetBrains Mono',monospace;cursor:pointer">
+          <option value="">最高分</option>
+          <option value="30">≤ 30</option><option value="60">≤ 60</option><option value="90">≤ 90</option><option value="120">≤ 120</option><option value="150">≤ 150</option>
+        </select>
+      </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:8px 0 12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="mono text-xs" id="batchBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s">批量</button>
+          <span id="batchBar" style="display:none;align-items:center;gap:8px">
+            <span class="text-xs" id="batchCount" style="color:var(--gold)">已选 0 项</span>
+            <button class="mono text-xs" id="batchDeleteBtn" style="padding:4px 10px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">删除选中</button>
+            <button class="mono text-xs" id="batchCancelBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
         <div style="display:flex;align-items:center;gap:6px">
           <span class="mono" style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase">MODE</span>
           <button class="filter-chip active" data-mode="">全部</button>
@@ -53,6 +74,80 @@ App.register('/works', async () => {
     });
   });
 
+  // Search with debounce
+  var searchTimer = null;
+  var currentSearch = '';
+  document.getElementById('worksSearch').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      currentSearch = this.value.trim();
+      loadPage(0);
+    }, 300);
+  });
+
+  // Score range
+  var scoreMin = null, scoreMax = null;
+  document.getElementById('scoreMin').addEventListener('change', function() {
+    scoreMin = this.value ? parseFloat(this.value) : null;
+    loadPage(0);
+  });
+  document.getElementById('scoreMax').addEventListener('change', function() {
+    scoreMax = this.value ? parseFloat(this.value) : null;
+    loadPage(0);
+  });
+
+  // Batch mode
+  var batchMode = false;
+  var selectedIds = new Set();
+  document.getElementById('batchBtn').addEventListener('click', function() {
+    batchMode = !batchMode;
+    document.getElementById('batchBar').style.display = batchMode ? 'flex' : 'none';
+    this.textContent = batchMode ? '取消' : '批量';
+    selectedIds.clear();
+    updateBatchCount();
+    // Re-render to show/hide checkboxes
+    loadPage(currentOffset);
+  });
+  document.getElementById('batchCancelBtn').addEventListener('click', function() {
+    batchMode = false;
+    selectedIds.clear();
+    document.getElementById('batchBar').style.display = 'none';
+    document.getElementById('batchBtn').textContent = '批量';
+    loadPage(currentOffset);
+  });
+  document.getElementById('batchDeleteBtn').addEventListener('click', async function() {
+    if (selectedIds.size === 0) return;
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = '<div class="glass-card" style="padding:24px;max-width:320px;text-align:center">'
+      + '<p class="serif text-lg font-bold mb-2" style="color:var(--ink)">确认删除</p>'
+      + '<p class="text-sm mb-6" style="color:var(--muted)">确定要删除选中的 ' + selectedIds.size + ' 部作品吗？此操作不可撤销。</p>'
+      + '<div style="display:flex;gap:10px;justify-content:center">'
+      + '<button id="bdelCancel" class="mono text-xs" style="padding:8px 24px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>'
+      + '<button id="bdelConfirm" class="mono text-xs" style="padding:8px 24px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">删除</button>'
+      + '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#bdelCancel').addEventListener('click', function() { overlay.remove(); });
+    overlay.querySelector('#bdelConfirm').addEventListener('click', async function() {
+      overlay.querySelector('#bdelConfirm').textContent = '...';
+      try {
+        var res = await API._req('POST', '/works/batch-delete', Array.from(selectedIds));
+        overlay.remove();
+        selectedIds.clear();
+        batchMode = false;
+        document.getElementById('batchBar').style.display = 'none';
+        document.getElementById('batchBtn').textContent = '批量';
+        loadPage(0);
+      } catch (err) {
+        overlay.querySelector('#bdelConfirm').textContent = '失败';
+      }
+    });
+  });
+
+  function updateBatchCount() {
+    document.getElementById('batchCount').textContent = '已选 ' + selectedIds.size + ' 项';
+  }
+
   await loadPage(0);
 
   async function loadPage(offset) {
@@ -86,7 +181,16 @@ App.register('/works', async () => {
   function renderList(items, total) {
     const list = document.getElementById('worksList');
     if (!items.length) {
-      const hint = currentMode ? '当前筛选条件下暂无作品' : '提交你的第一部作品，开始文学分析之旅';
+      var hint;
+      if (currentSearch) {
+        hint = '未找到包含"' + esc(currentSearch) + '"的作品';
+      } else if (scoreMin != null || scoreMax != null) {
+        hint = '当前分数范围内暂无作品，试试放宽范围';
+      } else if (currentMode) {
+        hint = '当前模式下暂无作品';
+      } else {
+        hint = '提交你的第一部作品，开始文学分析之旅';
+      }
       list.innerHTML = `
         <div class="glass-card" style="padding:40px 20px;text-align:center">
           <p class="serif" style="font-size:18px;font-weight:600;line-height:1.3;letter-spacing:0.03em;margin-bottom:8px;color:var(--ink)">尚无作品</p>

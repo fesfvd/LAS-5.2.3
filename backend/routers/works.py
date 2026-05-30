@@ -23,12 +23,27 @@ def list_works(
     mode: str = "",
     sort_by: str = "date",
     sort_order: str = "desc",
+    search: str = "",
+    score_min: float | None = None,
+    score_max: float | None = None,
     user: User = Depends(get_user),
     db: Session = Depends(get_session),
 ):
     base = db.query(Work).filter(Work.user_id == user.id)
     if mode and mode in ("original", "classic"):
         base = base.filter(Work.mode == mode)
+    if search:
+        base = base.filter(Work.title.contains(search))
+    if score_min is not None or score_max is not None:
+        from sqlalchemy import and_
+        conds = [Analysis.work_id == Work.id]
+        if score_min is not None:
+            conds.append(Analysis.wcs_score >= score_min)
+        if score_max is not None:
+            conds.append(Analysis.wcs_score <= score_max)
+        base = base.filter(
+            db.query(Analysis.work_id).filter(and_(*conds)).exists()
+        )
     total = base.count()
 
     if sort_by == "score":
@@ -146,6 +161,22 @@ def get_report(
             "total": latest.total_tokens or 0,
         },
     }
+
+
+@router.post("/batch-delete")
+def batch_delete_works(
+    ids: list[str],
+    user: User = Depends(get_user),
+    db: Session = Depends(get_session),
+):
+    deleted = 0
+    for wid in ids:
+        work = db.query(Work).filter(Work.id == wid, Work.user_id == user.id).first()
+        if work:
+            db.delete(work)
+            deleted += 1
+    db.commit()
+    return {"ok": True, "deleted": deleted}
 
 
 @router.delete("/{work_id}")
