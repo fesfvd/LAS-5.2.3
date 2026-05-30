@@ -92,21 +92,25 @@ def _validate_password(pw: str) -> str | None:
 # ── Routes ──
 
 
+class SendCodeBody(BaseModel):
+    email: str
+    purpose: str = "register"
+
+
 @router.post("/send-code")
-def send_verification_code(req: dict, db: Session = Depends(get_session)):
+def send_verification_code(req: SendCodeBody, db: Session = Depends(get_session)):
     """发送验证码。purpose: register | reset | bind"""
-    email = (req.get("email") or "").strip().lower()
-    purpose = req.get("purpose", "register")
+    email = req.email.strip().lower()
+    purpose = req.purpose
     if not email or "@" not in email:
         raise HTTPException(400, "请提供有效的邮箱地址")
     if purpose not in ("register", "reset", "bind"):
         raise HTTPException(400, "无效的用途")
 
-    # Check: for register, email must NOT exist
+    # register: email must NOT exist; reset: email MUST exist; bind: no check
     if purpose == "register" and db.query(User).filter(User.email == email).first():
         raise HTTPException(400, "该邮箱已被注册")
-    # Check: for reset/bind, email MUST exist
-    if purpose in ("reset", "bind") and not db.query(User).filter(User.email == email).first():
+    if purpose == "reset" and not db.query(User).filter(User.email == email).first():
         raise HTTPException(400, "该邮箱未注册")
 
     # Rate limit: 1 code per 60s per email
@@ -123,6 +127,11 @@ def send_verification_code(req: dict, db: Session = Depends(get_session)):
         raise HTTPException(429, "请 60 秒后再试")
 
     code = _gen_code()
+
+    # Send email FIRST — don't persist code if email fails
+    if not send_code(email, code, purpose):
+        raise HTTPException(500, "邮件发送失败，请稍后重试")
+
     vc = VerificationCode(
         email=email,
         code=code,
@@ -131,9 +140,6 @@ def send_verification_code(req: dict, db: Session = Depends(get_session)):
     )
     db.add(vc)
     db.commit()
-
-    if not send_code(email, code, purpose):
-        raise HTTPException(500, "邮件发送失败，请稍后重试")
 
     return {"ok": True, "message": "验证码已发送"}
 
@@ -197,7 +203,7 @@ def guest_login(db: Session = Depends(get_session)):
     guest_id = "guest_" + str(_uuid.uuid4())[:8]
     user = User(
         username=guest_id,
-        email="",
+        email=None,
         password_hash=hash_password(guest_id),
         role="guest",
     )

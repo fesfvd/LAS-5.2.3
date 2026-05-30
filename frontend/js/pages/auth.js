@@ -140,6 +140,16 @@ function buildAuth(tab) {
         sendCodeBtn.disabled = false;
       }
     });
+
+    // Reset code state when email changes
+    var emailInput = form.querySelector('[name="email"]');
+    if (emailInput) {
+      emailInput.addEventListener('input', function() {
+        codeSent = false;
+        if (codeGroup) codeGroup.style.display = 'none';
+        if (isForgot) { var npg = document.getElementById('newPwdGroup'); if (npg) npg.style.display = 'none'; }
+      });
+    }
   }
 
   // ── Guest login ──

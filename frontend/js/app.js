@@ -18,7 +18,9 @@ var CHAPTER = {
   '/report':  ['分析报告', 'REPORT'],
   '/analyze': ['分析中',   'ANALYSIS'],
   '/login':   ['登录',     'AUTH'],
-  '/register':['注册',     'REGISTER']
+  '/register':['注册',     'REGISTER'],
+  '/profile': ['个人中心', 'PROFILE'],
+  '/forgot':  ['忘记密码', 'RESET']
 };
 
 var _transitionPhase = 'idle';

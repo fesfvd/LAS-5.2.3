@@ -11,6 +11,9 @@ def send_code(email: str, code: str, purpose: str = "register") -> bool:
     if purpose == "reset":
         subject = "LAS 文学分析 — 密码重置验证码"
         body = f"您的密码重置验证码是：{code}\n\n10 分钟内有效。如非本人操作请忽略此邮件。\n\n—— LAS 文学分析系统"
+    elif purpose == "bind":
+        subject = "LAS 文学分析 — 邮箱绑定验证码"
+        body = f"您正在绑定/更换 LAS 账号的邮箱。\n\n您的验证码是：{code}\n\n10 分钟内有效。如非本人操作请忽略此邮件。\n\n—— LAS 文学分析系统"
     else:
         subject = "LAS 文学分析 — 注册验证码"
         body = f"欢迎注册 LAS 文学分析系统！\n\n您的验证码是：{code}\n\n10 分钟内有效。\n\n—— LAS 文学分析系统"
