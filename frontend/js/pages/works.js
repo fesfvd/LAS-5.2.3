@@ -118,7 +118,7 @@ App.register('/works', async () => {
   document.getElementById('batchDeleteBtn').addEventListener('click', async function() {
     if (selectedIds.size === 0) return;
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center';
     overlay.innerHTML = '<div class="glass-card" style="padding:24px;max-width:320px;text-align:center">'
       + '<p class="serif text-lg font-bold mb-2" style="color:var(--ink)">确认删除</p>'
       + '<p class="text-sm mb-6" style="color:var(--muted)">确定要删除选中的 ' + selectedIds.size + ' 部作品吗？此操作不可撤销。</p>'
@@ -294,7 +294,7 @@ App.register('/works', async () => {
         e.stopPropagation();
         // Custom modal instead of native confirm()
         var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center';
         overlay.innerHTML = '<div class="glass-card" style="max-width:360px;text-align:center;padding:32px">'
           + '<p class="serif text-lg font-bold mb-3" style="color:var(--ink)">确认删除</p>'
           + '<p class="text-sm mb-6" style="color:var(--muted)">此操作不可撤销，确定删除此作品？</p>'

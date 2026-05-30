@@ -18,7 +18,7 @@ App.register('/profile', async () => {
   document.getElementById('logoutBtn').addEventListener('click', function() {
     // Confirm modal
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center';
     overlay.innerHTML = '<div class="glass-card" style="padding:24px;max-width:320px;text-align:center">'
       + '<p class="serif text-lg font-bold mb-2" style="color:var(--ink)">确认退出</p>'
       + '<p class="text-sm mb-6" style="color:var(--muted)">确定要退出登录吗？</p>'
@@ -284,7 +284,7 @@ App.register('/profile', async () => {
     // ── Account deletion ──
     document.getElementById('deleteAccountBtn').addEventListener('click', function() {
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center';
       overlay.innerHTML = '<div class="glass-card" style="padding:24px;max-width:360px;text-align:center">'
         + '<p class="serif text-lg font-bold mb-2" style="color:var(--crimson)">确认注销</p>'
         + '<p class="text-sm mb-6" style="color:var(--muted)">注销后所有数据标记删除，7 天后永久清除。此操作不可撤销。</p>'
