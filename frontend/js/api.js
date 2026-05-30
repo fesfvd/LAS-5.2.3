@@ -57,6 +57,7 @@ const API = {
     qs.set('sort_by', params.sort_by || 'date');
     qs.set('sort_order', params.sort_order || 'desc');
     if (params.mode) qs.set('mode', params.mode);
+    qs.set('_t', Date.now()); // cache bust
     return this._fetch('/works?' + qs.toString());
   },
   createWork(data) { return this._post('/works', data); },
