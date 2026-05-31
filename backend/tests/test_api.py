@@ -14,42 +14,43 @@ class TestLogin:
     def test_login_success(self, client, db):
         user = mk_user(db, "logintest", email="login@test.com")
         r = client.post("/api/auth/login", json={
-            "username": "logintest", "password": "test1234",
+            "username": "logintest", "email": "login@test.com", "password": "test1234",
         })
         assert r.status_code == 200
         assert r.json()["username"] == "logintest"
         assert "access_token" in r.json()
 
-    def test_login_by_email(self, client, db):
+    def test_login_email_mismatch(self, client, db):
         mk_user(db, "emailuser", email="email@test.com")
         r = client.post("/api/auth/login", json={
-            "username": "email@test.com", "password": "test1234",
+            "username": "emailuser", "email": "wrong@test.com", "password": "test1234",
         })
-        assert r.status_code == 200
-        assert r.json()["username"] == "emailuser"
+        assert r.status_code == 400
+        assert "邮箱" in r.json()["detail"]
 
     def test_login_wrong_password(self, client, db):
         mk_user(db, "wrongpwd", email="wp@test.com")
         r = client.post("/api/auth/login", json={
-            "username": "wrongpwd", "password": "wrong",
+            "username": "wrongpwd", "email": "wp@test.com", "password": "wrong",
         })
         assert r.status_code == 400
-        assert "用户名或密码错误" in r.json()["detail"]
+        assert "密码错误" in r.json()["detail"]
 
     def test_login_nonexistent(self, client):
         r = client.post("/api/auth/login", json={
-            "username": "ghost", "password": "doesntmatter",
+            "username": "ghost", "email": "ghost@test.com", "password": "doesntmatter",
         })
         assert r.status_code == 400
+        assert "用户名不存在" in r.json()["detail"]
 
     def test_login_rate_limit(self, client):
         """5 failed attempts → 6th blocked."""
         for _ in range(5):
             client.post("/api/auth/login", json={
-                "username": "rate_bucket", "password": "wrong",
+                "username": "rate_bucket", "email": "rb@test.com", "password": "wrong",
             })
         r = client.post("/api/auth/login", json={
-            "username": "rate_bucket", "password": "wrong",
+            "username": "rate_bucket", "email": "rb@test.com", "password": "wrong",
         })
         assert r.status_code == 429
         assert "15 分钟" in r.json()["detail"]
