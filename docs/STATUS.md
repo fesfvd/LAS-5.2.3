@@ -1,21 +1,75 @@
 # LAS v5.2.3 项目现状
 
-> 最后更新: 2026-05-22
+> 最后更新: 2026-05-31
 
 ## 当前状态
 
-**稳定** — 提交 → 分析 → 报告 全链路通畅。
+**稳定** — 提交 → 分析 → 报告 → 对比 → 统计 全链路通畅。
 
 - 经典模式：仅需作品名，LLM 根据训练数据中的全文知识分析
 - 原创模式：需粘贴正文，16 维评分 + 审慎校验 + 惩罚计算
 - 双模板渲染：classic.html（深红）/ original.html（紫色）
+- 作品管理：按需选择模式（批量删除/作品对比）、统计图表（评级分布+分数走势）
+- 作品对比：独立全屏页面（雷达图叠加 + 16维评分表 + 四层面总结 + 差异分析）
+- 管理后台：统计卡片 + 用户列表 + 邀请码生成（仅 admin 可见入口在个人中心）
+- 金句广场：筛选（全部/原创/经典）+ 网格展示 + 换一批
 - Default 模型：DeepSeek V4 Flash（可选 V4 Pro）
 - JSON 解析多层防护（json.loads → json-repair → 手动补全）
 - 分析进度基于 SSE 字符流真实进度（conclusion/divination 里程碑）
-- 前端 SSE 健壮性：读超时 25s、5 分钟放弃、心跳 15s 保活、AbortController
+- SSE 健壮性：读超时 25s + 心跳 15s + 120s 无内容 watchdog + AbortController
 - 报告导出：PDF（打印展开 + 自动命名）+ DOCX（真格式）
 - 数据库：SQLite WAL 模式 + PRAGMA 优化 + 连接池
-- 代码质量：ruff 格式化全通过 + pydantic-settings 配置管理
+- 设计规范：DESIGN.md 16 章（含新增 Interaction Patterns 10 条交互铁律）
+- Dev 模式：start.bat 自动 `LAS_DEV=true`，前端自动登录，默认 admin 角色
+
+---
+
+## 5/31 会话完成的工作
+
+### 安全修复
+
+| # | 内容 | 文件 |
+|---|------|------|
+| 1 | 分享页 XSS：title/one_liner/golden/tier/author 全部 html_escape | main.py |
+| 2 | 内存泄漏：_login_attempts + _buckets 空 key 自动 pop | auth.py + rate_limit.py |
+| 3 | 并发竞态：quotes.json 读写加 threading.Lock | main.py |
+| 4 | SSE 看门狗：120s 无新内容自动 abort + error 事件 | llm.py |
+
+### 路由引擎
+
+| # | 内容 | 文件 |
+|---|------|------|
+| 5 | _startTransition 直接调用 _render() 替代 hashchange 依赖 | app.js |
+| 6 | App.navigate 用 history.pushState 消 hashchange 副作用 | app.js |
+| 7 | /compare 和 /stats 静态路由移至 /{work_id} 之前 | works.py |
+
+### UX 重设计
+
+| # | 内容 | 文件 |
+|---|------|------|
+| 8 | 作品管理复选框按需出现（批量删除/对比两种模式） | works.js |
+| 9 | 作品对比独立全屏页面（雷达图/评分表/层面总结/差异分析） | works.js |
+| 10 | 统计图表（评级分布饼图+分数走势曲线+模式筛选） | works.py + works.js |
+| 11 | 首页顶部导航栏 + 进入系统按钮 | index.html |
+| 12 | 管理后台入口从全局导航移至个人中心 | spa.html + profile.js |
+
+### 设计系统进化
+
+| # | 内容 | 文件 |
+|---|------|------|
+| 13 | DESIGN.md 新增 Interaction Patterns 章节（10 条交互铁律） | DESIGN.md |
+| 14 | 触控目标 ≥40px：filter-chip/quote-filter/btn 全部调整 | app.css + works.js + quotes.js |
+| 15 | .work-item:hover 去掉 translateY（改用 border-color） | app.css |
+| 16 | 13 级评级色板：金/深红/紫/翠绿/墨/琥珀/蓝/青/靛/红/橙/灰 | works.py |
+
+### 技能进化
+
+| # | 内容 | 文件 |
+|---|------|------|
+| 17 | ux-designer 重写（LAS 项目上下文 + 10 条交互铁律） | ~/.claude/skills/ux-designer |
+| 18 | frontend-designer 8→9 维（新增交互合规检查） | ~/.claude/skills/frontend-designer |
+| 19 | team 调度链强化（加功能强制 UX 审查 + 先交互后视觉） | ~/.claude/skills/team |
+| 20 | code-detective 新增交互反模式检测（10 项检查表） | ~/.claude/skills/code-detective |
 
 ---
 

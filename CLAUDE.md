@@ -27,7 +27,8 @@ backend/
   config.py            # Pydantic Settings (env → LAS_ prefix)
   models/orm.py        # SQLAlchemy ORM (User, Work, Analysis, InviteCode, VerificationCode)
   routers/auth.py      # 注册/登录/忘记密码/重置密码/游客
-  routers/works.py     # 作品 CRUD + 分析 + 报告
+  routers/works.py     # 作品 CRUD + 分析 + 报告 + 对比 + 统计
+  routers/admin.py     # 管理后台（统计/用户/邀请码）
   routers/users.py     # 个人中心（改密码/换邮箱/统计）
   services/llm.py      # DeepSeek 流式调用 + 里程碑
   services/analyzer.py # build_report() — LLM 输出 → 结构化报告
@@ -38,21 +39,21 @@ frontend/
   spa.html             # SPA 入口 /app
   index.html           # 首页 /
   css/app.css          # 全局样式（40+ CSS 变量、z-index 层级、motion token）
-  js/app.js            # 路由 + 转场状态机 + 离线检测 + 隐私路由
+  js/app.js            # 路由 + 转场状态机 + 离线检测 + 隐私路由 + 分析页内联
   js/api.js            # API 客户端（含 getWorksPaginated 分页）
   js/pages/auth.js     # 登录/注册/忘记密码（密码显隐切换、⚠ 错误图标）
   js/pages/upload.js   # 提交作品（提交取消按钮、maxlength 50万字）
-  js/pages/reader.js   # 分析进度（立即取消按钮、失败重试按钮）
   js/pages/report.js   # 报告渲染（CDN 守卫、card-tint 替换旧彩色左边框）
-  js/pages/works.js    # 作品管理（glass-card Modal 替换 confirm、分页器防累积）
-  js/pages/profile.js  # 个人中心
+  js/pages/works.js    # 作品管理（选择模式、对比页、统计图、glass-card Modal）
+  js/pages/profile.js  # 个人中心（管理后台入口）
+  js/pages/admin.js    # 管理后台（统计卡片/用户列表/邀请码生成）
+  js/pages/quotes.js   # 金句广场（筛选/网格/换一批）
   templates/           # 报告 HTML 模板（classic.html / original.html）
-  quotes.json          # 分析页句子库
 ```
 
 ## 设计规范
 
-调用 `/frontend-designer` 或以 `DESIGN.md` 为唯一宪法。DESIGN.md 包含 15 个完整章节：
+调用 `/frontend-designer` 或以 `DESIGN.md` 为唯一宪法。DESIGN.md 包含 16 个完整章节：
 
 | 章节 | 内容 |
 |------|------|
@@ -62,12 +63,13 @@ frontend/
 | Elevation & Z-Index | 6 级表面层级 + 表面色阶梯 + 5 级 z-index 变量 |
 | Shapes | 二半径体系（编辑/学术 2-4px + 功能/容器 8-12px + pill 仅标签） |
 | Interactive States | 六态机（default/hover/active/focus-visible/disabled/loading） |
+| Interaction Patterns | 10 条交互铁律（操作可见/选择分离/反馈/层级/无模式切换/确认/层级/触控/动画/三态） |
 | Components | glass-card 唯一卡片 + card-tints 5 色变体 + button-primary 六态 |
 | Accessibility | WCAG AA 对比度 + 44px 触摸 + focus-visible + 语义化 HTML |
-| Data Visualization | 四层面色板 + 雷达图色板 + tooltip + 图表动画 |
+| Data Visualization | 四层面色板 + 雷达图色板 + 评级 13 级色板 + tooltip + 图表动画 |
 | Dual-Theme System | 经典 crimson / 原创 purple 双主题切换 |
 | Responsive Behavior | 三断点 + 触摸目标 + 折叠策略 |
-| Iteration Guide | 12 条开发铁律 |
+| Iteration Guide | 13 条开发铁律 |
 
 **铁律**：
 - 三级字体不可混用：`.serif`（文学正文）、Sans 默认（UI）、`.mono`（英文标签/数字，含 `tnum` 等宽数字）
@@ -164,7 +166,11 @@ git config --global url."https://ghproxy.net/https://github.com".insteadOf "http
 | DELETE | `/api/works/{id}` | 删除作品 |
 | POST | `/api/works/{id}/analyze` | 启动分析 (SSE) |
 | GET | `/api/works/{id}/report` | 获取报告（含 report_number LAS-000001） |
+| GET | `/api/works/compare?ids=` | 作品对比（2-3 部，含 16 维分数） |
+| GET | `/api/works/stats?mode=` | 作品统计（评级分布 + 分数走势，支持模式筛选） |
+| POST | `/api/works/batch-delete` | 批量删除作品 |
 | POST | `/api/quotes` | 贡献金句 |
+| GET | `/api/admin/stats` | 管理后台统计（需 admin） |
 
 ## 关键 Skill
 
@@ -174,20 +180,23 @@ git config --global url."https://ghproxy.net/https://github.com".insteadOf "http
 | `/las-deploy` | 审→推→更→验 全链路部署 |
 | `/code-detective` | 深层缺陷侦探（CSS陷阱/异步竞态/跨文件影响链） |
 | `/code-reviewer` | 表层规范审查（语义化/a11y/性能/安全/可维护性） |
-| `/ux-designer` | 交互审计（交互流程/状态覆盖/微交互/移动端） |
-| `/frontend-designer` | 设计规范执行器（以 DESIGN.md 为宪法，8 维审查） |
+| `/ux-designer` | 交互审计（10 条交互铁律 + 7 态矩阵 + Nielsen 十原则） |
+| `/frontend-designer` | 设计规范执行器（以 DESIGN.md 为宪法，9 维审查） |
+| `/las-architect` | 系统架构师（编码前追踪影响链/设计API契约/风险评估） |
+| `/las-deploy-guard` | 部署安全网（缓存策略/API契约/持久化/端到端验证） |
 | `/las-prompt` | 提示词安全修改（跨文件影响追踪 + 一致性验证） |
 | `/las-debug` | 全链路诊断（LLM输出→后端解析→API响应→前端渲染） |
 | `/las-smoke` | 端到端冒烟测试 |
 | `/meta-skill-designer` | Skill 设计师（创建/进化/全量审查） |
 | `/karpathy-principles` | 编码原则（全局最高标准） |
 
-## 最近优化（2026-05-30）
+## 最近优化（2026-05-31）
 
-三轮前端大审查，25 项修复：
+全项目审计 + 交互重设计 + 安全修复：
 
-**第一轮（止血）**：CSS 变量补全到 40+ 个、分析页取消按钮立即可用、连接失败加「重新连接」按钮、PDF 回调修复、分页器防累积、全局离线检测、模板加载 fallback、works fetch 走统一 401 拦截
-
-**第二轮（合规）**：去除全部彩色左边框改用 card-tint、z-index 全部变量化（`--z-*`）、glass-card 风格自定义 Modal 替换原生 confirm、4 处事件/观察器泄漏修复、图表 A/C 层色修正、密码显隐切换、提交超时取消按钮、CDN 加载守卫、导航中文去 .mono、错误状态加 ⚠ 图标
-
-**第三轮（打磨）**：动效 duration 对齐 spec（.btn 200ms/.reveal 350ms）、附录图标非品牌色替换为 token、报告失败加「返回作品列表」、文本域 maxlength 50万字、筛选切换 spinner 闪烁优化、/privacy 路由修复
+**安全修复**：分享页 XSS 转义（html_escape）、_login_attempts/_buckets 内存泄漏清理、quotes.json 并发锁（threading.Lock）、SSE 120s 无内容 watchdog
+**路由引擎重写**：_startTransition 直接调用 _render() 替代 hashchange 依赖，消除导航失败；/compare /stats 路由移至 /{work_id} 之前
+**UX 重设计**：作品管理复选框按需出现（批量删除/对比模式）；对比页独立路由含雷达图+16维评分表+四层面总结+差异分析；统计图表（评级分布饼图+分数走势曲线，支持模式筛选）；首页顶部导航栏
+**设计系统进化**：DESIGN.md 新增 Interaction Patterns 章节（10 条交互铁律）；触控目标 ≥40px 全站统一；`.work-item:hover` 去掉 translateY；13 级评级色板（金/深红/紫/翠绿/墨/琥珀/蓝/青/靛/红/橙/灰）
+**技能进化**：ux-designer 重写（LAS 项目上下文 + 10 铁律）、frontend-designer 8→9 维、team 调度链强化（加功能强制 UX 审查）、code-detective 新增交互反模式检测
+**Dev 体验**：start.bat 自动 `LAS_DEV=true`、前端 dev 模式自动登录、dev 用户默认 admin 角色
