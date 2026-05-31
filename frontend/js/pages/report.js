@@ -204,13 +204,18 @@ async function renderFromTemplate(data, r, id) {
   });
 
   document.getElementById('shareBtn').addEventListener('click', () => {
-    var shareUrl = window.location.origin + '/share/' + (data.analysis_id || id);
+    var aid = data.analysis_id || id;
+    if (!aid) { alert('无法生成分享链接：缺少分析ID'); return; }
+    var shareUrl = window.location.origin + '/share/' + aid;
+    var btn = document.getElementById('shareBtn');
     navigator.clipboard.writeText(shareUrl).then(function() {
-      var btn = document.getElementById('shareBtn');
       btn.innerHTML = '<i class="fas fa-check"></i>';
-      setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
+      setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 2000);
     }).catch(function() {
-      alert('链接: ' + shareUrl);
+      // Clipboard API failed — show the URL for manual copy
+      prompt('复制以下链接分享报告：', shareUrl);
+      btn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 2000);
     });
   });
 
