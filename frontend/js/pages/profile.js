@@ -29,6 +29,7 @@ App.register('/profile', async () => {
     document.body.appendChild(overlay);
     overlay.querySelector('#logoutCancel').addEventListener('click', function() { overlay.remove(); });
     overlay.querySelector('#logoutConfirm').addEventListener('click', function() {
+      overlay.remove();
       API.clearToken();
       localStorage.removeItem('las_username');
       App.navigate('#/login');
@@ -36,7 +37,7 @@ App.register('/profile', async () => {
   });
 
   try {
-    var data = await API._fetch('/users/me');
+    var data = await API._fetch('/users/me?_t=' + Date.now());
     if (!data.ok) throw new Error('加载失败');
     var u = data.user;
     renderProfile(u);
