@@ -284,18 +284,15 @@
 <div class="mono text-xs" style="color:var(--muted)">{{TOKEN_USAGE}}</div>
 </div>
 <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted mt-2 pt-2" style="border-top:1px solid var(--rule)">
-<span>本报告由 AI 自动生成，仅供文学参考，不构成权威评价</span>
+<span onclick="var d=document.getElementById('rewardBox');if(d.style.display==='none'){d.style.display='block';this.textContent='收起赞赏'}else{d.style.display='none';this.textContent='☕ 赞赏'}" style="cursor:pointer;transition:color .2s;user-select:none" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--muted)'" title="请开发者喝一杯柠檬水">☕ 赞赏</span> <span class="text-muted/30">·</span> <span>本报告由 AI 自动生成，仅供文学参考，不构成权威评价</span>
 <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" class="text-purple hover:underline">鄂ICP备2026025713号</a>
 	<a href="https://qm.qq.com/q/lvpxj69QLm" target="_blank" class="text-purple hover:underline">QQ群 1091165886</a> · <a href="mailto:liusiqit@163.com" class="text-purple hover:underline">侵权投诉</a>
 </div>
 </div>
-	<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);text-align:left">
-	<span onclick="var d=document.getElementById('rewardBox');if(d.style.display==='none'){d.style.display='block';this.textContent='收起赞赏'}else{d.style.display='none';this.textContent='☕ 赞赏作者'}" style="font-size:12px;color:var(--muted);cursor:pointer;transition:color .2s;user-select:none" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--muted)'">☕ 赞赏作者</span>
-	<div id="rewardBox" style="display:none;margin-top:10px">
-	<p class="text-xs" style="color:var(--muted);line-height:1.8;margin-bottom:10px">感觉报告不错？LAS 由个人独立开发维护，服务器与 API 成本不菲。每一份支持都让这个项目走得更远。</p>
-	<img src="/static/reward.png" alt="赞赏码" style="width:180px;border-radius:6px;border:1px solid var(--rule)">
-	</div>
-	</div>
+		<div id="rewardBox" style="display:none;text-align:left;margin-top:8px">
+		<p class="text-xs" style="color:var(--muted);line-height:1.8;margin-bottom:10px">感觉报告不错？LAS 由个人独立开发维护，服务器与 API 成本不菲。<br>请开发者喝一杯柠檬水吧。</p>
+		<img src="/static/reward.png" alt="赞赏码" style="width:180px;border-radius:6px;border:1px solid var(--rule)">
+		</div>
 </footer>
 
 <button id="topBtn" onclick="document.documentElement.scrollTop=0;window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-16 md:bottom-6 right-5 w-9 h-9 rounded-full flex items-center justify-center text-muted/30 hover:text-purple transition opacity-0 pointer-events-none z-40" style="background:var(--paper);border:1px solid var(--rule)">

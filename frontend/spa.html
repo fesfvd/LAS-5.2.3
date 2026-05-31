@@ -31,7 +31,12 @@ tailwind.config={theme:{extend:{colors:{ink:'#1a1a1a',paper:'#faf8f3',gold:'#b88
   <a href="#/works" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:4px;transition:all .2s;margin-right:4px">作品管理</a>
   <a href="#/quotes" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:4px;transition:all .2s;margin-right:4px">金句广场</a>
   <span style="color:var(--rule-strong);margin-right:4px">|</span>
+  <span id="navReward" style="color:var(--muted);font-size:12px;cursor:pointer;transition:color .2s;user-select:none;padding:4px 8px;margin-right:4px" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--muted)'" onclick="var d=document.getElementById('navRewardBox');d.style.display=d.style.display==='none'?'block':'none'">☕ 赞赏</span>
   <span id="navUser" style="display:none"></span>
+  <div id="navRewardBox" style="display:none;position:absolute;top:52px;right:24px;z-index:var(--z-overlay);background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:16px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+    <p class="text-xs" style="color:var(--muted);line-height:1.8;margin-bottom:10px">感觉报告不错？<br>请开发者喝一杯柠檬水吧</p>
+    <img src="/static/reward.png" alt="赞赏码" style="width:160px;border-radius:6px">
+  </div>
   <a href="#/login" class="text-xs" id="navLogin" style="color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:4px;transition:all .2s">登录</a>
 </nav>
 
