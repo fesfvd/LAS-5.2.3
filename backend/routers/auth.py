@@ -222,7 +222,7 @@ def guest_login(db: Session = Depends(get_session)):
     guest_id = "guest_" + str(_uuid.uuid4())[:8]
     user = User(
         username=guest_id,
-        email=None,
+        email=guest_id + "@guest.local",
         password_hash=hash_password(guest_id),
         role="guest",
     )
