@@ -1,4 +1,4 @@
-:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--gold-pressed:#9a6f09;--gold-soft:rgba(184,134,11,.08);--crimson:#8b0000;--crimson-pressed:#6b0000;--purple:#6b21a8;--purple-pressed:#4e157a;--jade:#2d6a4f;--jade-soft:rgba(45,106,79,.08);--muted:#6b6558;--muted-soft:rgba(107,101,88,.3);--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15);--surface-glass:rgba(255,255,255,.45);--surface-soft:#f5f0e8;--surface-card:#efe9de;--surface-warning:rgba(180,120,30,.04);--surface-adjustment:rgba(180,120,30,.08);--on-gold:#faf8f3;--on-crimson:#faf8f3;--on-purple:#faf8f3;--semantic-success:#2d6a4f;--semantic-warning:#8b6914;--semantic-error:#dc2626;--card-tint-jade:rgba(45,106,79,.04);--card-tint-warning:rgba(180,120,30,.04);--card-tint-error:rgba(220,38,38,.04);--card-tint-gold:rgba(184,134,11,.04);--card-tint-purple:rgba(107,33,168,.04);--z-base:0;--z-raised:10;--z-dropdown:50;--z-sticky:100;--z-overlay:1000}
+:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--gold-pressed:#9a6f09;--gold-soft:rgba(184,134,11,.08);--crimson:#8b0000;--crimson-pressed:#6b0000;--purple:#6b21a8;--purple-pressed:#4e157a;--jade:#2d6a4f;--jade-soft:rgba(45,106,79,.08);--muted:#6b6558;--muted-soft:rgba(107,101,88,.3);--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15);--surface-glass:rgba(255,255,255,.45);--surface-soft:#f5f0e8;--surface-card:#efe9de;--surface-warning:rgba(180,120,30,.04);--surface-adjustment:rgba(180,120,30,.08);--on-gold:#faf8f3;--on-crimson:#faf8f3;--on-purple:#faf8f3;--semantic-success:#2d6a4f;--semantic-warning:#8b6914;--semantic-error:#dc2626;--card-tint-jade:rgba(45,106,79,.04);--card-tint-warning:rgba(180,120,30,.04);--card-tint-error:rgba(220,38,38,.04);--card-tint-gold:rgba(184,134,11,.04);--card-tint-purple:rgba(107,33,168,.04);--card-tint-ink:rgba(26,26,26,.03);--card-tint-crimson:rgba(139,0,0,.06);--z-base:0;--z-raised:10;--z-dropdown:50;--z-sticky:100;--z-overlay:1000}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
@@ -249,8 +249,8 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 /* Tags — used for genre/spectral/work labels */
 .tag{display:inline-block;font-size:11px;padding:2px 10px;border-radius:9999px;white-space:nowrap}
 .tag--genre{background:rgba(184,134,11,.04);border:1px solid rgba(184,134,11,.12);color:var(--gold)}
-.tag--spectral{background:rgba(26,26,26,.03);border:1px solid rgba(26,26,26,.06);color:var(--muted)}
-.tag--work{background:rgba(139,0,0,.06);border:1px solid rgba(139,0,0,.1);color:var(--crimson)}
+.tag--spectral{background:var(--card-tint-ink);border:1px solid rgba(26,26,26,.06);color:var(--muted)}
+.tag--work{background:var(--card-tint-crimson);border:1px solid rgba(139,0,0,.1);color:var(--crimson)}
 
 /* screenshot float */
 /* export toolbar (screenshot / PDF / Word) */

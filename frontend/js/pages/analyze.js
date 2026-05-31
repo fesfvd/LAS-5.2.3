@@ -361,7 +361,11 @@ async function startStream(workId, model) {
             receivedDone = true;
             onComplete();
             if (statusText) { statusText.textContent = '报告生成中...'; statusText.style.color = 'var(--gold)'; }
-            await waitForReport(workId);
+            var reportReady = await waitForReport(workId);
+            if (!reportReady) {
+              if (statusText) { statusText.textContent = '报告生成超时，请返回重试'; statusText.style.color = 'var(--semantic-error)'; }
+              return;
+            }
             if (statusText) statusText.textContent = '报告就绪，正在加载...';
             App.navigate('#/report/' + workId);
             return;
@@ -372,7 +376,15 @@ async function startStream(workId, model) {
           if (parseErrors === 10) {
             console.error('[LAS] 连续 10 次 SSE 解析失败，流可能已损坏');
             if (statusText) { statusText.textContent = '数据传输异常'; statusText.style.color = 'var(--semantic-warning)'; }
-          }
+            var retryBtn = document.createElement('button');
+            retryBtn.textContent = '重新连接';
+            retryBtn.className = 'text-xs';
+            retryBtn.style.cssText = 'margin-left:12px;padding:4px 12px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;transition:all .2s';
+            retryBtn.addEventListener('click', function() {
+              if (retryBtn.parentNode) retryBtn.remove();
+              App.navigate('#/upload');
+            });
+            if (statusText && statusText.parentNode) statusText.parentNode.insertBefore(retryBtn, statusText.nextSibling);
         }
       }
 
@@ -468,15 +480,17 @@ function cycleQuote() {
 }
 
 async function waitForReport(workId) {
-  for (let i = 0; ; i++) {
+  var maxRetries = 90; // ~3 min at increasing delays
+  for (let i = 0; i < maxRetries; i++) {
     const delay = i === 0 ? 0 : i <= 5 ? 500 : i <= 20 ? 1000 : 2000;
     await new Promise(r => setTimeout(r, delay));
     try {
       const data = await API.getReport(workId);
-      if (data.report && data.report.ok) return;
-      if (data.status === 'failed') return;
+      if (data.report && data.report.ok) return true;
+      if (data.status === 'failed') return false;
     } catch (e) {
       if (i <= 3 || i % 5 === 0) console.log('[LAS] 报告轮询 ' + (i + 1) + ': ' + (e.message || e));
     }
   }
+  return false;
 }

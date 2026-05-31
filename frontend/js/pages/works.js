@@ -172,7 +172,8 @@ App.register('/works', async () => {
     } catch (e) {
       list.style.opacity = '0';
       setTimeout(function() {
-        list.innerHTML = '<p class="text-sm" style="text-align:center;padding:40px 0">⚠ 加载失败: <span style="color:var(--semantic-error)">' + esc(e.message || '') + '</span></p>';
+        list.innerHTML = '<p class="text-sm" style="text-align:center;padding:40px 0">⚠ 加载失败: <span style="color:var(--semantic-error)">' + esc(e.message || '') + '</span></p>'
+          + '<p style="text-align:center;margin-top:12px"><button onclick="location.reload()" class="text-xs" style="padding:6px 18px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer">重试</button></p>';
         list.style.opacity = '1';
       }, 160);
     }

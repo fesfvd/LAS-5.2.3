@@ -7,7 +7,7 @@ App.register('/upload', () => {
   root.innerHTML = `
     <div class="submit-container">
       <div class="submit-header">
-        <p class="mono text-xs text-muted tracking-[4px] mb-1">SUBMISSION 作品录入</p>
+        <p class="text-xs text-muted mb-1"><span class="mono tracking-[4px]">SUBMISSION</span> <span style="font-family:'Noto Sans SC',sans-serif;letter-spacing:0">作品录入</span></p>
         <h1 class="serif text-3xl font-black leading-[1.1]">提交作品</h1>
       </div>
 
@@ -51,7 +51,7 @@ App.register('/upload', () => {
         <div class="textarea-group">
           <div class="flex items-center justify-between">
             <label class="field-label">TEXT <span class="field-label-zh">作品正文</span></label>
-            <span class="mono text-[10px]" style="color:var(--muted)" id="wordCount">0 字</span>
+            <span id="wordCount"><span class="mono" style="font-size:10px;color:var(--muted)">0</span> <span style="font-size:10px;color:var(--muted)">字</span></span>
           </div>
           <div class="upload-bar">
             <input type="file" id="fileInput" accept=".txt,.md,.docx,.doc,.pdf,.json,.csv,.xml,.html" hidden>
@@ -60,7 +60,7 @@ App.register('/upload', () => {
             <span class="upload-done" id="uploadDone" style="display:none"><i class="fas fa-file-alt mr-1"></i><span id="uploadName"></span><span class="upload-clear" id="uploadClear">×</span></span>
           </div>
           <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="${textHint}" required maxlength="${textMax}"></textarea>
-          <p class="mono text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint">// 原创模式必须提供完整正文</p>
+          <p class="text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint"><span class="mono">//</span> 原创模式必须提供完整正文</p>
         </div>
 
         <div class="submit-options">
