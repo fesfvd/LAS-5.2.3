@@ -244,6 +244,13 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .audit-tag{font-size:0.58rem;padding:2px 8px;border-radius:99px;font-weight:500;background:rgba(45,106,79,.08);color:var(--jade);white-space:nowrap}
 .audit-tag.updated{background:rgba(184,134,11,.08);color:var(--gold)}
 .audit-sub{font-size:0.72rem;color:var(--muted);line-height:1.7;margin-top:4px;padding-left:66px}
+.audit-sub--exemption{margin-top:8px;padding-top:8px;border-top:1px solid var(--rule)}
+
+/* Tags — used for genre/spectral/work labels */
+.tag{display:inline-block;font-size:11px;padding:2px 10px;border-radius:9999px;white-space:nowrap}
+.tag--genre{background:rgba(184,134,11,.04);border:1px solid rgba(184,134,11,.12);color:var(--gold)}
+.tag--spectral{background:rgba(26,26,26,.03);border:1px solid rgba(26,26,26,.06);color:var(--muted)}
+.tag--work{background:rgba(139,0,0,.06);border:1px solid rgba(139,0,0,.1);color:var(--crimson)}
 
 /* screenshot float */
 /* export toolbar (screenshot / PDF / Word) */

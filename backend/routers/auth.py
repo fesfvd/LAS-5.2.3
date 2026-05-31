@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.config import SECRET_KEY, JWT_ALGORITHM, JWT_EXPIRE_HOURS
 from backend.models.orm import User, InviteCode, VerificationCode, get_session
-from backend.schemas.models import RegisterRequest, LoginRequest, TokenResponse
+from backend.schemas.models import RegisterRequest, TokenResponse
 from backend.services.email import send_code
 
 logger = logging.getLogger("las.auth")
@@ -235,22 +235,27 @@ def guest_login(db: Session = Depends(get_session)):
 
 class LoginRequestV2(BaseModel):
     username: str
+    email: str = ""  # optional during transition (old cached SPA has no email field)
     password: str
     remember: bool = False
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequestV2, db: Session = Depends(get_session)):
-    login_id = req.username.strip()
-    rate_key = login_id.lower()
+    username = req.username.strip()
+    email = req.email.strip().lower() if req.email else ""
+    rate_key = (username or "") + ":" + email
     if not _check_login_rate(rate_key):
         raise HTTPException(429, "尝试次数过多，请 15 分钟后再试")
-    if "@" in login_id:
-        user = db.query(User).filter(User.email == login_id.lower()).first()
-    else:
-        user = db.query(User).filter(User.username == login_id).first()
-    if not user or not verify_password(req.password, user.password_hash):
-        raise HTTPException(400, "用户名或密码错误")
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(400, "用户名不存在")
+    # When email is provided (new frontend), verify it matches
+    if email:
+        if not user.email or user.email.lower() != email:
+            raise HTTPException(400, "邮箱与用户名不匹配")
+    if not verify_password(req.password, user.password_hash):
+        raise HTTPException(400, "密码错误")
     if user.is_deleted:
         raise HTTPException(400, "该账号已注销")
     token = create_token(user.id, user.username, req.remember)

@@ -182,7 +182,7 @@ var App = {
       }
     }
     if (result && typeof result.then === 'function') {
-      result.then(animateIn);
+      result.then(animateIn).catch(animateIn);
     } else {
       // Sync handler or no content — animate on next frame
       requestAnimationFrame(animateIn);

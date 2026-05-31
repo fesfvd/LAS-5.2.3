@@ -410,9 +410,10 @@ async function startStream(workId, model) {
 
 async function startQuoteCarousel() {
   try {
-    const res = await fetch('/static/quotes.json');
+    const res = await fetch('/api/quotes');
     if (!res.ok) return;
-    _quotes = await res.json();
+    const data = await res.json();
+    _quotes = data.quotes || [];
     for (let i = _quotes.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [_quotes[i], _quotes[j]] = [_quotes[j], _quotes[i]];

@@ -4,6 +4,7 @@ from backend.services.calculator import (
     verify_strategy,
     apply_originality_check,
     apply_original_caps,
+    apply_defect_bounds,
     apply_defect_exemption,
     compute_wcs,
     layer_for_dim,
@@ -54,6 +55,7 @@ def build_report(raw: dict, mode: str, genre: str) -> dict:
             "originality_adjustments"
         )  # new field, fallback to old
         scores = apply_originality_check(scores, dim_audit if dim_audit else None)
+        scores = apply_defect_bounds(scores, dim_audit if dim_audit else None)
         scores = apply_defect_exemption(scores, sa.get("defect_exemptions"))
         scores = apply_original_caps(scores)
 

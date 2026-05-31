@@ -4,9 +4,11 @@ from backend.services.calculator import (
     calc_tier,
     verify_strategy,
     apply_originality_check,
+    apply_defect_bounds,
     apply_defect_exemption,
     apply_original_caps,
     compute_wcs,
+    _is_genre_exempt,
 )
 
 
@@ -86,14 +88,14 @@ class TestVerifyStrategy:
         }
         assert verify_strategy(scores, 1) == 4
 
-    def test_best_layer_d_maps_to_strategy_1(self):
+    def test_best_layer_d_maps_to_strategy_4(self):
         scores = {
             1: 60, 2: 60, 3: 60, 4: 60,
             5: 60, 6: 60, 7: 60, 8: 60,
             9: 60, 10: 60, 11: 60, 12: 60,
             13: 120, 14: 120, 15: 120, 16: 120,  # D high
         }
-        assert verify_strategy(scores, 1) == 1
+        assert verify_strategy(scores, 1) == 4
 
 
 class TestApplyOriginalityCheck:
@@ -296,3 +298,63 @@ class TestComputeWCS:
         result = compute_wcs(scores, strategy=1, mode="classic", genre="novel")
         assert result["core_penalty_k"] == 1.0
         assert result["mediocrity_mf"] == 1.0
+
+
+class TestIsGenreExempt:
+    def test_exact_match(self):
+        assert _is_genre_exempt("诗歌") is True
+        assert _is_genre_exempt("小说") is False
+
+    def test_parenthetical_chinese(self):
+        assert _is_genre_exempt("诗歌（抒情/意象/口语/具象/短诗）") is True
+        assert _is_genre_exempt("先锋小说（语言实验/意识流）") is True
+
+    def test_parenthetical_english(self):
+        assert _is_genre_exempt("诗歌(抒情)") is True
+
+    def test_non_exempt_with_parens(self):
+        assert _is_genre_exempt("小说（长篇）") is False
+
+    def test_edge_spaces(self):
+        assert _is_genre_exempt("  诗歌  ") is True
+
+
+class TestApplyDefectBounds:
+    def test_clamps_score_to_bound(self):
+        scores = {1: 80, 2: 60, 3: 70}
+        audit = [
+            {"dimension_id": 1, "defect_bound": 55},
+            {"dimension_id": 2, "defect_bound": None},
+        ]
+        result = apply_defect_bounds(scores, audit)
+        assert result[1] == 55
+        assert result[2] == 60  # unchanged (no bound)
+
+    def test_null_bound_skipped(self):
+        scores = {1: 80}
+        audit = [{"dimension_id": 1, "defect_bound": None}]
+        result = apply_defect_bounds(scores, audit)
+        assert result[1] == 80
+
+    def test_string_null_bound_skipped(self):
+        scores = {1: 80}
+        audit = [{"dimension_id": 1, "defect_bound": "null"}]
+        result = apply_defect_bounds(scores, audit)
+        assert result[1] == 80
+
+    def test_no_audit(self):
+        scores = {1: 80}
+        result = apply_defect_bounds(scores, None)
+        assert result[1] == 80
+
+    def test_score_below_bound_unchanged(self):
+        scores = {1: 40}
+        audit = [{"dimension_id": 1, "defect_bound": 55}]
+        result = apply_defect_bounds(scores, audit)
+        assert result[1] == 40
+
+    def test_unknown_dim_skipped(self):
+        scores = {1: 80}
+        audit = [{"dimension_id": 99, "defect_bound": 55}]
+        result = apply_defect_bounds(scores, audit)
+        assert result[1] == 80

@@ -21,28 +21,29 @@ function buildAuth(tab) {
 
         ${!isForgot ? `
         <div class="field-group">
-          <label class="field-label">${isLogin ? 'ACCOUNT' : 'USERNAME'} <span class="field-label-zh">${isLogin ? '用户名/邮箱' : '用户名'}</span></label>
-          <input class="input-underline" name="username" placeholder="${isLogin ? '用户名或邮箱' : '2-50 个字符'}" required maxlength="${isLogin ? 100 : 50}" autocomplete="${isLogin ? 'username email' : 'username'}">
+          <label class="field-label">${isLogin ? 'USERNAME' : 'USERNAME'} <span class="field-label-zh">${isLogin ? '用户名' : '用户名'}</span></label>
+          <input class="input-underline" name="username" placeholder="${isLogin ? '输入用户名' : '2-50 个字符'}" required maxlength="${isLogin ? 50 : 50}" autocomplete="username">
         </div>` : ''}
 
-        ${(isRegister || isForgot) ? `
+        ${(isRegister || isForgot || isLogin) ? `
         ${isForgot ? `
         <div class="field-group">
           <label class="field-label">USERNAME <span class="field-label-zh">用户名</span></label>
           <input class="input-underline" name="username" placeholder="输入注册时的用户名" required maxlength="50" autocomplete="username">
         </div>` : ''}
         <div class="field-group">
-          <label class="field-label">EMAIL <span class="field-label-zh">邮箱</span></label>
+          <label class="field-label">EMAIL <span class="field-label-zh">${isLogin ? '绑定邮箱' : '邮箱'}</span></label>
           <div style="display:flex;gap:8px">
-            <input class="input-underline" name="email" type="email" placeholder="${isForgot ? '输入注册时的邮箱' : '必填，用于验证和找回密码'}" required maxlength="100" autocomplete="email" style="flex:1">
-            <button type="button" id="sendCodeBtn" style="font-size:12px;padding:8px 14px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;transition:all .2s">发送验证码</button>
+            <input class="input-underline" name="email" type="email" placeholder="${isLogin ? '输入绑定的邮箱地址' : isForgot ? '输入注册时的邮箱' : '必填，用于验证和找回密码'}" required maxlength="100" autocomplete="email" style="flex:1">
+            ${!isLogin ? `<button type="button" id="sendCodeBtn" style="font-size:12px;padding:8px 14px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;transition:all .2s">发送验证码</button>` : ''}
           </div>
         </div>
+        ${!isLogin ? `
         <div class="field-group" id="codeGroup" style="display:none">
           <label class="field-label">CODE <span class="field-label-zh">验证码</span></label>
           <input class="input-underline mono" name="code" placeholder="6 位数字" maxlength="6" style="letter-spacing:4px">
           <p class="text-xs" style="color:var(--muted);opacity:.6;margin-top:4px" id="codeHint">验证码已发送，10 分钟内有效</p>
-        </div>
+        </div>` : ''}
         ` : ''}
 
         ${!isForgot ? `
@@ -106,7 +107,13 @@ function buildAuth(tab) {
   const guestBtn = document.getElementById('guestBtn');
 
   function showError(msg) {
-    errEl.textContent = '⚠ ERROR: ' + msg;
+    var t = {
+      'username not found': '用户名不存在',
+      'invalid username or password': '用户名或密码错误',
+      'validation error': '请检查输入是否正确',
+    };
+    var cn = t[(msg||'').toLowerCase()] || msg;
+    errEl.textContent = '⚠ ' + cn;
     errEl.classList.add('show');
   }
 
@@ -181,12 +188,15 @@ function buildAuth(tab) {
     errEl.textContent = ''; errEl.classList.remove('show');
     var fd = new FormData(form);
     var data = Object.fromEntries(fd.entries());
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var origHTML = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; }
 
     try {
       if (isRegister) {
-        if (!codeSent) { showError('请先发送邮箱验证码'); return; }
+        if (!codeSent) { showError('请先发送邮箱验证码'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
         var code = (data.code || '').trim();
-        if (code.length !== 6) { showError('请输入 6 位验证码'); return; }
+        if (code.length !== 6) { showError('请输入 6 位验证码'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
         data.code = code;
         var invRaw = (form.querySelector('[name="invite_code"]') || {}).value || '';
         data.invite_code = invRaw.toUpperCase().replace(/\s/g, '');
@@ -199,16 +209,18 @@ function buildAuth(tab) {
         var usernameVal = (data.username || '').trim();
         var codeVal = (data.code || '').trim();
         var newPwd = (data.new_password || '').trim();
-        if (!usernameVal) { showError('请输入用户名'); return; }
-        if (!codeSent) { showError('请先发送验证码'); return; }
-        if (codeVal.length !== 6) { showError('请输入 6 位验证码'); return; }
-        if (newPwd.length < 6) { showError('新密码至少 6 位'); return; }
+        if (!usernameVal) { showError('请输入用户名'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
+        if (!codeSent) { showError('请先发送验证码'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
+        if (codeVal.length !== 6) { showError('请输入 6 位验证码'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
+        if (newPwd.length < 6) { showError('新密码至少 6 位'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
         await API._post('/auth/reset-password', { email: emailVal, username: usernameVal, code: codeVal, new_password: newPwd });
         alert('密码已重置，请登录');
         App.navigate('#/login');
       } else {
-        // Login
-        var payload = { username: data.username, password: data.password, remember: !!data.remember };
+        // Login — require username + email + password
+        var emailVal = (data.email || '').trim();
+        if (!emailVal || emailVal.indexOf('@') < 0) { showError('请输入绑定的邮箱地址'); if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; } return; }
+        var payload = { username: data.username, email: emailVal, password: data.password, remember: !!data.remember };
         var res = await API._post('/auth/login', payload);
         API.setToken(res.access_token);
         localStorage.setItem('las_username', res.username);
@@ -219,6 +231,7 @@ function buildAuth(tab) {
       }
     } catch (err) {
       showError(err.message);
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.innerHTML = origHTML; }
     }
   });
 }

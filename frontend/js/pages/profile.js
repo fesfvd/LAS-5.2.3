@@ -23,8 +23,8 @@ App.register('/profile', async () => {
       + '<p class="serif text-lg font-bold mb-2" style="color:var(--ink)">确认退出</p>'
       + '<p class="text-sm mb-6" style="color:var(--muted)">确定要退出登录吗？</p>'
       + '<div style="display:flex;gap:10px;justify-content:center">'
-      + '<button id="logoutCancel" class="mono text-xs" style="padding:8px 24px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>'
-      + '<button id="logoutConfirm" class="mono text-xs" style="padding:8px 24px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">退出</button>'
+      + '<button id="logoutCancel" class="text-xs" style="padding:8px 24px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>'
+      + '<button id="logoutConfirm" class="text-xs" style="padding:8px 24px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">退出</button>'
       + '</div></div>';
     document.body.appendChild(overlay);
     overlay.querySelector('#logoutCancel').addEventListener('click', function() { overlay.remove(); });
@@ -178,8 +178,10 @@ App.register('/profile', async () => {
       e.preventDefault();
       var fd = new FormData(this);
       var msg = document.getElementById('pwdMsg');
+      var submitBtn = this.querySelector('button[type="submit"]');
       msg.style.color = 'var(--muted)';
       msg.textContent = '...';
+      if (submitBtn) submitBtn.disabled = true;
       try {
         await API._req('PUT', '/users/password', {
           current_password: fd.get('current_password'),
@@ -192,6 +194,7 @@ App.register('/profile', async () => {
         msg.style.color = 'var(--crimson)';
         msg.textContent = err.message;
       }
+      if (submitBtn) submitBtn.disabled = false;
     });
 
     // ── Email change ──
@@ -230,17 +233,20 @@ App.register('/profile', async () => {
       var fd = new FormData(this);
       var msg = document.getElementById('emailMsg');
       if (!bindSent) { msg.textContent = '请先发送验证码'; msg.style.color = 'var(--crimson)'; return; }
+      var submitBtn = this.querySelector('button[type="submit"]');
       msg.style.color = 'var(--muted)';
       msg.textContent = '...';
+      if (submitBtn) submitBtn.disabled = true;
       try {
         await API._req('PUT', '/users/email', { email: fd.get('email'), code: fd.get('code') });
         msg.style.color = 'var(--jade)';
-        msg.textContent = '邮箱已更新';
-        bindSent = false;
+        msg.textContent = '邮箱已更新 — 即将刷新';
+        setTimeout(function() { location.reload(); }, 1000);
       } catch (err) {
         msg.style.color = 'var(--crimson)';
         msg.textContent = err.message;
       }
+      if (submitBtn) submitBtn.disabled = false;
     });
 
     // ── Guest upgrade ──
@@ -251,7 +257,9 @@ App.register('/profile', async () => {
         var code = new FormData(this).get('invite_code').trim();
         if (!code) return;
         var msg = document.getElementById('upgradeMsg');
+        var submitBtn = this.querySelector('button[type="submit"]');
         msg.textContent = '...'; msg.style.color = 'var(--muted)';
+        if (submitBtn) submitBtn.disabled = true;
         try {
           var res = await API._post('/auth/upgrade', { invite_code: code });
           msg.style.color = 'var(--jade)';
@@ -260,6 +268,7 @@ App.register('/profile', async () => {
         } catch (err) {
           msg.style.color = 'var(--crimson)';
           msg.textContent = err.message;
+          if (submitBtn) submitBtn.disabled = false;
         }
       });
     }
@@ -269,7 +278,9 @@ App.register('/profile', async () => {
       e.preventDefault();
       var fd = new FormData(this);
       var msg = document.getElementById('usernameMsg');
+      var submitBtn = this.querySelector('button[type="submit"]');
       msg.style.color = 'var(--muted)'; msg.textContent = '...';
+      if (submitBtn) submitBtn.disabled = true;
       try {
         var res = await API._req('PUT', '/users/username', { username: fd.get('username') });
         msg.style.color = 'var(--jade)';
@@ -279,6 +290,7 @@ App.register('/profile', async () => {
         msg.style.color = 'var(--crimson)';
         msg.textContent = err.message;
       }
+      if (submitBtn) submitBtn.disabled = false;
     });
 
     // ── Account deletion ──
@@ -289,12 +301,14 @@ App.register('/profile', async () => {
         + '<p class="serif text-lg font-bold mb-2" style="color:var(--crimson)">确认注销</p>'
         + '<p class="text-sm mb-6" style="color:var(--muted)">注销后所有数据标记删除，7 天后永久清除。此操作不可撤销。</p>'
         + '<div style="display:flex;gap:10px;justify-content:center">'
-        + '<button id="delCancel" class="mono text-xs" style="padding:8px 24px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>'
-        + '<button id="delConfirm" class="mono text-xs" style="padding:8px 24px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">确认注销</button>'
+        + '<button id="delCancel" class="text-xs" style="padding:8px 24px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>'
+        + '<button id="delConfirm" class="text-xs" style="padding:8px 24px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">确认注销</button>'
         + '</div></div>';
       document.body.appendChild(overlay);
       overlay.querySelector('#delCancel').addEventListener('click', function() { overlay.remove(); });
-      overlay.querySelector('#delConfirm').addEventListener('click', async function() {
+      var delBtn = overlay.querySelector('#delConfirm');
+      delBtn.addEventListener('click', async function() {
+        delBtn.disabled = true;
         try {
           await API._req('DELETE', '/users/me');
           overlay.remove();
@@ -302,7 +316,8 @@ App.register('/profile', async () => {
           localStorage.removeItem('las_username');
           App.navigate('#/login');
         } catch (err) {
-          overlay.querySelector('#delConfirm').textContent = '失败';
+          delBtn.textContent = '失败';
+          delBtn.disabled = false;
         }
       });
     });

@@ -11,11 +11,6 @@ class RegisterRequest(BaseModel):
     invite_code: str = Field(default="", max_length=32)
 
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str = Field(min_length=6, max_length=100)
-
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

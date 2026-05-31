@@ -1,6 +1,9 @@
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
+
+logger = logging.getLogger("las.orm")
 
 from sqlalchemy import (
     Boolean,
@@ -155,6 +158,17 @@ def init_db():
                 conn.commit()
             except Exception:
                 pass
+        # Backfill: mark existing users with emails as verified
+        # (accounts created before email_verified column existed defaulted to 0)
+        try:
+            result = conn.execute(
+                text("UPDATE users SET email_verified = 1 WHERE email IS NOT NULL AND email != '' AND email_verified = 0")
+            )
+            conn.commit()
+            if result.rowcount:
+                logger.info("已回填 %d 个旧用户的 email_verified 标记", result.rowcount)
+        except Exception:
+            pass
 
 
 def get_session():

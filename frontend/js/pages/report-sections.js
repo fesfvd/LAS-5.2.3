@@ -18,15 +18,18 @@ function buildReportSections(data, r, fallbackId) {
 
   // Genre & spectral keywords
   const genreKW = (meta.genre_keywords || []).map(k =>
-    `<span class="tag" style="background:rgba(184,134,11,.04);border:1px solid rgba(184,134,11,.12);color:var(--gold)">${esc(k)}</span>`
+    `<span class="tag tag--genre">${esc(k)}</span>`
   ).join('');
   const spectralKW = (meta.spectral_keywords || []).map(k =>
-    `<span class="tag" style="background:rgba(26,26,26,.03);border:1px solid rgba(26,26,26,.06);color:var(--muted)">${esc(k)}</span>`
+    `<span class="tag tag--spectral">${esc(k)}</span>`
   ).join('');
   const keywordsHtml = (genreKW || spectralKW) ? `<div class="flex flex-wrap gap-1.5 mb-4">${genreKW}${spectralKW}</div>` : '';
 
-  const tags = (ac.tags || []).map(t =>
-    `<span class="tag" style="background:rgba(139,0,0,.06);border:1px solid rgba(139,0,0,.1);color:var(--crimson)">${esc(t)}</span>`
+  // Tags: try per-field format first, fall back to legacy array
+  const tagFields = ['tag_1','tag_2','tag_3','tag_4','tag_5','tag_6','tag_7'];
+  const newTags = tagFields.map(k => ac[k]).filter(t => t != null && t !== '');
+  const tags = (newTags.length ? newTags : (ac.tags || [])).map(t =>
+    `<span class="tag tag--work">#${esc((t||'').replace(/^#/,''))}</span>`
   ).join('');
 
   const layerAvgs = s.layer_avgs || { A: 0, B: 0, C: 0, D: 0 };
@@ -361,8 +364,37 @@ const extremeText = ds.triggered ? '已触发' : '无';
   const svBestLayer = {A:'语言与形式',B:'叙事与内容',C:'思想与意义',D:'审美与影响'}[sv.best_layer] || '';
   if (sv.predicted !== undefined) {
     const matched = sv.predicted === sv.verified_strategy;
-    auditHtml += `<div class="audit-item"><div class="audit-row"><span class="audit-label mono">策略校验</span><span class="audit-value">预判策略 ${sv.predicted || '?'} → 校验确认策略 ${sv.verified_strategy || '?'}</span><span class="audit-tag ${matched ? '' : 'updated'}">${matched ? '一致' : '已更新'}</span></div>${sv.best_layer ? `<p class="audit-sub">四层均分：A ${(sv.layer_avgs||{}).A||'?'} / B ${(sv.layer_avgs||{}).B||'?'} / C ${(sv.layer_avgs||{}).C||'?'} / D ${(sv.layer_avgs||{}).D||'?'} · 最优层：${svBestLayer}${sv.weight_updated === true ? ' · 权重已更新' : ''}</p>` : ''}</div>`;
+    auditHtml += `<div class="audit-item"><div class="audit-row"><span class="audit-label">策略校验</span><span class="audit-value">预判策略 ${sv.predicted || '?'} → 校验确认策略 ${sv.verified_strategy || '?'}</span><span class="audit-tag ${matched ? '' : 'updated'}">${matched ? '一致' : '已更新'}</span></div>${sv.best_layer ? `<p class="audit-sub">四层均分：A ${(sv.layer_avgs||{}).A||'?'} / B ${(sv.layer_avgs||{}).B||'?'} / C ${(sv.layer_avgs||{}).C||'?'} / D ${(sv.layer_avgs||{}).D||'?'} · 最优层：${svBestLayer}${sv.weight_updated === true ? ' · 权重已更新' : ''}</p>` : ''}</div>`;
   }
+  // Defect exemption details
+  const defExemptions = sa.defect_exemptions;
+  if (defExemptions && defExemptions.length) {
+    auditHtml += '<div class="audit-item"><div class="audit-row"><span class="audit-label">正缺陷豁免</span><span class="audit-value">' + defExemptions.length + ' 项</span><span class="audit-tag updated">已应用</span></div>';
+    defExemptions.forEach(function(ex, i) {
+      var tfj = ex.three_factor_judgment || {};
+      auditHtml += '<div class="audit-sub audit-sub--exemption">'
+        + '<span style="color:var(--ink);font-weight:500">豁免 ' + (i+1) + '：</span>'
+        + '维度 ' + esc(ex.exempted_dimension_name || ex.exempted_dimension_id || '?')
+        + '（' + (ex.original_score != null ? ex.original_score.toFixed(1) : '?') + '分）'
+        + ' → 传世级维度 ' + esc(ex.linked_to_master_dimension_name || ex.linked_to_master_dimension_id || '?')
+        + '（' + (ex.master_score != null ? ex.master_score.toFixed(1) : '?') + '分）';
+      if (tfj.causal_necessity) {
+        auditHtml += '<p class="text-xs" style="color:var(--muted);margin-top:4px">'
+          + '<span style="color:var(--ink)">因果必然性：</span>' + esc(tfj.causal_necessity) + '</p>';
+      }
+      if (tfj.unavoidability) {
+        auditHtml += '<p class="text-xs" style="color:var(--muted);margin-top:2px">'
+          + '<span style="color:var(--ink)">不可规避性：</span>' + esc(tfj.unavoidability) + '</p>';
+      }
+      if (tfj.internal_consistency) {
+        auditHtml += '<p class="text-xs" style="color:var(--muted);margin-top:2px">'
+          + '<span style="color:var(--ink)">内在一贯性：</span>' + esc(tfj.internal_consistency) + '</p>';
+      }
+      auditHtml += '</div>';
+    });
+    auditHtml += '</div>';
+  }
+
   const auditSectionHtml = auditHtml ? `<section id="auditLog" class="py-10 reveal"><hr class="rule-strong mb-6"><h2 class="text-2xl font-bold serif mb-5">评分决策日志</h2><div class="glass-card rounded-xl p-5 space-y-3">${auditHtml}</div></section>` : '';
 
   const sections = {

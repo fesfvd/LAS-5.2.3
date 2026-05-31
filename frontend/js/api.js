@@ -45,7 +45,6 @@ const API = {
   _delete(path) { return this._req('DELETE', path); },
 
   // Auth
-  login(username, password) { return this._post('/auth/login', { username, password }); },
   register(data) { return this._post('/auth/register', data); },
 
   // Works

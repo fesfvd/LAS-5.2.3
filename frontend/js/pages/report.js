@@ -204,12 +204,20 @@ async function renderFromTemplate(data, r, id) {
 
   initReport(root, { dimData, layerAvgs, wcs, tier });
 
-  // ── Quote contribution ──
+  // ── Quote contribution (original mode only) ──
   var contributeBox = document.getElementById('contributeBox');
-  if (contributeBox && !localStorage.getItem('las_contribute_dismissed')) {
+  if (contributeBox && isOriginal) {
     var qt = (r.analysis_content && r.analysis_content.golden_quote) || '';
     if (qt.length < 4) { contributeBox.style.display = 'none'; }
     else {
+      // Track handled quotes per-quote — both "贡献" and "不了，谢谢" only affect this one
+      var handledQuotes = [];
+      try {
+        handledQuotes = JSON.parse(localStorage.getItem('las_handled_quotes') || '[]');
+      } catch (e) {}
+      if (handledQuotes.indexOf(qt) !== -1) {
+        contributeBox.style.display = 'none';
+      } else {
       var preview = document.getElementById('contributeQuotePreview');
       if (preview) preview.textContent = qt;
       var qsrc = (data.title || '') + ' ' + (data.author || '');
@@ -225,6 +233,8 @@ async function renderFromTemplate(data, r, id) {
           var msg = document.getElementById('contributeMsg');
           msg.textContent = '已添加到句子库，感谢分享';
           msg.style.display = '';
+          handledQuotes.push(qt);
+          try { localStorage.setItem('las_handled_quotes', JSON.stringify(handledQuotes)); } catch(e) {}
           setTimeout(function() {
             contributeBox.style.opacity = '0';
             contributeBox.style.transition = 'opacity .4s';
@@ -241,8 +251,10 @@ async function renderFromTemplate(data, r, id) {
       });
       document.getElementById('contributeDismiss').addEventListener('click', function() {
         contributeBox.style.display = 'none';
-        localStorage.setItem('las_contribute_dismissed', '1');
+        handledQuotes.push(qt);
+        try { localStorage.setItem('las_handled_quotes', JSON.stringify(handledQuotes)); } catch(e) {}
       });
+      } // end else (not already handled)
     }
   }
 }

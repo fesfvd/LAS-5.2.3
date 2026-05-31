@@ -1,6 +1,9 @@
 App.register('/upload', () => {
   document.title = '提交作品 — LAS 文学分析';
   const root = document.getElementById('spaApp');
+  var isGuest = (localStorage.getItem('las_username') || '').startsWith('guest_');
+  var textMax = isGuest ? 50000 : 500000;
+  var textHint = isGuest ? '粘贴全文，或点击上方按钮上传文件...（游客上限 5 万字）' : '粘贴全文，或点击上方按钮上传文件...（上限 50 万字）';
   root.innerHTML = `
     <div class="submit-container">
       <div class="submit-header">
@@ -56,7 +59,7 @@ App.register('/upload', () => {
             <span class="upload-hint" id="uploadHint">或拖拽文件到文本框</span>
             <span class="upload-done" id="uploadDone" style="display:none"><i class="fas fa-file-alt mr-1"></i><span id="uploadName"></span><span class="upload-clear" id="uploadClear">×</span></span>
           </div>
-          <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="粘贴全文，或点击上方按钮上传文件...（上限 50 万字）" required maxlength="500000"></textarea>
+          <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="${textHint}" required maxlength="${textMax}"></textarea>
           <p class="mono text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint">// 原创模式必须提供完整正文</p>
         </div>
 

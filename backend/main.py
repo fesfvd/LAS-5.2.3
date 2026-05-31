@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 
 from pydantic import BaseModel
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
@@ -112,6 +112,7 @@ app.include_router(works.router)
 app.include_router(users.router)
 
 frontend_dir = os.path.join(BASE_DIR, "frontend")
+data_dir = os.path.join(BASE_DIR, "data")
 app.mount("/css", StaticFiles(directory=os.path.join(frontend_dir, "css")), name="css")
 app.mount("/js", StaticFiles(directory=os.path.join(frontend_dir, "js")), name="js")
 app.mount(
@@ -153,7 +154,7 @@ async def serve_spa():
 @app.get("/privacy")
 async def serve_privacy():
     resp = FileResponse(os.path.join(frontend_dir, "privacy.html"))
-    resp.headers["Cache-Control"] = "public, max-age=86400"
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
 
@@ -171,9 +172,25 @@ class QuoteBody(BaseModel):
     mode: str = "classic"
 
 
+def _get_quotes_file() -> str:
+    """Return path to quotes.json, migrating from frontend/ if needed."""
+    quote_file = os.path.join(data_dir, "quotes.json")
+    old_file = os.path.join(frontend_dir, "quotes.json")
+    if not os.path.exists(quote_file) and os.path.exists(old_file):
+        try:
+            import shutil
+            shutil.copy2(old_file, quote_file)
+            logger.info("quotes.json 已从 frontend/ 迁移到 data/")
+        except OSError:
+            pass
+    return quote_file
+
+
 @app.post("/api/quotes")
-async def contribute_quote(data: QuoteBody):
-    quote_file = os.path.join(frontend_dir, "quotes.json")
+async def contribute_quote(data: QuoteBody, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "请先登录")
+    quote_file = _get_quotes_file()
     try:
         with open(quote_file, "r", encoding="utf-8") as f:
             quotes = json.load(f)
@@ -183,3 +200,16 @@ async def contribute_quote(data: QuoteBody):
     with open(quote_file, "w", encoding="utf-8") as f:
         json.dump(quotes, f, ensure_ascii=False, indent=2)
     return {"ok": True, "count": len(quotes)}
+
+
+@app.get("/api/quotes")
+async def get_quotes(mode: str = ""):
+    quote_file = _get_quotes_file()
+    try:
+        with open(quote_file, "r", encoding="utf-8") as f:
+            quotes = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        quotes = []
+    if mode:
+        quotes = [q for q in quotes if q.get("m") == mode]
+    return {"quotes": quotes}

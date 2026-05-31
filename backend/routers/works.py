@@ -88,6 +88,24 @@ def list_works(
 def create_work(
     req: WorkCreate, user: User = Depends(get_user), db: Session = Depends(get_session)
 ):
+    if user.role == "guest":
+        content_len = len(req.content or "")
+        if content_len > 50000:
+            raise HTTPException(400, "游客单次提交上限 5 万字")
+        # Daily 10万字 total
+        from datetime import datetime as _dt, timezone as _tz
+        today = _dt.now(_tz.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_total = (
+            db.query(Work)
+            .filter(
+                Work.user_id == user.id,
+                Work.created_at >= today,
+            )
+            .all()
+        )
+        daily_chars = sum(len(w.content or "") for w in today_total)
+        if daily_chars + content_len > 100000:
+            raise HTTPException(400, "游客每日提交上限 10 万字")
     work = Work(
         user_id=user.id,
         title=req.title,

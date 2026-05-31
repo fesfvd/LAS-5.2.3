@@ -59,6 +59,30 @@ BIAS_EXEMPT_GENRES = {
 }
 
 
+def _is_genre_exempt(genre: str) -> bool:
+    """Check if genre is in the exemption list using prefix matching.
+
+    LLM may output genre with parenthetical subtypes (e.g. "诗歌（抒情/意象）"
+    or "先锋小说（语言实验/意识流）"), while BIAS_EXEMPT_GENRES stores only
+    base names. This function strips the parenthetical to match correctly.
+    """
+    base = genre.split("（")[0].split("(")[0].strip()
+    return base in BIAS_EXEMPT_GENRES
+
+
+def _safe_dim_id(val) -> int | None:
+    """Coerce LLM's dimension_id to int, logging type mismatches."""
+    if val is None:
+        return None
+    if isinstance(val, int):
+        return val
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        logger.warning("维度 ID 类型异常，无法转换为 int: %r", val)
+        return None
+
+
 def layer_for_dim(dim_id: int) -> str:
     if dim_id <= 4:
         return "A"
@@ -82,7 +106,7 @@ def verify_strategy(scores: dict, predicted_strategy: int) -> int:
         dims = [v for k, v in scores.items() if layer_for_dim(k) == layer]
         layer_avgs[layer] = sum(dims) / len(dims) if dims else 0
     best = max(layer_avgs, key=layer_avgs.get)
-    strategy_map = {"A": 2, "B": 3, "C": 4, "D": 1}
+    strategy_map = {"A": 2, "B": 3, "C": 4, "D": 4}
     return strategy_map.get(best, predicted_strategy)
 
 
@@ -106,8 +130,10 @@ def apply_originality_check(scores: dict, dimension_audit: list | None = None) -
         # Build dim_id → d_value map from LLM's 16-dimension audit
         d_map = {}
         for entry in dimension_audit:
-            dim_id = entry.get("dimension_id")
-            d_val = entry.get("d_value", 1)
+            dim_id = _safe_dim_id(entry.get("dimension_id"))
+            d_val = entry.get("d_value")
+            if d_val is None:
+                d_val = 1
             if dim_id is not None and dim_id in scores:
                 if d_val not in GAP_RATIOS:
                     logger.warning(
@@ -163,7 +189,7 @@ def apply_defect_exemption(scores: dict, exemptions: list | None = None) -> dict
     for ex in exemptions:
         if exempted_count >= 4:
             break
-        dim_id = ex.get("exempted_dimension_id")
+        dim_id = _safe_dim_id(ex.get("exempted_dimension_id"))
         if dim_id is None or dim_id not in result:
             continue
         # Verify pre-condition: exempted dim must be ≤85
@@ -175,7 +201,7 @@ def apply_defect_exemption(scores: dict, exemptions: list | None = None) -> dict
             )
             continue
         # Verify pre-condition: linked master dim must be ≥105
-        master_id = ex.get("linked_to_master_dimension_id")
+        master_id = _safe_dim_id(ex.get("linked_to_master_dimension_id"))
         if master_id is None or master_id not in result or result[master_id] < 105:
             logger.warning(
                 "apply_defect_exemption: master dim %d score %.1f < 105, 驳回豁免",
@@ -197,6 +223,37 @@ def apply_defect_exemption(scores: dict, exemptions: list | None = None) -> dict
         result[dim_id] = round(avg, 1)
         exempted_count += 1
 
+    return result
+
+
+def apply_defect_bounds(scores: dict, dimension_audit: list | None = None) -> dict:
+    """Enforce defect binding upper limits (≤55 or ≤60) from LLM's audit.
+
+    Prompt requires LLM to cap scores for defect-bound dimensions, but this
+    is a safety net in case the LLM fails to self-enforce the constraint.
+    """
+    if not dimension_audit:
+        return dict(scores)
+    result = dict(scores)
+    for entry in dimension_audit:
+        dim_id = _safe_dim_id(entry.get("dimension_id"))
+        bound = entry.get("defect_bound")
+        if dim_id is None or dim_id not in result:
+            continue
+        if bound is None:
+            continue
+        if isinstance(bound, str) and bound.strip().lower() in ("null", "none", ""):
+            continue
+        try:
+            bound = float(bound)
+        except (ValueError, TypeError):
+            continue
+        if result[dim_id] > bound:
+            logger.info(
+                "apply_defect_bounds: dim %d %.1f clamped to %.0f (defect bound)",
+                dim_id, result[dim_id], bound,
+            )
+            result[dim_id] = bound
     return result
 
 
@@ -228,7 +285,7 @@ def compute_wcs(scores: dict, strategy: int, mode: str, genre: str) -> dict:
         noncore_avg = sum(scores[d] for d in noncore_dims) / len(noncore_dims)
         gap = abs(core_avg - noncore_avg)
         # 偏科惩罚: k = 1/(1 + 0.01×gap)，gap>5 且核心≤90 时触发；k 下界 0.65
-        if genre not in BIAS_EXEMPT_GENRES and core_avg <= 90 and gap > 5:
+        if not _is_genre_exempt(genre) and core_avg <= 90 and gap > 5:
             k = 1.0 / (1.0 + 0.01 * gap)
             k = max(k, 0.65)
 
