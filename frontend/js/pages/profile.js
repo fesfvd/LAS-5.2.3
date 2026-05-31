@@ -104,7 +104,7 @@ App.register('/profile', async () => {
         }).join('')}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;color:var(--muted);padding-top:12px;border-top:1px solid var(--rule)">
-        <div><span class="text-xs" style="color:var(--ink);font-weight:500">邮箱</span><br>${esc(u.email || '未绑定')} ${u.email_verified ? '<span style="color:var(--jade);font-size:11px">✓已验证</span>' : '<span style="color:var(--crimson);font-size:11px">未验证</span>'}</div>
+        <div><span class="text-xs" style="color:var(--ink);font-weight:500">邮箱</span><br>${(u.email && u.email.indexOf('@guest.local') === -1) ? esc(u.email) + (u.email_verified ? ' <span style="color:var(--jade);font-size:11px">✓已验证</span>' : ' <span style="color:var(--crimson);font-size:11px">未验证</span>') : '<span style="color:var(--muted)">未绑定</span>'}</div>
         <div><span class="text-xs" style="color:var(--ink);font-weight:500">注册时间</span><br>${(u.created_at||'').slice(0,10)}</div>
       </div>
     </div>
