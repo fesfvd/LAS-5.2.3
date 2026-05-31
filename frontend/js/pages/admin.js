@@ -68,7 +68,12 @@ App.register('/admin', async () => {
   }
   loadUsers('');
 
-  document.getElementById('userSearch').addEventListener('input', function() { loadUsers(this.value); });
+  var searchTimer = null;
+  document.getElementById('userSearch').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    var v = this.value;
+    searchTimer = setTimeout(function() { loadUsers(v); }, 300);
+  });
 
   // Generate invite codes
   document.getElementById('genInviteBtn').addEventListener('click', async function() {

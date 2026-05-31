@@ -20,7 +20,11 @@ RULES: dict[str, tuple[int, int]] = {
 
 def _cleanup(key: str, now: float, window: int) -> None:
     cutoff = now - window
-    _buckets[key] = [t for t in _buckets[key] if t > cutoff]
+    remaining = [t for t in _buckets[key] if t > cutoff]
+    if remaining:
+        _buckets[key] = remaining
+    else:
+        _buckets.pop(key, None)  # prevent unbounded dict growth
 
 
 def check_rate_limit(request: Request, user_id: str | None) -> None:

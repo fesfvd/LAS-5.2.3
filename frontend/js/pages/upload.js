@@ -59,8 +59,8 @@ App.register('/upload', () => {
             <span class="upload-hint" id="uploadHint">或拖拽文件到文本框</span>
             <span class="upload-done" id="uploadDone" style="display:none"><i class="fas fa-file-alt mr-1"></i><span id="uploadName"></span><span class="upload-clear" id="uploadClear">×</span></span>
           </div>
-          <textarea class="input-underline textarea" name="content" id="contentArea" placeholder="${textHint}" required maxlength="${textMax}"></textarea>
-          <p class="text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint"><span class="mono">//</span> 原创模式必须提供完整正文</p>
+	          <div class="textarea-wrap"><textarea class="input-underline textarea" name="content" id="contentArea" placeholder="${textHint}" required maxlength="${textMax}"></textarea></div>
+          <p class="text-xs text-muted mt-1" style="font-size:10px;opacity:.6" id="contentHint"><span class="mono">//</span> 原创模式不必提交完稿，未完结片段同样可以分析</p>
         </div>
 
         <div class="submit-options">
@@ -102,7 +102,7 @@ App.register('/upload', () => {
       } else {
         textarea.setAttribute('required', '');
         textarea.placeholder = textHint;
-        contentHint.textContent = '// 原创模式必须提供完整正文';
+        contentHint.textContent = '// 原创模式不必提交完稿，未完结片段同样可以分析';
       }
     });
   });
@@ -237,12 +237,17 @@ function bindSubmitHandler() {
     formBody.style.opacity = '0.3';
     formBody.style.filter = 'blur(2px)';
     formBody.style.pointerEvents = 'none';
+    // Abort controller for createWork request
+    var createCtrl = new AbortController();
+    var createTimeout = setTimeout(function() { createCtrl.abort(); }, 60000); // 60s timeout
     // Add cancel button to overlay
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = '取消';
     cancelBtn.className = 'mono text-xs';
-    cancelBtn.style.cssText = 'margin-top:24px;padding:6px 20px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:JetBrains Mono,monospace';
+    cancelBtn.style.cssText = 'margin-top:24px;padding:6px 20px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:JetBrains Mono,monospace;opacity:0';
     cancelBtn.addEventListener('click', function() {
+      createCtrl.abort();
+      clearTimeout(createTimeout);
       submitBtn.disabled = false;
       submitBtn.innerHTML = origHTML;
       overlay.classList.remove('show');
@@ -254,38 +259,50 @@ function bindSubmitHandler() {
     overlay.appendChild(cancelBtn);
     setTimeout(() => overlay.classList.add('show'), 300);
 
-    const logs = [
-      { el: 'submitLog1', text: '> 正在接收文本数据...', delay: 400 },
-      { el: 'submitLog2', text: '> 正在校验完整性...', delay: 1000 },
-      { el: 'submitLog3', text: '> 分析准备就绪', delay: 1800 }
-    ];
-    logs.forEach(log => {
-      setTimeout(() => {
-        const el = document.getElementById(log.el);
-        if (el) el.textContent = log.text;
-      }, log.delay);
-    });
+    // First two logs show on timer (visual only), third waits for API
+    var log1Timer = setTimeout(function() {
+      var el = document.getElementById('submitLog1');
+      if (el) el.textContent = '> 正在接收文本数据...';
+    }, 400);
+    // Fade in cancel button after first log
+    setTimeout(function() { cancelBtn.style.opacity = '1'; }, 500);
+    var log2Timer = setTimeout(function() {
+      var el = document.getElementById('submitLog2');
+      if (el) el.textContent = '> 正在校验完整性...';
+    }, 1000);
 
     try {
-      const work = await API.createWork(data);
+      console.log('[UPLOAD] createWork start...');
+      const work = await API.createWork(data, createCtrl.signal);
+      console.log('[UPLOAD] createWork ok, id=' + (work.id || 'nil'));
+      clearTimeout(createTimeout);
+      var el3 = document.getElementById('submitLog3');
+      if (el3) el3.textContent = '> 分析准备就绪';
+      var target = '#/analyze/' + (work.id || '');
+      console.log('[UPLOAD] nav to ' + target + ' in 300ms');
       setTimeout(function() {
-        try { App.navigate('#/analyze/' + work.id); } catch(e) {}
-        // 兜底：500ms 后转场还没触发就直接跳
-        setTimeout(function() {
-          if (window.location.hash.indexOf('/analyze/') === -1) {
-            window.location.hash = '#/analyze/' + work.id;
-          }
-        }, 500);
-      }, 2400);
+        console.log('[UPLOAD] reset _transitionPhase=' + _transitionPhase);
+        _transitionPhase = 'idle';
+        _pendingRoute = null;
+        var ov = document.getElementById('transitionOverlay');
+        if (ov) ov.classList.remove('enter', 'exit');
+        App.navigate(target);
+        console.log('[UPLOAD] App.navigate done');
+      }, 300);
     } catch (err) {
+      console.log('[UPLOAD] createWork fail: ' + err.name + ' | ' + err.message);
+      clearTimeout(createTimeout);
+      if (err.name === 'AbortError') return;
+      clearTimeout(log1Timer);
+      clearTimeout(log2Timer);
       submitBtn.disabled = false;
       submitBtn.innerHTML = origHTML;
       overlay.classList.remove('show');
       formBody.style.opacity = '';
       formBody.style.filter = '';
       formBody.style.pointerEvents = '';
-      logs.forEach(log => {
-        const el = document.getElementById(log.el);
+      ['submitLog1','submitLog2','submitLog3'].forEach(function(id) {
+        var el = document.getElementById(id);
         if (el) el.textContent = '';
       });
       errEl.textContent = '> ⚠ ERROR: ' + err.message;

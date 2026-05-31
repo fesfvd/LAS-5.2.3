@@ -3,6 +3,7 @@ import logging
 import logging.handlers
 import os
 from contextlib import asynccontextmanager
+from html import escape as html_escape
 
 from sqlalchemy import text
 
@@ -170,12 +171,12 @@ async def share_report(report_id: str):
         work = db.query(Work).filter(Work.id == analysis.work_id).first()
         r = analysis.report_json
         ac = r.get("analysis_content", {}) if isinstance(r, dict) else {}
-        title = (work.title if work else "") or ""
-        author = (work.author if work else "") or ""
+        title = html_escape((work.title if work else "") or "")
+        author = html_escape((work.author if work else "") or "")
         score = analysis.wcs_score or 0
-        tier = analysis.tier or ""
-        one_liner = ac.get("one_liner", "") if isinstance(ac, dict) else ""
-        golden = ac.get("golden_quote", "") if isinstance(ac, dict) else ""
+        tier = html_escape(analysis.tier or "")
+        one_liner = html_escape(ac.get("one_liner", "") if isinstance(ac, dict) else "")
+        golden = html_escape(ac.get("golden_quote", "") if isinstance(ac, dict) else "")
         share_html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -229,6 +230,10 @@ class QuoteBody(BaseModel):
     mode: str = "classic"
 
 
+import threading
+_quote_lock = threading.Lock()
+
+
 def _get_quotes_file() -> str:
     """Return path to quotes.json, migrating from frontend/ if needed."""
     quote_file = os.path.join(data_dir, "quotes.json")
@@ -248,14 +253,15 @@ async def contribute_quote(data: QuoteBody, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "请先登录")
     quote_file = _get_quotes_file()
-    try:
-        with open(quote_file, "r", encoding="utf-8") as f:
-            quotes = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        quotes = []
-    quotes.append({"t": data.quote.strip(), "s": data.source.strip(), "m": data.mode})
-    with open(quote_file, "w", encoding="utf-8") as f:
-        json.dump(quotes, f, ensure_ascii=False, indent=2)
+    with _quote_lock:
+        try:
+            with open(quote_file, "r", encoding="utf-8") as f:
+                quotes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            quotes = []
+        quotes.append({"t": data.quote.strip(), "s": data.source.strip(), "m": data.mode})
+        with open(quote_file, "w", encoding="utf-8") as f:
+            json.dump(quotes, f, ensure_ascii=False, indent=2)
     return {"ok": True, "count": len(quotes)}
 
 

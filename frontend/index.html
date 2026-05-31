@@ -60,7 +60,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 .rule-strong{border:none;border-top:1px solid var(--rule-strong);margin:0}
 .rule-gold{border:none;border-top:2px solid var(--gold);margin:0;width:3rem}
 
-#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding-top:48px}
 .hero-inner{text-align:center;padding:2rem;max-width:640px}
 .hero-label{font-size:.7rem;color:var(--muted);letter-spacing:6px;text-transform:uppercase;margin-bottom:2rem;opacity:0;animation:fadeUp .8s ease forwards .2s}
 .hero-title{font-size:clamp(5rem,14vw,10rem);font-weight:900;color:var(--ink);line-height:.85;letter-spacing:.15em;opacity:0;animation:fadeUp 1s ease forwards .4s}
@@ -150,6 +150,8 @@ footer a{color:var(--gold);text-decoration:none}
 footer a:hover{color:var(--crimson)}
 
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(26,26,26,.1);border-radius:2px}
+nav a:hover:not([href="/app"]){color:var(--ink)}
+nav a[href="/app"]:hover{background:var(--gold);color:var(--paper)}
 
 @media(max-width:768px){
 .side-nav{display:none}
@@ -216,6 +218,19 @@ footer a:hover{color:var(--crimson)}
 </style>
 </head>
 <body>
+
+<nav style="position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--rule)">
+  <a class="serif" href="/" style="color:var(--gold);text-decoration:none;font-weight:700;font-size:1.1rem">LAS</a>
+  <div style="display:flex;align-items:center;gap:4px">
+    <a href="#philosophy" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:4px;transition:all .2s">体系</a>
+    <a href="#dimensions" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:4px;transition:all .2s">维度</a>
+    <a href="#tiers" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:4px;transition:all .2s">标尺</a>
+    <a href="#demo" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:4px;transition:all .2s">示例</a>
+    <span style="color:var(--rule-strong)">|</span>
+    <a href="/app#/quotes" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:4px;transition:all .2s">金句广场</a>
+    <a href="/app#/profile" class="text-xs" style="padding:6px 18px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;letter-spacing:1px">进入系统</a>
+  </div>
+</nav>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
 

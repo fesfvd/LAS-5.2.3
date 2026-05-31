@@ -27,10 +27,15 @@ def _check_login_rate(key: str, max_attempts: int = 5, window_min: int = 15) -> 
     now = datetime.now(timezone.utc)
     with _rate_lock:
         attempts = [t for t in _login_attempts.get(key, []) if t > now - timedelta(minutes=window_min)]
-        _login_attempts[key] = attempts
+        if not attempts:
+            _login_attempts.pop(key, None)  # prevent unbounded dict growth
+        else:
+            _login_attempts[key] = attempts
         if len(attempts) >= max_attempts:
             return False
         attempts.append(now)
+        if key not in _login_attempts:
+            _login_attempts[key] = attempts
         return True
 
 

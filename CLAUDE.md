@@ -42,7 +42,7 @@ frontend/
   js/api.js            # API 客户端（含 getWorksPaginated 分页）
   js/pages/auth.js     # 登录/注册/忘记密码（密码显隐切换、⚠ 错误图标）
   js/pages/upload.js   # 提交作品（提交取消按钮、maxlength 50万字）
-  js/pages/analyze.js  # 分析进度（立即取消按钮、失败重试按钮）
+  js/pages/reader.js   # 分析进度（立即取消按钮、失败重试按钮）
   js/pages/report.js   # 报告渲染（CDN 守卫、card-tint 替换旧彩色左边框）
   js/pages/works.js    # 作品管理（glass-card Modal 替换 confirm、分页器防累积）
   js/pages/profile.js  # 个人中心

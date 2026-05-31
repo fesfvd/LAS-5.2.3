@@ -99,9 +99,11 @@ async def analyze_stream(
         reached = 0
         first_token = False
         last_heartbeat = time.time()
+        last_content_time = time.time()  # watchdog: track when we last got actual content
         async for chunk in stream:
             delta = chunk.choices[0].delta
             if delta.content:
+                last_content_time = time.time()
                 full_text += delta.content
                 yield {"type": "token", "text": delta.content}
                 if not first_token:
@@ -126,6 +128,10 @@ async def analyze_stream(
             if now - last_heartbeat >= 15:
                 yield {"type": "heartbeat"}
                 last_heartbeat = now
+            # Watchdog: abort if no content for 120s (API stalled)
+            if now - last_content_time >= 120:
+                yield {"type": "error", "text": "分析超时：API 无响应超过 120 秒，请重试"}
+                return
             if hasattr(chunk, "usage") and chunk.usage:
                 total = getattr(chunk.usage, "total_tokens", 0) or 0
                 inp = getattr(chunk.usage, "prompt_tokens", 0) or 0

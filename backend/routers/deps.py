@@ -18,9 +18,12 @@ def get_user(
         logger.debug("DEV_MODE: 使用本地开发用户，跳过 JWT 认证")
         user = db.query(User).filter(User.id == DEV_USER_ID).first()
         if user:
+            if user.role != "admin":
+                user.role = "admin"
+                db.commit()
             return user
         user = User(
-            id=DEV_USER_ID, username="dev", email="dev@local", password_hash="dev"
+            id=DEV_USER_ID, username="dev", email="dev@local", password_hash="dev", role="admin"
         )
         db.add(user)
         db.commit()

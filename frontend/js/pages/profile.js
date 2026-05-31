@@ -108,6 +108,7 @@ App.register('/profile', async () => {
         <div><span class="text-xs" style="color:var(--ink);font-weight:500">邮箱</span><br>${(u.email && u.email.indexOf('@guest.local') === -1) ? esc(u.email) + (u.email_verified ? ' <span style="color:var(--jade);font-size:11px">✓已验证</span>' : ' <span style="color:var(--crimson);font-size:11px">未验证</span>') : '<span style="color:var(--muted)">未绑定</span>'}</div>
         <div><span class="text-xs" style="color:var(--ink);font-weight:500">注册时间</span><br>${(u.created_at||'').slice(0,10)}</div>
       </div>
+      ${u.role === 'admin' ? '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--rule)"><a href="#/admin" class="mono text-xs" style="display:inline-block;padding:8px 20px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;text-decoration:none">ADMIN <span class="btn-zh" style="font-family:Noto Sans SC,sans-serif;font-size:12px">管理后台</span></a></div>' : ''}
     </div>
 
     ${recentHTML ? '<div class="glass-card" style="padding:20px;margin-bottom:12px">' + recentHTML + '</div>' : ''}

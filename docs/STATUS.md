@@ -26,15 +26,15 @@
 | # | 内容 | 文件 |
 |---|------|------|
 | 1 | **done 事件提前发送**：原在 build_report+db.commit 之后发 done，前端卡在进度条不更新。改为先发 done 再保存 | works.py |
-| 2 | **waitForReport 轮询加速**：首次延迟 200ms→0ms，间隔 2s→500ms，上限 40→15 次 | analyze.js |
-| 3 | **超时参数调大**：READ_TIMEOUT 8s→25s，IDLE_GIVEUP 90s→300s，心跳 15s 不再被超时打断 | analyze.js |
+| 2 | **waitForReport 轮询加速**：首次延迟 200ms→0ms，间隔 2s→500ms，上限 40→15 次 | reader.js |
+| 3 | **超时参数调大**：READ_TIMEOUT 8s→25s，IDLE_GIVEUP 90s→300s，心跳 15s 不再被超时打断 | reader.js |
 | 4 | **SQLite WAL + PRAGMA**：journal_mode=WAL, synchronous=NORMAL, 64MB 缓存, busy_timeout=5s, 连接池 | orm.py |
 
 ### 进度与流程
 
 | # | 内容 | 文件 |
 |---|------|------|
-| 5 | **里程碑对齐真实流程**：`analysis_content`(~30%)→`conclusion`(~80%)+`divination`(~95%) | llm.py + analyze.js |
+| 5 | **里程碑对齐真实流程**：`analysis_content`(~30%)→`conclusion`(~80%)+`divination`(~95%) | llm.py + reader.js |
 | 6 | **默认模型切换**：V4 Pro → V4 Flash（分析速度更快） | upload.js |
 | 7 | **作者默认佚名**：提交时 author 为空自动填入 | upload.js |
 
@@ -77,17 +77,17 @@
 | 1 | **原创审慎校验权责分离**：LLM 对全部 16 维输出 `d_value`（dimension_audit），后端筛选 ≥75 分 + 取前 4 + 套公式。LLM 不再自行决定"哪些该调" | prompt + calculator.py + analyzer.py |
 | 2 | **分数下调 bug 修复**：原路径 1 无 ≥75 守卫，LLM 盲信输入导致 68→59.2 误下调。已加固 | calculator.py |
 | 3 | **性能优化**：里程碑匹配从全文本重扫改为增量 delta 匹配 + 去重 `_repair_truncated` + 缓存 JSON 错误 | llm.py |
-| 4 | **SSE 健壮性**：后端每 15s 心跳保活 + 前端 8s 读超时 / 30s 警告 / 90s 放弃 + AbortController 清理 + 流断开不再当成功处理 | llm.py + analyze.js + api.js |
+| 4 | **SSE 健壮性**：后端每 15s 心跳保活 + 前端 8s 读超时 / 30s 警告 / 90s 放弃 + AbortController 清理 + 流断开不再当成功处理 | llm.py + reader.js + api.js |
 
 ### 分析页重构
 
 | # | 内容 | 文件 |
 |---|------|------|
-| 1 | **纸底画布**：全局 #faf8f3 暖米白底色，无卡片包裹，内容直接呼吸在纸面上 | app.css + analyze.js |
-| 2 | **进度环升级**：56px/2px → 80px/5px，添加背景轨 stroke + drop-shadow 呼吸光晕 | app.css + analyze.js |
+| 1 | **纸底画布**：全局 #faf8f3 暖米白底色，无卡片包裹，内容直接呼吸在纸面上 | app.css + reader.js |
+| 2 | **进度环升级**：56px/2px → 80px/5px，添加背景轨 stroke + drop-shadow 呼吸光晕 | app.css + reader.js |
 | 3 | **终端修正**：底色 rgba(26,26,26,0.02) 暖墨、字体 mono-label 13px/1.7、✓ jade 语义色 | app.css |
-| 4 | **文心拾贝重构**：18px italic + gold 顶线 + 居中文本 + crossfade 无空白 + height 自适应过渡 | app.css + analyze.js |
-| 5 | **三区合一**：单一 glass-card → 三条细 rule 分隔，卡片边界消失，回归书页感 | analyze.js |
+| 4 | **文心拾贝重构**：18px italic + gold 顶线 + 居中文本 + crossfade 无空白 + height 自适应过渡 | app.css + reader.js |
+| 5 | **三区合一**：单一 glass-card → 三条细 rule 分隔，卡片边界消失，回归书页感 | reader.js |
 | 6 | **卡片入场动画**：stagger 依次淡入上滑 → 单容器单动画 | app.css |
 
 ### 报告页导出
@@ -102,11 +102,11 @@
 
 | # | 问题 | 文件 |
 |---|------|------|
-| 1 | 报告页轮询 5→8 次，waitForReport 30→40 次，错误页增加重新加载按钮 | report.js + analyze.js |
-| 2 | beforeunload 监听器重复添加 → { once: true } | analyze.js |
-| 3 | JSON 解析错误不再静默吞噬——单条 warn + 10 条汇总 error | analyze.js |
-| 4 | 心跳事件提前触发 firstEvent → 移到 JSON.parse 之后 | analyze.js |
-| 5 | `waitForReport` 返回值被忽略 → 检查并 warn | analyze.js |
+| 1 | 报告页轮询 5→8 次，waitForReport 30→40 次，错误页增加重新加载按钮 | report.js + reader.js |
+| 2 | beforeunload 监听器重复添加 → { once: true } | reader.js |
+| 3 | JSON 解析错误不再静默吞噬——单条 warn + 10 条汇总 error | reader.js |
+| 4 | 心跳事件提前触发 firstEvent → 移到 JSON.parse 之后 | reader.js |
+| 5 | `waitForReport` 返回值被忽略 → 检查并 warn | reader.js |
 | 6 | LLM 调用无超时 → timeout=300s | llm.py |
 | 7 | `.env` API Key 已泄露，需轮换 | — |
 

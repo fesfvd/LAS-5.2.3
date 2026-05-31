@@ -24,9 +24,10 @@ const API = {
     return h;
   },
 
-  async _req(method, path, body) {
+  async _req(method, path, body, signal) {
     const opts = { method, headers: this._headers() };
     if (body) opts.body = JSON.stringify(body);
+    if (signal) opts.signal = signal;
     const res = await fetch(this._base + path, opts);
     if (res.status === 401 && !path.startsWith('/auth/')) {
       this.clearToken();
@@ -41,7 +42,7 @@ const API = {
   },
 
   _fetch(path) { return this._req('GET', path); },
-  _post(path, body) { return this._req('POST', path, body); },
+  _post(path, body, signal) { return this._req('POST', path, body, signal); },
   _delete(path) { return this._req('DELETE', path); },
 
   // Auth
@@ -59,7 +60,7 @@ const API = {
     qs.set('_t', Date.now()); // cache bust
     return this._fetch('/works?' + qs.toString());
   },
-  createWork(data) { return this._post('/works', data); },
+  createWork(data, signal) { return this._post('/works', data, signal); },
   getWork(id) { return this._fetch(`/works/${id}`); },
   deleteWork(id) { return this._delete(`/works/${id}`); },
   getReport(id) { return this._fetch(`/works/${id}/report`); },

@@ -104,7 +104,7 @@ mf   = 1-0.006×(75-mean)       平庸惩罚（全面平庸无亮点）
 ┌──────────────┐  HTTP   ┌──────────────────┐  API   ┌───────────┐
 │ spa.html     │◄───────►│ main.py          │◄───────►│ v4-pro    │
 │ ├ upload.js  │         │ ├ routers/works  │  SSE    │ 1M ctx    │
-│ ├ analyze.js │  SSE    │ ├ services/llm   │ stream  │           │
+│ ├ app.js     │  SSE    │ ├ services/llm   │ stream  │           │
 │ └ report.js  │◄───────│ ├ analyzer       │◄───────│           │
 │              │         │ └ calculator     │         └───────────┘
 └──────────────┘         └──────────────────┘
@@ -142,7 +142,6 @@ mf   = 1-0.006×(75-mean)       平庸惩罚（全面平庸无亮点）
 │   │   ├── app.js           # Hash 路由 + 工具函数
 │   │   └── pages/
 │   │       ├── upload.js    # 提交页（文件上传 + 字数统计）
-│   │       ├── analyze.js   # 分析进度页（SSE 驱动）
 │   │       └── report.js    # 报告渲染（模板 + 雷达图 + 截图）
 │   └── templates/
 │       ├── classic.html     # 经典模式报告模板

@@ -127,60 +127,6 @@ def create_work(
     )
 
 
-@router.get("/{work_id}")
-def get_work(
-    work_id: str, user: User = Depends(get_user), db: Session = Depends(get_session)
-):
-    work = db.query(Work).filter(Work.id == work_id, Work.user_id == user.id).first()
-    if not work:
-        raise HTTPException(404, "作品不存在")
-    return {
-        "id": work.id,
-        "title": work.title,
-        "author": work.author or "",
-        "content": work.content,
-        "mode": work.mode,
-        "ancestor_dialogue": work.ancestor_dialogue == "true",
-        "created_at": work.created_at.isoformat() if work.created_at else "",
-    }
-
-
-@router.get("/{work_id}/report")
-def get_report(
-    work_id: str, user: User = Depends(get_user), db: Session = Depends(get_session)
-):
-    work = db.query(Work).filter(Work.id == work_id, Work.user_id == user.id).first()
-    if not work:
-        raise HTTPException(404, "作品不存在")
-    latest = (
-        db.query(Analysis)
-        .filter(Analysis.work_id == work.id)
-        .order_by(Analysis.created_at.desc())
-        .first()
-    )
-    if not latest or not latest.report_json:
-        raise HTTPException(404, "报告不存在")
-    return {
-        "id": work.id,
-        "title": work.title,
-        "author": work.author or "",
-        "mode": work.mode,
-        "ancestor_dialogue": work.ancestor_dialogue == "true",
-        "report": latest.report_json,
-        "wcs_score": latest.wcs_score,
-        "tier": latest.tier,
-        "badge": latest.tier_badge,
-        "report_number": latest.report_number,
-        "analysis_id": latest.id,
-        "status": latest.status,
-        "tokens": {
-            "prompt": latest.prompt_tokens or 0,
-            "completion": latest.completion_tokens or 0,
-            "total": latest.total_tokens or 0,
-        },
-    }
-
-
 @router.post("/batch-delete")
 def batch_delete_works(
     ids: list[str],
@@ -238,6 +184,108 @@ def compare_works(
             "dimensions": dims,
         })
     return {"ok": True, "works": works_data}
+
+
+@router.get("/stats")
+def works_stats(
+    mode: str = "",
+    user: User = Depends(get_user),
+    db: Session = Depends(get_session),
+):
+    """Return tier distribution and recent score history for the user's works, optionally filtered by mode."""
+    q = (
+        db.query(Analysis)
+        .join(Work, Analysis.work_id == Work.id)
+        .filter(Work.user_id == user.id, Analysis.status == "done", Analysis.wcs_score > 0)
+    )
+    if mode and mode in ("original", "classic"):
+        q = q.filter(Work.mode == mode)
+    analyses = q.order_by(Analysis.created_at.desc()).all()
+
+    tierCounts = {}
+    scores = []
+    for a in analyses:
+        t = a.tier or "未评级"
+        tierCounts[t] = tierCounts.get(t, 0) + 1
+        scores.append({
+            "score": round(a.wcs_score, 1) if a.wcs_score else 0,
+            "tier": a.tier or "",
+            "date": a.created_at.isoformat()[:10] if a.created_at else "",
+        })
+
+    # Tier order + color map
+    tierColors = {
+        "文学之巅": "#b8860b", "永恒殿堂": "#8b0000", "不朽丰碑": "#6b21a8",
+        "传世经典": "#2d6a4f", "典范之作": "#1a1a1a",
+        "上乘佳作": "#d97706", "中等之作": "#2563eb",
+        "准文学级": "#0891b2", "合格文本": "#4f46e5",
+        "严重瑕疵": "#dc2626", "缺陷明显": "#f97316",
+        "稚嫩习作": "#6b7280", "未评级": "#9ca3af",
+    }
+    tierOrder = list(tierColors.keys())
+    tierDist = [{"tier": t, "count": tierCounts.get(t, 0), "color": tierColors[t]} for t in tierOrder if tierCounts.get(t, 0) > 0]
+
+    return {
+        "ok": True,
+        "total_analyzed": len(analyses),
+        "tier_distribution": tierDist,
+        "score_history": scores[:30],
+        "tier_colors": tierColors,
+    }
+
+
+@router.get("/{work_id}")
+def get_work(
+    work_id: str, user: User = Depends(get_user), db: Session = Depends(get_session)
+):
+    work = db.query(Work).filter(Work.id == work_id, Work.user_id == user.id).first()
+    if not work:
+        raise HTTPException(404, "作品不存在")
+    return {
+        "id": work.id,
+        "title": work.title,
+        "author": work.author or "",
+        "content": work.content,
+        "mode": work.mode,
+        "ancestor_dialogue": work.ancestor_dialogue == "true",
+        "created_at": work.created_at.isoformat() if work.created_at else "",
+    }
+
+
+@router.get("/{work_id}/report")
+def get_report(
+    work_id: str, user: User = Depends(get_user), db: Session = Depends(get_session)
+):
+    work = db.query(Work).filter(Work.id == work_id, Work.user_id == user.id).first()
+    if not work:
+        raise HTTPException(404, "作品不存在")
+    latest = (
+        db.query(Analysis)
+        .filter(Analysis.work_id == work.id)
+        .order_by(Analysis.created_at.desc())
+        .first()
+    )
+    if not latest or not latest.report_json:
+        raise HTTPException(404, "报告不存在")
+    return {
+        "id": work.id,
+        "title": work.title,
+        "author": work.author or "",
+        "mode": work.mode,
+        "ancestor_dialogue": work.ancestor_dialogue == "true",
+        "report": latest.report_json,
+        "wcs_score": latest.wcs_score,
+        "tier": latest.tier,
+        "badge": latest.tier_badge,
+        "report_number": latest.report_number,
+        "analysis_id": latest.id,
+        "status": latest.status,
+        "tokens": {
+            "prompt": latest.prompt_tokens or 0,
+            "completion": latest.completion_tokens or 0,
+            "total": latest.total_tokens or 0,
+        },
+    }
 
 
 @router.delete("/{work_id}")
