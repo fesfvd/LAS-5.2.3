@@ -97,11 +97,11 @@ App.register('/upload', () => {
       modeInput.value = mode;
       if (mode === 'classic') {
         textarea.removeAttribute('required');
-        textarea.placeholder = '经典模式正文可留空，系统将基于知识库记忆进行分析...';
+        textarea.placeholder = isGuest ? '经典模式正文可留空，系统将基于知识库记忆进行分析...（游客上限 5 万字）' : '经典模式正文可留空，系统将基于知识库记忆进行分析...';
         contentHint.textContent = '// 经典模式无需正文，仅凭作品名启动';
       } else {
         textarea.setAttribute('required', '');
-        textarea.placeholder = '粘贴全文，系统将进行多维标尺分析...';
+        textarea.placeholder = textHint;
         contentHint.textContent = '// 原创模式必须提供完整正文';
       }
     });

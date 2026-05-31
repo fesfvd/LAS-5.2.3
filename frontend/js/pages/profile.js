@@ -122,7 +122,7 @@ App.register('/profile', async () => {
           <input class="input-underline" name="new_password" type="password" placeholder="新密码（至少 6 位）" required minlength="6" maxlength="100">
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">修改密码</button>
+          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">CHANGE <span class="btn-zh">修改密码</span></button>
           <span id="pwdMsg" class="text-xs"></span>
         </div>
       </form>
@@ -137,7 +137,7 @@ App.register('/profile', async () => {
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <input class="input-underline mono" name="code" placeholder="6 位验证码" maxlength="6" style="width:140px;letter-spacing:4px">
-          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">确认${u.email ? '更换' : '绑定'}</button>
+          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">CONFIRM <span class="btn-zh">确认${u.email ? '更换' : '绑定'}</span></button>
           <span id="emailMsg" class="text-xs"></span>
         </div>
       </form>
@@ -149,7 +149,7 @@ App.register('/profile', async () => {
       <form id="upgradeForm">
         <div style="display:flex;align-items:center;gap:10px">
           <input class="input-underline mono" name="invite_code" placeholder="邀请码" maxlength="32" style="width:200px;text-transform:uppercase;letter-spacing:2px">
-          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">升级</button>
+          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">UPGRADE <span class="btn-zh">升级</span></button>
           <span id="upgradeMsg" class="text-xs"></span>
         </div>
       </form>
@@ -160,7 +160,7 @@ App.register('/profile', async () => {
       <form id="usernameForm">
         <div style="display:flex;align-items:center;gap:10px">
           <input class="input-underline" name="username" placeholder="2-50 个字符" required minlength="2" maxlength="50" style="width:200px" value="${esc(u.username)}">
-          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">保存</button>
+          <button type="submit" class="btn" style="font-size:11px;padding:6px 18px">SAVE <span class="btn-zh">保存</span></button>
           <span id="usernameMsg" class="text-xs"></span>
         </div>
       </form>
@@ -169,7 +169,7 @@ App.register('/profile', async () => {
     <div class="glass-card" style="padding:20px;margin-bottom:12px">
       <p class="serif text-sm font-bold mb-3" style="color:var(--crimson)">注销账号</p>
       <p class="text-xs" style="color:var(--muted);margin-bottom:12px">注销后 7 天内可联系恢复，到期将永久删除所有数据</p>
-      <button id="deleteAccountBtn" class="btn" style="font-size:11px;padding:6px 18px;border-color:var(--crimson);color:var(--crimson)">注销账号</button>
+      <button id="deleteAccountBtn" class="btn" style="font-size:11px;padding:6px 18px;border-color:var(--crimson);color:var(--crimson)">DELETE <span class="btn-zh">注销账号</span></button>
     </div>`;
 
     document.getElementById('profileContent').innerHTML = html;
