@@ -9,8 +9,12 @@ _buckets: dict[str, list[float]] = defaultdict(list)
 
 # Route → (max_requests, window_seconds)
 RULES: dict[str, tuple[int, int]] = {
-    r"^/api/works/[^/]+/analyze": (3, 300),   # 3 per 5 min per user
-    r"^/api/auth/login":         (10, 60),    # 10 per 1 min per IP
+    r"^/api/works/[^/]+/analyze": (3, 300),    # 3 per 5 min per user
+    r"^/api/auth/login":          (10, 60),     # 10 per 1 min per IP
+    r"^/api/auth/guest":          (10, 300),    # 10 per 5 min per IP
+    r"^/api/auth/register":       (5, 600),     # 5 per 10 min per IP
+    r"^/api/auth/send-code":      (3, 120),     # 3 per 2 min per IP
+    r"^/api/quotes$":             (5, 60),      # 5 per 1 min per user (POST)
 }
 
 

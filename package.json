@@ -1,0 +1,28 @@
+{
+  "name": "las-5.2.3",
+  "version": "1.0.0",
+  "description": "**L**iterary **A**nalysis **S**ystem — 基于大语言模型的十六维文学价值评估框架。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fesfvd/LAS-5.2.3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fesfvd/LAS-5.2.3/issues"
+  },
+  "homepage": "https://github.com/fesfvd/LAS-5.2.3#readme",
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.7"
+  }
+}
