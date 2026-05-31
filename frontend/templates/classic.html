@@ -233,6 +233,11 @@
 <p id="contributeMsg" class="text-xs text-center" style="color:var(--jade);margin-top:10px;display:none"></p>
 </div>
 
+<section style="text-align:center;padding:0 0 32px">
+<button onclick="var d=document.getElementById('rewardBox');if(d.style.display==='none'){d.style.display='block';this.textContent='收起赞赏'}else{d.style.display='none';this.textContent='赞赏作者'}" style="padding:8px 24px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;font-family:'Noto Sans SC',sans-serif;font-size:13px;transition:all .2s">赞赏作者</button>
+<div id="rewardBox" style="display:none;margin-top:16px"><img src="/static/reward.png" alt="赞赏码" style="max-width:240px;border-radius:8px;border:1px solid var(--rule)"><p class="text-xs" style="color:var(--muted);margin-top:8px">感谢支持 LAS</p></div>
+</section>
+
 <footer style="border-top:1px solid var(--rule)" class="py-8">
 <div class="max-w-5xl mx-auto px-6">
 <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted">
