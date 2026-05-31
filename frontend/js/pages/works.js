@@ -28,7 +28,6 @@ App.register('/works', async () => {
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:8px 0 12px">
         <div style="display:flex;align-items:center;gap:6px">
           <button class="mono text-xs" id="batchBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s">批量</button>
-          <button class="mono text-xs" id="compareBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s">对比</button>
           <span id="batchBar" style="display:none;align-items:center;gap:8px">
             <span class="text-xs" id="batchCount" style="color:var(--gold)">已选 0 项</span>
             <button class="mono text-xs" id="batchDeleteBtn" style="padding:4px 10px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">删除选中</button>

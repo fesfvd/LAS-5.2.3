@@ -252,9 +252,9 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .tag--spectral{background:var(--card-tint-ink);border:1px solid rgba(26,26,26,.06);color:var(--muted)}
 .tag--work{background:var(--card-tint-crimson);border:1px solid rgba(139,0,0,.1);color:var(--crimson)}
 
-/* Filter chips (golden quote wall) */
-.filter-chip{font-size:11px;padding:4px 14px;border:1px solid var(--rule);border-radius:99px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:inherit}
-.filter-chip.active{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+/* Quote wall filter chips */
+.quote-filter{font-size:11px;padding:4px 14px;border:1px solid var(--rule);border-radius:99px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:inherit}
+.quote-filter.active{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
 
 /* screenshot float */
 /* export toolbar (screenshot / PDF / Word) */

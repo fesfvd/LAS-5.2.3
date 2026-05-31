@@ -9,9 +9,9 @@ App.register('/quotes', async () => {
       </div>
       <hr class="rule" style="margin:16px 0">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-        <button class="filter-chip active" data-mode="">全部</button>
-        <button class="filter-chip" data-mode="original">原创</button>
-        <button class="filter-chip" data-mode="classic">经典</button>
+        <button class="quote-filter active" data-mode="">全部</button>
+        <button class="quote-filter" data-mode="original">原创</button>
+        <button class="quote-filter" data-mode="classic">经典</button>
         <button id="refreshBtn" class="text-xs" style="margin-left:auto;padding:4px 12px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer">换一批</button>
       </div>
       <div id="quoteGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
@@ -42,9 +42,9 @@ App.register('/quotes', async () => {
   }
   loadQuotes('');
 
-  document.querySelectorAll('.filter-chip').forEach(function(btn) {
+  document.querySelectorAll('.quote-filter').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.filter-chip').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.quote-filter').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       currentMode = btn.dataset.mode;
       loadQuotes(currentMode);

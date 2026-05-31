@@ -208,7 +208,9 @@ body{{font-family:'Noto Serif SC',Georgia,serif;background:#faf8f3;color:#1a1a1a
 <div class="footer">由 <a href="https://lasystem.cn">LAS 文学分析系统</a> 生成 · AI 生成内容仅供参考</div>
 </body>
 </html>"""
-        return Response(content=share_html, media_type="text/html; charset=utf-8")
+        resp = Response(content=share_html, media_type="text/html; charset=utf-8")
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return resp
     finally:
         db.close()
 
