@@ -197,6 +197,49 @@ def batch_delete_works(
     return {"ok": True, "deleted": deleted}
 
 
+@router.get("/compare")
+def compare_works(
+    ids: str = "",
+    user: User = Depends(get_user),
+    db: Session = Depends(get_session),
+):
+    """Compare up to 3 works by their dimension scores."""
+    id_list = [i.strip() for i in ids.split(",") if i.strip()][:3]
+    if len(id_list) < 2:
+        raise HTTPException(400, "至少选择 2 个作品进行对比")
+    works_data = []
+    for wid in id_list:
+        work = db.query(Work).filter(Work.id == wid, Work.user_id == user.id).first()
+        if not work:
+            continue
+        analysis = (
+            db.query(Analysis)
+            .filter(Analysis.work_id == wid, Analysis.status == "done")
+            .order_by(Analysis.created_at.desc())
+            .first()
+        )
+        if not analysis or not analysis.report_json:
+            continue
+        r = analysis.report_json
+        dims = {}
+        for d in (r.get("dimensions") or {}).values():
+            dims[str(d["id"])] = {
+                "name": d["name"],
+                "score": d.get("adjusted_score", d["score"]),
+                "tier": d.get("tier_name", ""),
+            }
+        works_data.append({
+            "id": work.id,
+            "title": work.title,
+            "author": work.author or "",
+            "mode": work.mode,
+            "wcs": analysis.wcs_score or 0,
+            "tier": analysis.tier or "",
+            "dimensions": dims,
+        })
+    return {"ok": True, "works": works_data}
+
+
 @router.delete("/{work_id}")
 def delete_work(
     work_id: str, user: User = Depends(get_user), db: Session = Depends(get_session)

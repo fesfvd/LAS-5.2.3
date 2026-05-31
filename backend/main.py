@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, Response
 from backend.config import DEV_MODE, CORS_ORIGINS
 from backend.models.orm import init_db
 from backend.middleware.rate_limit import check_rate_limit
-from backend.routers import auth, works, users
+from backend.routers import auth, works, users, admin
 
 logging.basicConfig(
     level=logging.DEBUG if DEV_MODE else logging.INFO,
@@ -110,6 +110,7 @@ async def rate_limiter(request, call_next):
 app.include_router(auth.router)
 app.include_router(works.router)
 app.include_router(users.router)
+app.include_router(admin.router)
 
 frontend_dir = os.path.join(BASE_DIR, "frontend")
 data_dir = os.path.join(BASE_DIR, "data")
@@ -158,6 +159,60 @@ async def serve_privacy():
     return resp
 
 
+@app.get("/share/{report_id}")
+async def share_report(report_id: str):
+    from backend.models.orm import SessionLocal, Analysis, Work
+    db = SessionLocal()
+    try:
+        analysis = db.query(Analysis).filter(Analysis.id == report_id).first()
+        if not analysis or not analysis.report_json:
+            return Response(status_code=404)
+        work = db.query(Work).filter(Work.id == analysis.work_id).first()
+        r = analysis.report_json
+        ac = r.get("analysis_content", {}) if isinstance(r, dict) else {}
+        title = (work.title if work else "") or ""
+        author = (work.author if work else "") or ""
+        score = analysis.wcs_score or 0
+        tier = analysis.tier or ""
+        one_liner = ac.get("one_liner", "") if isinstance(ac, dict) else ""
+        golden = ac.get("golden_quote", "") if isinstance(ac, dict) else ""
+        share_html = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta property="og:title" content="《{title}》— {score:.1f}分 {tier}">
+<meta property="og:description" content="{one_liner}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="LAS 文学分析">
+<meta name="twitter:card" content="summary">
+<title>《{title}》— LAS 文学分析</title>
+<style>
+body{{font-family:'Noto Serif SC',Georgia,serif;background:#faf8f3;color:#1a1a1a;max-width:600px;margin:60px auto;padding:0 24px;text-align:center}}
+.score{{font-size:64px;font-weight:900;color:#8b0000;line-height:1}}
+.tier{{font-size:18px;color:#b8860b;margin:8px 0}}
+.title{{font-size:24px;font-weight:700;margin:20px 0 8px}}
+.author{{font-size:14px;color:#6b6558;margin-bottom:24px}}
+.quote{{font-size:16px;line-height:1.9;color:#4a4a4a;font-style:italic;padding:20px;border-left:3px solid #b8860b;text-align:left;margin:24px 0}}
+.oneliner{{font-size:14px;color:#6b6558;line-height:1.8;margin:16px 0}}
+.footer{{margin-top:40px;font-size:11px;color:#888}}
+.footer a{{color:#b8860b;text-decoration:none}}
+</style>
+</head>
+<body>
+<div class="score">{score:.1f}</div>
+<div class="tier">{tier}</div>
+<h1 class="title">《{title}》</h1>
+<p class="author">{author} 著</p>
+<div class="oneliner">「{one_liner}」</div>
+{('<div class="quote">' + golden + '</div>') if golden else ''}
+<div class="footer">由 <a href="https://lasystem.cn">LAS 文学分析系统</a> 生成 · AI 生成内容仅供参考</div>
+</body>
+</html>"""
+        return Response(content=share_html, media_type="text/html; charset=utf-8")
+    finally:
+        db.close()
+
+
 @app.get("/favicon.ico")
 async def favicon():
     ico = os.path.join(frontend_dir, "favicon.ico")
@@ -203,7 +258,7 @@ async def contribute_quote(data: QuoteBody, authorization: str = Header(None)):
 
 
 @app.get("/api/quotes")
-async def get_quotes(mode: str = ""):
+async def get_quotes(mode: str = "", random: int = 0):
     quote_file = _get_quotes_file()
     try:
         with open(quote_file, "r", encoding="utf-8") as f:
@@ -212,4 +267,7 @@ async def get_quotes(mode: str = ""):
         quotes = []
     if mode:
         quotes = [q for q in quotes if q.get("m") == mode]
+    if random and random < len(quotes):
+        import random as _random
+        quotes = _random.sample(quotes, random)
     return {"quotes": quotes}

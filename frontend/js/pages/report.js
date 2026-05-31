@@ -112,6 +112,7 @@ async function renderFromTemplate(data, r, id) {
       </div>
       <button class="export-btn" id="pdfBtn" title="导出 PDF"><i class="fas fa-file-pdf"></i></button>
       <button class="export-btn" id="wordBtn" title="导出 Word (.docx)"><i class="fas fa-file-word"></i></button>
+      <button class="export-btn" id="shareBtn" title="分享链接"><i class="fas fa-share-alt"></i></button>
     </div>`;
   root.insertAdjacentHTML('beforeend', exportHTML);
 
@@ -200,6 +201,17 @@ async function renderFromTemplate(data, r, id) {
   // Word
   document.getElementById('wordBtn').addEventListener('click', async () => {
     await exportDocx(data);
+  });
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    var shareUrl = window.location.origin + '/share/' + (data.analysis_id || id);
+    navigator.clipboard.writeText(shareUrl).then(function() {
+      var btn = document.getElementById('shareBtn');
+      btn.innerHTML = '<i class="fas fa-check"></i>';
+      setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
+    }).catch(function() {
+      alert('链接: ' + shareUrl);
+    });
   });
 
   initReport(root, { dimData, layerAvgs, wcs, tier });

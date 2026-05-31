@@ -21,7 +21,9 @@ var CHAPTER = {
   '/register':['注册',     'REGISTER'],
   '/profile': ['个人中心', 'PROFILE'],
   '/forgot':  ['忘记密码', 'RESET'],
-  '/privacy': ['隐私政策', 'PRIVACY']
+  '/privacy': ['隐私政策', 'PRIVACY'],
+  '/admin':   ['管理后台', 'ADMIN'],
+  '/quotes':  ['金句广场', 'MUSES']
 };
 
 var _transitionPhase = 'idle';

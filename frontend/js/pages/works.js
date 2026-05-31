@@ -28,9 +28,11 @@ App.register('/works', async () => {
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:8px 0 12px">
         <div style="display:flex;align-items:center;gap:6px">
           <button class="mono text-xs" id="batchBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s">批量</button>
+          <button class="mono text-xs" id="compareBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s">对比</button>
           <span id="batchBar" style="display:none;align-items:center;gap:8px">
             <span class="text-xs" id="batchCount" style="color:var(--gold)">已选 0 项</span>
             <button class="mono text-xs" id="batchDeleteBtn" style="padding:4px 10px;border:1px solid var(--crimson);border-radius:4px;background:transparent;color:var(--crimson);cursor:pointer">删除选中</button>
+            <button class="mono text-xs" id="batchCompareBtn" style="padding:4px 10px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer">对比 (≤3)</button>
             <button class="mono text-xs" id="batchCancelBtn" style="padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">取消</button>
           </span>
         </div>
@@ -143,6 +145,38 @@ App.register('/works', async () => {
       }
     });
   });
+
+  // Compare button
+  document.getElementById('batchCompareBtn').addEventListener('click', async function() {
+    if (selectedIds.size < 2 || selectedIds.size > 3) { alert('请选择 2-3 个作品进行对比'); return; }
+    var ids = Array.from(selectedIds).join(',');
+    try {
+      var data = await API._fetch('/works/compare?ids=' + ids + '&_t=' + Date.now());
+      if (!data.ok || !data.works || data.works.length < 2) { alert('所选作品无有效分析报告'); return; }
+      showComparePanel(data.works);
+    } catch (e) { alert('对比加载失败: ' + (e.message || '')); }
+  });
+
+  function showComparePanel(works) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay);background:rgba(26,26,26,.3);overflow-y:auto';
+    var dimNames = {};
+    works.forEach(function(w) { for (var k in w.dimensions) dimNames[k] = w.dimensions[k].name; });
+    var dimIds = Object.keys(dimNames).sort(function(a,b){ return parseInt(a)-parseInt(b); });
+    var tableRows = dimIds.map(function(did) {
+      var cells = works.map(function(w) {
+        var d = w.dimensions[did];
+        return d ? '<td style="text-align:center;padding:6px 8px;font-size:13px"><span class="mono" style="font-weight:600;color:' + (d.score >= 90 ? 'var(--jade)' : d.score >= 75 ? 'var(--gold)' : d.score >= 55 ? 'var(--muted)' : 'var(--crimson)') + '">' + d.score.toFixed(1) + '</span><br><span class="text-xs" style="color:var(--muted)">' + esc(d.tier) + '</span></td>' : '<td style="text-align:center;color:var(--muted)">—</td>';
+      }).join('');
+      return '<tr style="border-bottom:1px solid var(--rule)"><td style="padding:6px 8px;color:var(--ink);font-size:13px">' + esc(dimNames[did]) + '</td>' + cells + '</tr>';
+    }).join('');
+    var headerCells = works.map(function(w) {
+      return '<th style="text-align:center;padding:10px 8px"><p class="serif" style="color:var(--ink);font-weight:600;font-size:14px">' + esc(w.title) + '</p><p class="mono text-xs" style="color:var(--gold)">' + esc(w.tier) + ' ' + w.wcs.toFixed(1) + '</p></th>';
+    }).join('');
+    overlay.innerHTML = '<div style="max-width:900px;margin:40px auto;padding:24px"><div class="glass-card" style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 class="serif text-xl font-bold" style="color:var(--ink)">作品对比</h2><button id="compareClose" class="text-xs" style="padding:6px 16px;border:1px solid var(--rule-strong);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer">关闭</button></div><div style="overflow-x:auto"><table style="width:100%;font-size:13px"><thead><tr style="border-bottom:2px solid var(--rule-strong)"><th style="text-align:left;padding:8px;color:var(--muted);font-size:11px">维度</th>' + headerCells + '</tr></thead><tbody>' + tableRows + '</tbody></table></div></div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#compareClose').addEventListener('click', function() { overlay.remove(); });
+  }
 
   function updateBatchCount() {
     document.getElementById('batchCount').textContent = '已选 ' + selectedIds.size + ' 项';
