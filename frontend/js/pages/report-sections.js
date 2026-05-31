@@ -346,14 +346,16 @@ const extremeText = ds.triggered ? '已触发' : '无';
   // Literary fortune
   const div = ac.divination || {};
 
-  // Token usage
+  // Token usage — show actual totals from API, not estimated
   const t = data.tokens || {};
   const tokenStr = (() => {
     if (!t.total) return '';
     const k = (v) => v >= 1000 ? (v / 1000).toFixed(1) + 'K' : String(v);
-    const sysEst = 28000;
-    const variable = Math.max(0, t.total - sysEst);
-    return '消耗 ' + k(variable) + ' tokens（作品 + 生成报告）';
+    var parts = [];
+    if (t.prompt) parts.push('输入 ' + k(t.prompt));
+    if (t.completion) parts.push('输出 ' + k(t.completion));
+    parts.push('合计 ' + k(t.total));
+    return '消耗 ' + parts.join(' · ') + ' tokens';
   })();
 
 

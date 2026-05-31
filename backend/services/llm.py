@@ -143,10 +143,10 @@ async def analyze_stream(
                         "total": total,
                     }
 
-        # Fallback: estimate if API didn't return usage
+        # Fallback: estimate if API didn't return usage (~2 bytes/token for Chinese)
         if not result_holder["usage"]:
-            est_in = len(system_prompt) // 3 + len(user_prompt) // 3
-            est_out = len(full_text) // 3
+            est_in = len(system_prompt.encode("utf-8")) // 2 + len(user_prompt.encode("utf-8")) // 2
+            est_out = len(full_text.encode("utf-8")) // 2
             result_holder["usage"] = {
                 "prompt": est_in,
                 "completion": est_out,
