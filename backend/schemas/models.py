@@ -31,6 +31,7 @@ class WorkResponse(BaseModel):
     author: str
     mode: str
     ancestor_dialogue: bool = False
+    is_public: bool = False
     created_at: str
     latest_status: str | None = None
     latest_wcs_score: float | None = None

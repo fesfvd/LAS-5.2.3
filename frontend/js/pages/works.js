@@ -469,6 +469,7 @@ App.register('/works', async () => {
         + '<div style="display:flex;gap:4px">'
         + (isDone ? '<button class="work-btn view" data-id="' + esc(w.id) + '" title="查看报告"><i class="fas fa-file-alt"></i></button>' : '')
         + ((isDone || isFailed || isRejected) ? '<button class="work-btn redo" data-id="' + esc(w.id) + '" title="重新分析"><i class="fas fa-redo"></i></button>' : '')
+        + (isDone ? '<button class="work-btn publish" data-id="' + esc(w.id) + '" title="' + (w.is_public ? '设为私密' : '设为公开') + '" style="' + (w.is_public ? 'color:var(--jade);border-color:var(--jade)' : '') + '"><i class="fas fa-' + (w.is_public ? 'globe' : 'lock') + '"></i></button>' : '')
         + '<button class="work-btn del" data-id="' + esc(w.id) + '" title="删除"><i class="fas fa-trash"></i></button>'
         + '</div></div></div></div></div>';
     });
@@ -505,6 +506,18 @@ App.register('/works', async () => {
         e.stopPropagation();
         window.__LAS_MODEL = 'deepseek-v4-flash';
         App.navigate('#/analyze/' + btn.dataset.id);
+      });
+    });
+    list.querySelectorAll('.publish').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        var res = await API._req('PUT', '/works/' + btn.dataset.id + '/publish');
+        if (res.ok) {
+          btn.querySelector('i').className = 'fas fa-' + (res.is_public ? 'globe' : 'lock');
+          btn.title = res.is_public ? '设为私密' : '设为公开';
+          btn.style.color = res.is_public ? 'var(--jade)' : '';
+          btn.style.borderColor = res.is_public ? 'var(--jade)' : '';
+        }
       });
     });
     list.querySelectorAll('.del').forEach(btn => {

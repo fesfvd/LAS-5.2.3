@@ -75,6 +75,7 @@ def list_works(
                 author=w.author or "",
                 mode=w.mode,
                 ancestor_dialogue=w.ancestor_dialogue == "true",
+                is_public=w.is_public if hasattr(w, 'is_public') else False,
                 created_at=w.created_at.isoformat() if w.created_at else "",
                 latest_status=latest.status if latest else None,
                 latest_wcs_score=latest.wcs_score if latest else None,

@@ -252,7 +252,7 @@ nav a[href="/app"]:hover{background:var(--gold);color:var(--paper)}
 <p class="hero-sub serif">文学分析</p>
 <p class="hero-tagline">超越主观，多维洞见</p>
 <a class="hero-cta serif" href="/app">提交作品</a><a class="hero-cta serif" href="#philosophy" style="margin-right:12px;border-color:var(--muted);color:var(--muted)">了解体系</a>
-<p class="hero-meta mono">designed by 凸(→_→)凸</p>
+<p class="hero-meta mono">designed by 凸(→_→)凸 <span style="margin:0 .5rem;color:var(--rule-strong)">|</span> <span id="todayCount" style="color:var(--gold)">—</span> 篇今日分析</p>
 </div>
 <div class="scroll-hint"><i class="fas fa-chevron-down"></i></div>
 </section>
@@ -1440,6 +1440,13 @@ window.LAS_showReward = function() {
   document.getElementById('rewardClose').addEventListener('click', close);
   document.addEventListener('keydown', onKey);
 };
+</script>
+<script>
+// Today's analysis count
+fetch('/api/health').then(function(r){return r.json()}).then(function(d){
+  var el = document.getElementById('todayCount');
+  if (el && d.today_analyses != null) el.textContent = d.today_analyses;
+}).catch(function(){});
 </script>
 <!-- LAS v5.2.3 · 970fb6a · 2026-06-01 -->
 </body>
