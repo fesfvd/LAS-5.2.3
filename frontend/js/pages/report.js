@@ -371,22 +371,69 @@ async function renderFromTemplate(data, r, id) {
 
   initReport(root, { dimData, layerAvgs, wcs, tier });
 
-  // ── Lightweight support nudge: every 3 successful analyses ──
+  // ── Support nudge: 3 → 10 → 20, stop after accept or 3rd decline ──
   (function() {
-    var key = 'las_success_count';
+    var MILESTONES = [3, 10, 20];
+    var countKey = 'las_success_count';
     var seenKey = 'las_seen_analyses';
-    var count = parseInt(localStorage.getItem(key) || '0', 10);
+    var nudgeKey = 'las_nudge_state';
+
+    var nudgeState = localStorage.getItem(nudgeKey) || '';  // '' | 'declined_3' | 'declined_3_10' | 'done'
+    if (nudgeState === 'done') return;
+
+    var count = parseInt(localStorage.getItem(countKey) || '0', 10);
     var seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
-    if (seen.indexOf(id) === -1) {
-      seen.push(id);
-      if (seen.length > 50) seen = seen.slice(-50);  // keep last 50 IDs max
-      localStorage.setItem(seenKey, JSON.stringify(seen));
-      count++;
-      localStorage.setItem(key, String(count));
-      if (count % 3 === 0 && typeof window.LAS_showReward === 'function') {
-        setTimeout(function() { window.LAS_showReward(); }, 2000);
+    if (seen.indexOf(id) !== -1) return;
+
+    seen.push(id);
+    if (seen.length > 50) seen = seen.slice(-50);
+    localStorage.setItem(seenKey, JSON.stringify(seen));
+    count++;
+    localStorage.setItem(countKey, String(count));
+
+    // Find next pending milestone
+    var milestone = 0;
+    for (var i = 0; i < MILESTONES.length; i++) {
+      if (count >= MILESTONES[i] && nudgeState.indexOf(String(MILESTONES[i])) === -1) {
+        milestone = MILESTONES[i];
+        break;
       }
     }
+    if (!milestone || typeof window.LAS_showReward !== 'function') return;
+
+    setTimeout(function() {
+      window.LAS_showReward();
+
+      // Hook into the just-created modal: dismiss = decline, img click = accept
+      setTimeout(function() {
+        var overlay = document.querySelector('#rewardClose');
+        if (!overlay) return;
+        overlay = overlay.closest('[style*="fixed"]') || overlay.parentNode.parentNode;
+        if (!overlay) return;
+
+        var declined = false;
+        var mark = function(result) {
+          if (declined) return;
+          declined = true;
+          localStorage.setItem(nudgeKey, result);
+          // cleanup listeners
+          document.removeEventListener('keydown', onEsc);
+        };
+
+        var onEsc = function(e) { if (e.key === 'Escape') mark(nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone); };
+        document.addEventListener('keydown', onEsc);
+
+        var closeBtn = document.getElementById('rewardClose');
+        if (closeBtn) closeBtn.addEventListener('click', function() { mark(nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone); }, { once: true });
+
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) mark(nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone);
+        });
+
+        var img = overlay.querySelector('img');
+        if (img) img.addEventListener('click', function() { mark('done'); }, { once: true });
+      }, 100);
+    }, 2000);
   })();
 
   // ── Quote contribution (original mode only) ──
