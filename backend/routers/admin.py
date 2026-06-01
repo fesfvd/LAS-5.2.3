@@ -136,10 +136,13 @@ def generate_invite_codes(
 
 @router.get("/invite-codes")
 def list_invite_codes(
+    limit: int = 30,
+    offset: int = 0,
     user: User = Depends(require_admin),
     db: Session = Depends(get_session),
 ):
-    codes = db.query(InviteCode).order_by(InviteCode.created_at.desc()).limit(100).all()
+    total = db.query(InviteCode).count()
+    codes = db.query(InviteCode).order_by(InviteCode.created_at.desc()).offset(offset).limit(limit).all()
     # Batch user lookup — avoid N+1
     used_ids = [c.used_by for c in codes if c.used_by]
     user_map = {}
@@ -156,12 +159,12 @@ def list_invite_codes(
             "used_by": user_map.get(c.used_by) if c.used_by else None,
             "used_at": c.used_at.isoformat() if c.used_at else None,
         })
-    return {"ok": True, "items": items, "total": len(items)}
+    return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/analyses")
 def list_analyses(
-    limit: int = 50,
+    limit: int = 30,
     offset: int = 0,
     status: str = "",
     user: User = Depends(require_admin),
@@ -169,12 +172,13 @@ def list_analyses(
 ):
     """List recent analyses with user/work info — admin only, no report content."""
     q = (
-        db.query(Analysis, User.username, Work.title)
+        db.query(Analysis, User.username, User.role, Work.title)
         .join(Work, Analysis.work_id == Work.id)
         .join(User, Work.user_id == User.id)
     )
     if status and status in ("done", "failed", "running"):
         q = q.filter(Analysis.status == status)
+    total = q.count()
     rows = (
         q.order_by(Analysis.created_at.desc())
         .offset(offset)
@@ -182,10 +186,11 @@ def list_analyses(
         .all()
     )
     items = []
-    for a, username, title in rows:
+    for a, username, role, title in rows:
         items.append({
             "id": a.id,
             "username": username,
+            "role": role,
             "title": title,
             "status": a.status,
             "model": a.model or "default",
@@ -199,4 +204,4 @@ def list_analyses(
             "report_number": a.report_number,
             "created_at": a.created_at.isoformat() if a.created_at else "",
         })
-    return {"ok": True, "items": items, "total": len(items), "limit": limit, "offset": offset}
+    return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}

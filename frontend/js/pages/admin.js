@@ -14,30 +14,37 @@ App.register('/admin', async () => {
         <p class="mono text-xs text-muted tracking-[4px] mb-1">ADMIN</p>
         <h1 class="serif text-3xl font-black leading-[1.1]">管理后台</h1>
       </div>
-      <hr class="rule" style="margin:16px 0">
-      <div id="adminStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
-        <div class="spinner mx-auto" style="margin-top:20px"></div>
+      <!-- Admin section nav -->
+      <div class="admin-nav" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;position:sticky;top:0;z-index:var(--z-sticky,100);background:var(--paper);padding:12px 0;border-bottom:1px solid var(--rule)">
+        <a href="#admin-stats" class="admin-nav-link active mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--gold);border-radius:4px;background:var(--gold-soft);color:var(--gold);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">概览</a>
+        <a href="#admin-users" class="admin-nav-link mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">用户</a>
+        <a href="#admin-invites" class="admin-nav-link mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">邀请码</a>
+        <a href="#admin-analyses" class="admin-nav-link mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">分析</a>
       </div>
-      <div class="glass-card" style="padding:20px;margin-bottom:12px">
+
+      <div id="admin-stats"><div id="adminStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div class="spinner mx-auto" style="margin-top:20px"></div>
+      </div></div>
+      <div id="admin-users" class="glass-card" style="padding:20px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <p class="serif text-sm font-bold" style="color:var(--ink)">用户列表</p>
           <input id="userSearch" class="input-underline" placeholder="搜索用户名或邮箱..." style="width:200px;font-size:13px">
         </div>
         <div id="userTable" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
+        <div id="userPager" style="text-align:center;margin-top:12px"></div>
       </div>
-      <div class="glass-card" style="padding:20px;margin-bottom:12px">
+      <div id="admin-invites" class="glass-card" style="padding:20px;margin-bottom:12px">
         <p class="serif text-sm font-bold mb-3" style="color:var(--ink)">生成邀请码</p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
           <input id="inviteCount" type="number" min="1" max="100" value="5" style="width:64px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:transparent;font-size:13px;text-align:center;font-family:'JetBrains Mono',monospace">
           <button id="genInviteBtn" class="btn" style="font-size:11px;padding:6px 18px">GENERATE <span class="btn-zh">生成</span></button>
         </div>
         <div id="inviteResult" style="display:flex;flex-direction:column;gap:6px"></div>
-      </div>
-      <div class="glass-card" style="padding:20px">
-        <p class="serif text-sm font-bold mb-3" style="color:var(--ink)">邀请码列表</p>
+        <p class="serif text-sm font-bold mb-3" style="color:var(--ink);margin-top:16px">邀请码列表</p>
         <div id="inviteList" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
+        <div id="invitePager" style="text-align:center;margin-top:12px"></div>
       </div>
-      <div class="glass-card" style="padding:20px;margin-top:12px">
+      <div id="admin-analyses" class="glass-card" style="padding:20px;margin-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <p class="serif text-sm font-bold" style="color:var(--ink)">分析记录</p>
           <div style="display:flex;gap:4px" id="analysisFilter">
@@ -78,19 +85,40 @@ App.register('/admin', async () => {
     }
   } catch (e) { document.getElementById('adminStats').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载统计失败</p>'; }
 
-  // Load users
-  async function loadUsers(search) {
+  // ── User list with pagination ──
+  var _userPage = 0, _userSearch = '';
+  var USER_LIMIT = 20;
+  function renderPager(id, page, total, limit, loadFn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var pages = Math.ceil(total / limit);
+    if (pages <= 1) { el.innerHTML = '<span class="text-xs" style="color:var(--muted)">共 ' + total + ' 条</span>'; return; }
+    var html = '<span class="text-xs" style="color:var(--muted)">共 ' + total + ' 条 · </span>';
+    html += '<button data-p="0" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:' + (page > 0 ? 'var(--ink)' : 'var(--muted)') + '" ' + (page <= 0 ? 'disabled' : '') + '>«</button> ';
+    html += '<span class="text-xs" style="color:var(--muted);margin:0 4px">' + (page + 1) + '/' + pages + '</span> ';
+    html += '<button data-p="' + (page + 1) + '" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:' + (page < pages - 1 ? 'var(--ink)' : 'var(--muted)') + '" ' + (page >= pages - 1 ? 'disabled' : '') + '>»</button>';
+    el.innerHTML = html;
+    el.querySelectorAll('button').forEach(function(b) {
+      b.addEventListener('click', function() { loadFn(parseInt(this.dataset.p)); });
+    });
+  }
+
+  async function loadUsers(searchOrPage) {
+    if (typeof searchOrPage === 'number') { _userPage = searchOrPage; }
+    else { _userPage = 0; _userSearch = searchOrPage || ''; }
     try {
-      var data = await API._fetch('/admin/users?limit=50&search=' + encodeURIComponent(search || ''));
+      var data = await API._fetch('/admin/users?limit=' + USER_LIMIT + '&offset=' + (_userPage * USER_LIMIT) + '&search=' + encodeURIComponent(_userSearch));
       if (!data.ok) return;
+      var roleNames = { admin: '管理', user: '用户', guest: '游客' };
+      var roleColors = { admin: 'var(--gold)', user: 'var(--purple)', guest: 'var(--muted)' };
       var html = '<table style="width:100%;font-size:13px"><thead><tr style="border-bottom:2px solid var(--rule-strong)"><th style="text-align:left;padding:8px 6px;color:var(--muted);font-size:11px">用户名</th><th style="text-align:left;padding:8px 6px;color:var(--muted);font-size:11px">邮箱</th><th style="text-align:center;padding:8px 6px;color:var(--muted);font-size:11px">角色</th><th style="text-align:center;padding:8px 6px;color:var(--muted);font-size:11px">作品</th><th style="text-align:center;padding:8px 6px;color:var(--muted);font-size:11px">分析</th><th style="text-align:left;padding:8px 6px;color:var(--muted);font-size:11px">注册时间</th></tr></thead><tbody>';
       data.items.forEach(function(u) {
-        var roleColors = { admin: 'var(--gold)', user: 'var(--jade)', guest: 'var(--muted)' };
-        html += '<tr style="border-bottom:1px solid var(--rule)"><td style="padding:8px 6px;color:var(--ink)">' + esc(u.username) + '</td><td style="padding:8px 6px;color:var(--muted);font-size:12px">' + esc(u.email || '—') + (u.email_verified ? '' : ' <span style="color:var(--crimson);font-size:10px">未验证</span>') + '</td><td style="padding:8px 6px;text-align:center;font-size:12px;color:' + (roleColors[u.role] || 'var(--muted)') + '">' + esc(u.role) + '</td><td style="padding:8px 6px;text-align:center" class="mono text-xs">' + u.work_count + '</td><td style="padding:8px 6px;text-align:center" class="mono text-xs">' + u.analysis_count + '</td><td style="padding:8px 6px;font-size:11px;color:var(--muted)">' + (u.created_at || '').slice(0, 10) + '</td></tr>';
+        html += '<tr style="border-bottom:1px solid var(--rule)"><td style="padding:8px 6px;color:var(--ink)">' + esc(u.username) + '</td><td style="padding:8px 6px;color:var(--muted);font-size:12px">' + esc(u.email || '—') + (u.email_verified ? '' : ' <span style="color:var(--crimson);font-size:10px">未验证</span>') + '</td><td style="padding:8px 6px;text-align:center;font-size:12px;color:' + (roleColors[u.role] || 'var(--muted)') + '">' + (roleNames[u.role] || u.role) + '</td><td style="padding:8px 6px;text-align:center" class="mono text-xs">' + u.work_count + '</td><td style="padding:8px 6px;text-align:center" class="mono text-xs">' + u.analysis_count + '</td><td style="padding:8px 6px;font-size:11px;color:var(--muted)">' + (u.created_at || '').slice(0, 10) + '</td></tr>';
       });
       html += '</tbody></table>';
       if (!data.items.length) html = '<p class="text-sm" style="text-align:center;padding:20px;color:var(--muted)">无匹配用户</p>';
       document.getElementById('userTable').innerHTML = html;
+      renderPager('userPager', _userPage, data.total, USER_LIMIT, loadUsers);
     } catch (e) { document.getElementById('userTable').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; }
   }
   loadUsers('');
@@ -143,13 +171,17 @@ App.register('/admin', async () => {
     btn.querySelector('.btn-zh').textContent = '生成';
   });
 
-  // Load invite code list
-  async function loadInvites() {
+  // ── Invite list with pagination ──
+  var _invitePage = 0;
+  var INVITE_LIMIT = 20;
+  async function loadInvites(page) {
+    if (typeof page === 'number') _invitePage = page; else _invitePage = 0;
     try {
-      var res = await API._fetch('/admin/invite-codes');
+      var res = await API._fetch('/admin/invite-codes?limit=' + INVITE_LIMIT + '&offset=' + (_invitePage * INVITE_LIMIT));
       if (!res.ok) { document.getElementById('inviteList').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; return; }
       if (!res.items.length) {
         document.getElementById('inviteList').innerHTML = '<p class="text-sm" style="text-align:center;padding:20px;color:var(--muted)">暂无邀请码</p>';
+        document.getElementById('invitePager').innerHTML = '';
         return;
       }
       var html = '<table style="width:100%;font-size:13px"><thead><tr style="border-bottom:2px solid var(--rule-strong)">'
@@ -174,6 +206,7 @@ App.register('/admin', async () => {
       });
       html += '</tbody></table>';
       document.getElementById('inviteList').innerHTML = html;
+      renderPager('invitePager', _invitePage, res.total, INVITE_LIMIT, loadInvites);
       document.getElementById('inviteList').querySelectorAll('.copyListBtn').forEach(function(b) {
         b.addEventListener('click', function() {
           var code = this.dataset.code;
@@ -191,9 +224,10 @@ App.register('/admin', async () => {
   }
   loadInvites();
 
-  // ── Analysis records (paginated) ──
+  // ── Analysis records (LOAD MORE) ──
   var _analysisStatus = '';
   var _analysisOffset = 0;
+  var _analysisTotal = 0;
   var _analysisMore = true;
   async function loadAnalyses(append) {
     if (!append) { _analysisOffset = 0; _analysisMore = true; document.getElementById('analysisTable').innerHTML = '<div class="spinner mx-auto" style="margin-top:20px"></div>'; }
@@ -202,8 +236,10 @@ App.register('/admin', async () => {
       var res = await API._fetch('/admin/analyses?limit=30&offset=' + _analysisOffset + '&status=' + _analysisStatus + '&_t=' + Date.now());
       if (!res.ok) { document.getElementById('analysisTable').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; return; }
       if (!res.items.length && !append) { document.getElementById('analysisTable').innerHTML = '<p class="text-sm" style="text-align:center;padding:20px;color:var(--muted)">无记录</p>'; return; }
-      if (res.items.length < 30) _analysisMore = false;
+      _analysisTotal = res.total;
       _analysisOffset += res.items.length;
+      if (_analysisOffset >= _analysisTotal) _analysisMore = false;
+      var roleColors = { admin: 'var(--gold)', user: 'var(--purple)', guest: 'var(--muted)' };
       var statusBadge = {
         done: '<span style="color:var(--jade);font-size:11px">完成</span>',
         failed: '<span style="color:var(--crimson);font-size:11px">失败</span>',
@@ -221,9 +257,10 @@ App.register('/admin', async () => {
         + '</tr></thead><tbody>';
       var rows = '';
       res.items.forEach(function(a) {
+        var userColor = roleColors[a.role] || 'var(--muted)';
         rows += '<tr style="border-bottom:1px solid var(--rule)">'
           + '<td style="padding:6px 4px" class="mono text-xs">' + (a.report_number ? 'LAS-' + String(a.report_number).padStart(6,'0') : '—') + '</td>'
-          + '<td style="padding:6px 4px;color:var(--ink)">' + esc(a.username) + '</td>'
+          + '<td style="padding:6px 4px" title="' + esc(a.role) + '"><span style="color:' + userColor + '">' + esc(a.username) + '</span></td>'
           + '<td style="padding:6px 4px;color:var(--ink);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(a.title) + '</td>'
           + '<td style="padding:6px 4px;text-align:center" class="mono text-xs">' + (a.model === 'deepseek-v4-pro' ? '<span style="color:var(--purple)">Pro</span>' : a.model === 'deepseek-v4-flash' ? 'Flash' : esc(a.model)) + '</td>'
           + '<td style="padding:6px 4px;text-align:center">' + (statusBadge[a.status] || a.status) + '</td>'
@@ -237,7 +274,7 @@ App.register('/admin', async () => {
       if (_analysisMore) {
         moreBtn = '<div style="text-align:center;margin-top:12px"><button id="loadMoreAnalyses" style="font-size:11px;padding:10px 28px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);transition:all .2s;font-family:\'JetBrains Mono\',monospace">LOAD MORE</button></div>';
       } else if (_analysisOffset > 0) {
-        moreBtn = '<p class="text-xs" style="text-align:center;margin-top:12px;color:var(--muted)">共 ' + _analysisOffset + ' 条记录</p>';
+        moreBtn = '<p class="text-xs" style="text-align:center;margin-top:12px;color:var(--muted)">共 ' + _analysisTotal + ' 条记录</p>';
       }
       if (append) {
         var tbody = document.getElementById('analysisTable').querySelector('tbody');
@@ -284,5 +321,25 @@ App.register('/admin', async () => {
       _analysisStatus = btn.dataset.status;
       loadAnalyses();
     });
+  });
+
+  // ── Admin nav: scroll to section + update active state ──
+  document.querySelectorAll('.admin-nav-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelectorAll('.admin-nav-link').forEach(function(l) {
+        l.classList.remove('active'); l.style.color = 'var(--muted)'; l.style.borderColor = 'var(--rule)'; l.style.background = 'transparent';
+      });
+      this.classList.add('active'); this.style.color = 'var(--gold)'; this.style.borderColor = 'var(--gold)'; this.style.background = 'var(--gold-soft)';
+    });
+  });
+
+  // Refresh invite list after generating codes
+  var origGenClick = document.getElementById('genInviteBtn').onclick;
+  var genBtn = document.getElementById('genInviteBtn');
+  genBtn.addEventListener('click', function() {
+    setTimeout(function() { loadInvites(0); }, 500);
   });
 });
