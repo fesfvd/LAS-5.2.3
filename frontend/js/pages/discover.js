@@ -43,7 +43,7 @@ App.register('/discover', async () => {
           + (w.wcs_score != null ? '<span class="mono" style="font-size:28px;font-weight:700;color:var(--ink)">' + w.wcs_score.toFixed(1) + '</span>' : '<span class="text-xs" style="color:var(--muted)">暂无评分</span>')
           + (w.tier ? '<span class="text-xs" style="color:var(--gold)">' + esc(w.tier) + '</span>' : '')
           + '</div>'
-          + (w.report_number ? '<p class="mono text-xs" style="color:var(--muted);margin-top:8px">LAS-' + String(w.report_number).padStart(6,'0') + '</p>' : '')
+          + (w.report_number ? '<p class="mono text-xs" style="color:var(--muted);margin-top:8px">LAS-' + (w.report_prefix ? w.report_prefix + '-' : '') + String(w.report_number).padStart(6,'0') + '</p>' : '')
           + '</a>';
       });
       document.getElementById('discoverGrid').innerHTML = html;

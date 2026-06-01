@@ -257,7 +257,7 @@ App.register('/admin', async () => {
       res.items.forEach(function(a) {
         var userColor = roleColors[a.role] || 'var(--muted)';
         rows += '<tr style="border-bottom:1px solid var(--rule)">'
-          + '<td style="padding:6px 4px" class="mono text-xs">' + (a.report_number ? 'LAS-' + String(a.report_number).padStart(6,'0') : '—') + '</td>'
+          + '<td style="padding:6px 4px" class="mono text-xs">' + (a.report_number ? 'LAS-' + (a.report_prefix ? a.report_prefix + '-' : '') + String(a.report_number).padStart(6,'0') : '—') + '</td>'
           + '<td style="padding:6px 4px" title="' + esc(a.role) + '"><span style="color:' + userColor + '">' + esc(a.username) + '</span></td>'
           + '<td style="padding:6px 4px;color:var(--ink);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(a.title) + '</td>'
           + '<td style="padding:6px 4px;text-align:center" class="mono text-xs">' + (a.model === 'deepseek-v4-pro' ? '<span style="color:var(--purple)">Pro</span>' : a.model === 'deepseek-v4-flash' ? 'Flash' : esc(a.model)) + '</td>'

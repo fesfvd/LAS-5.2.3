@@ -98,6 +98,7 @@ class Analysis(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     work_id = Column(String(36), ForeignKey("works.id"), nullable=False, index=True)
     report_number = Column(Integer, nullable=True, index=True)
+    report_prefix = Column(String(1), nullable=True, default="")  # "C"=classic, "O"=original
     model = Column(String(50), default="")
     status = Column(String(20), default="pending")
     wcs_score = Column(Float, nullable=True)
@@ -147,7 +148,7 @@ def init_db():
     Base.metadata.create_all(_engine)
     # Migration: add columns added after initial deploy
     with _engine.connect() as conn:
-        for col, dtype in [("report_number", "INTEGER"), ("role", "VARCHAR(20)"), ("created_at", "DATETIME")]:
+        for col, dtype in [("report_number", "INTEGER"), ("report_prefix", "VARCHAR(1) DEFAULT ''"), ("role", "VARCHAR(20)"), ("created_at", "DATETIME")]:
             try:
                 conn.execute(text(f"ALTER TABLE analyses ADD COLUMN {col} {dtype}"))
                 conn.commit()
@@ -179,6 +180,19 @@ def init_db():
                 conn.commit()
             except Exception:
                 pass
+        # Backfill report_prefix for existing analyses (v5.2.3)
+        try:
+            result = conn.execute(text(
+                "UPDATE analyses SET report_prefix = CASE "
+                "WHEN (SELECT mode FROM works WHERE works.id = analyses.work_id) = 'original' THEN 'O' "
+                "ELSE 'C' END "
+                "WHERE (report_prefix IS NULL OR report_prefix = '') AND report_number IS NOT NULL"
+            ))
+            conn.commit()
+            if result.rowcount:
+                logger.info("已回填 %d 条分析的 report_prefix", result.rowcount)
+        except Exception:
+            pass
         # Quota columns (v5.2.3 analysis quota system)
         for col, dtype in [("daily_quota", "INTEGER DEFAULT 0"), ("permanent_quota", "INTEGER DEFAULT 0"), ("last_quota_refresh", "DATE")]:
             try:

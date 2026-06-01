@@ -297,6 +297,7 @@ def get_report(
         "tier": latest.tier,
         "badge": latest.tier_badge,
         "report_number": latest.report_number,
+        "report_prefix": latest.report_prefix or "",
         "analysis_id": latest.id,
         "status": latest.status,
         "tokens": {
@@ -389,10 +390,14 @@ async def start_analysis(
     if user.role == "guest" and "flash" not in (model_used or "").lower():
         model_used = "deepseek-v4-flash"  # force flash for guests
 
-    # Assign sequential report number
-    last = db.query(Analysis.report_number).filter(Analysis.report_number.isnot(None)).order_by(Analysis.report_number.desc()).first()
+    # Assign sequential report number per mode (C=classic, O=original)
+    prefix = "O" if work.mode == "original" else "C"
+    last = db.query(Analysis.report_number).filter(
+        Analysis.report_number.isnot(None),
+        Analysis.report_prefix == prefix,
+    ).order_by(Analysis.report_number.desc()).first()
     next_no = (last[0] + 1) if last else 1
-    analysis = Analysis(work_id=work.id, model=model_used or "default", status="running", report_number=next_no)
+    analysis = Analysis(work_id=work.id, model=model_used or "default", status="running", report_number=next_no, report_prefix=prefix)
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
@@ -535,6 +540,7 @@ def list_public_works(
             "wcs_score": latest.wcs_score if latest else None,
             "tier": latest.tier if latest else None,
             "report_number": latest.report_number if latest else None,
+            "report_prefix": latest.report_prefix or "",
         })
     return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}
 

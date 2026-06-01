@@ -403,7 +403,7 @@ const extremeText = ds.triggered ? '已触发' : '无';
     WORK_TITLE: esc(data.title),
     WORK_AUTHOR: esc(data.author || ''),
     WORK_TAGS: tags,
-    LAS_ID: (data.report_number ? 'LAS-' + String(data.report_number).padStart(6, '0') : 'LAS-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+String(id||'').slice(0,3)),
+    LAS_ID: (data.report_number ? 'LAS-' + (data.report_prefix ? data.report_prefix + '-' : '') + String(data.report_number).padStart(6, '0') : 'LAS-'+now.getFullYear()+('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2)+'-'+String(id||'').slice(0,3)),
     WORK_TYPE: esc(meta.genre || ''),
     WCS_SCORE: (s.wcs || 0).toFixed(2),
     WORK_LEVEL: esc(s.tier || ''),

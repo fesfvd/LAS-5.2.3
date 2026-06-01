@@ -207,6 +207,7 @@ def list_analyses(
                 "total": a.total_tokens or 0,
             },
             "report_number": a.report_number,
+            "report_prefix": a.report_prefix or "",
             "created_at": _bjt(a.created_at),
         })
     return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}

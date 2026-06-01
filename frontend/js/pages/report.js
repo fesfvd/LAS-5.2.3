@@ -217,7 +217,8 @@ async function renderFromTemplate(data, r, id) {
     var mode = data.mode || 'classic';
     var primaryColor = mode === 'original' ? '#6b21a8' : '#8b0000';
     var primaryRgb = mode === 'original' ? '107,33,168' : '139,0,0';
-    var reportNumber = data.report_number != null ? 'LAS-' + String(data.report_number).padStart(6,'0') : 'LAS-' + String(aid || '000000').slice(0,6).toUpperCase();
+    var prefix = data.report_prefix || '';
+    var reportNumber = data.report_number != null ? 'LAS-' + (prefix ? prefix + '-' : '') + String(data.report_number).padStart(6,'0') : 'LAS-' + String(aid || '000000').slice(0,6).toUpperCase();
 
     var ac = (r.analysis_content && typeof r.analysis_content === 'object') ? r.analysis_content : {};
     var honor = (ac.nickname || '').replace(/</g,'&lt;');
