@@ -83,6 +83,7 @@ class Work(Base):
     content = Column(Text, nullable=False)
     mode = Column(String(20), default="original")
     ancestor_dialogue = Column(String(5), default="false")
+    is_public = Column(Boolean, default=False, nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="works")
@@ -161,6 +162,13 @@ def init_db():
         for col, dtype in [("is_deleted", "BOOLEAN DEFAULT 0"), ("deleted_at", "DATETIME")]:
             try:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
+                conn.commit()
+            except Exception:
+                pass
+        # Public works (v5.2.3)
+        for col, dtype in [("is_public", "BOOLEAN DEFAULT 0")]:
+            try:
+                conn.execute(text(f"ALTER TABLE works ADD COLUMN {col} {dtype}"))
                 conn.commit()
             except Exception:
                 pass

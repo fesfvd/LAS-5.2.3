@@ -110,6 +110,7 @@ async def rate_limiter(request, call_next):
 
 app.include_router(auth.router)
 app.include_router(works.router)
+app.include_router(works.public_router)
 app.include_router(users.router)
 app.include_router(admin.router)
 
@@ -127,17 +128,30 @@ app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/api/health")
 def health():
-    from backend.models.orm import _engine
+    from backend.models.orm import _engine, Analysis
+    from backend.config import DB_PATH
+    from datetime import datetime, timezone
     try:
         with _engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         db_ok = True
     except Exception:
         db_ok = False
+    today_count = 0
+    if db_ok:
+        try:
+            from backend.models.orm import SessionLocal
+            db = SessionLocal()
+            today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            today_count = db.query(Analysis).filter(Analysis.created_at >= today, Analysis.status == "done").count()
+            db.close()
+        except Exception:
+            pass
     return {
         "status": "ok" if db_ok else "degraded",
         "version": "5.2.3",
         "db": db_ok,
+        "today_analyses": today_count,
     }
 
 

@@ -497,3 +497,53 @@ async def start_analysis(
             yield f"data: {json.dumps({'type': 'error', 'error_code': 'E010', 'text': '服务器内部错误，请稍后重试'}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# ── Public works (no auth required) ──
+public_router = APIRouter(prefix="/api/public", tags=["public"])
+
+
+@public_router.get("/works")
+def list_public_works(
+    limit: int = 20,
+    offset: int = 0,
+    db: Session = Depends(get_session),
+):
+    """List public works with their latest scores — no auth required."""
+    q = db.query(Work).filter(Work.is_public == True)  # noqa: E712
+    total = q.count()
+    works = q.order_by(Work.created_at.desc()).offset(offset).limit(limit).all()
+    items = []
+    for w in works:
+        latest = (
+            db.query(Analysis)
+            .filter(Analysis.work_id == w.id, Analysis.status == "done")
+            .order_by(Analysis.created_at.desc())
+            .first()
+        )
+        items.append({
+            "id": w.id,
+            "title": w.title,
+            "author": w.author or "",
+            "mode": w.mode,
+            "created_at": w.created_at.isoformat() if w.created_at else "",
+            "wcs_score": latest.wcs_score if latest else None,
+            "tier": latest.tier if latest else None,
+            "report_number": latest.report_number if latest else None,
+        })
+    return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}
+
+
+@router.put("/{work_id}/publish")
+def toggle_publish(
+    work_id: str,
+    user: User = Depends(get_user),
+    db: Session = Depends(get_session),
+):
+    """Toggle is_public flag on own work."""
+    work = db.query(Work).filter(Work.id == work_id, Work.user_id == user.id).first()
+    if not work:
+        raise HTTPException(404, "作品不存在")
+    work.is_public = not work.is_public
+    db.commit()
+    return {"ok": True, "is_public": work.is_public}
