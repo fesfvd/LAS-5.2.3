@@ -41,7 +41,7 @@ App.register('/upload', () => {
                 <span class="chevron">&#9660;</span>
               </button>
               <div class="model-selector-dropdown" id="modelDropdown">
-                <div class="model-option" data-model="deepseek-v4-pro" id="proOption">DeepSeek V4 Pro <span style="font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px">高级</span><span class="pro-lock" style="font-size:9px;color:var(--muted);margin-left:4px;display:none">登录后可用</span></div>
+                <div class="model-option" data-model="deepseek-v4-pro">DeepSeek V4 Pro <span style="font-size:9px;color:var(--gold);font-weight:600;letter-spacing:1px">高级</span></div>
                 <div class="model-option selected" data-model="deepseek-v4-flash">DeepSeek V4 Flash</div>
               </div>
             </div>
@@ -139,12 +139,6 @@ App.register('/upload', () => {
   };
 
   window.__LAS_MODEL = 'deepseek-v4-flash';
-  // Guests can only use Flash — hide Pro option
-  if (isGuest) {
-    var proOpt = document.getElementById('proOption');
-    if (proOpt) { proOpt.style.opacity = '0.4'; proOpt.style.pointerEvents = 'none'; proOpt.style.cursor = 'not-allowed'; proOpt.querySelector('.pro-lock').style.display = 'inline'; }
-  }
-
   const modelSel = document.getElementById('modelSelector');
   const modelTrigger = document.getElementById('modelTrigger');
   const modelLabel = document.getElementById('modelLabel');
@@ -208,7 +202,7 @@ App.register('/upload', () => {
       if (me.user.role === 'admin') {
         quotaEl.innerHTML = '<span style="color:var(--gold)">管理员 · 无限制</span>';
       } else if (total <= 0) {
-        quotaEl.innerHTML = '<span style="color:var(--crimson)">今日额度已用完</span> · <span style="color:var(--gold);cursor:pointer;text-decoration:underline" onclick="LAS_showReward()">打赏获取更多次数</span>';
+        quotaEl.innerHTML = '<span style="color:var(--crimson)">今日额度已用完，明日自动刷新</span>';
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.4';
         submitBtn.style.cursor = 'not-allowed';
@@ -223,7 +217,6 @@ App.register('/upload', () => {
 
   modelDropdown.querySelectorAll('.model-option').forEach(opt => {
     opt.addEventListener('click', () => {
-      if (isGuest && opt.dataset.model === 'deepseek-v4-pro') return;  // guest locked to Flash
       window.__LAS_MODEL = opt.dataset.model;
       modelLabel.textContent = MODEL_CONFIG[opt.dataset.model].name;
       modelDropdown.querySelectorAll('.model-option').forEach(o => o.classList.remove('selected'));
