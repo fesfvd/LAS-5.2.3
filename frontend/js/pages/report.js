@@ -446,21 +446,10 @@ async function renderFromTemplate(data, r, id) {
         var noBtn = overlay.querySelector('.reward-no-btn');
         if (noBtn) noBtn.addEventListener('click', function() { mark(newState); }, { once: true });
 
-        // Accept: QR image click (image appears after clicking "支持")
+        // Accept: clicking "支持" immediately marks as done
         var yesBtn = overlay.querySelector('.reward-yes-btn');
         if (yesBtn) {
-          yesBtn.addEventListener('click', function() {
-            // After "支持" clicked, wait for QR image to appear
-            var checkImg = setInterval(function() {
-              var img = overlay.querySelector('.reward-qr-img');
-              if (img) {
-                clearInterval(checkImg);
-                img.addEventListener('click', function() { mark('done'); }, { once: true });
-              }
-            }, 50);
-            // Stop checking after 5s
-            setTimeout(function() { clearInterval(checkImg); }, 5000);
-          }, { once: true });
+          yesBtn.addEventListener('click', function() { mark('done'); }, { once: true });
         }
       }
       setTimeout(hookModal, 100);
