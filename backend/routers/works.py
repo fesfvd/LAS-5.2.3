@@ -374,74 +374,74 @@ async def start_analysis(
     async def event_generator():
         try:
             async for event in stream:
-            if event["type"] == "done":
-                # Send done event FIRST so frontend starts polling immediately
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-                # Then build report + save to DB (frontend polls in parallel)
-                raw = result_holder["data"] or {}
-                try:
-                    report = build_report(
-                        raw, work.mode, raw.get("metadata", {}).get("genre", "")
-                    )
-                except Exception as e:
-                    logger.error(
-                        "报告构建异常 work_id=%s: %s\n%s",
-                        work_id,
-                        e,
-                        traceback.format_exc(),
-                    )
-                    report = {
-                        "ok": False,
-                        "error": f"报告构建异常: {e}",
-                        "error_code": "E003",
-                        "error_detail": "后端评分计算或数据处理时发生异常，原始 LLM 输出已保存",
-                        "raw_preview": str(raw)[:500],
-                    }
-                try:
-                    analysis.report_json = report
-                    usage = result_holder.get("usage") or {}
-                    if usage.get("total"):
-                        analysis.prompt_tokens = usage.get("prompt")
-                        analysis.completion_tokens = usage.get("completion")
-                        analysis.total_tokens = usage.get("total")
-                    if report.get("ok"):
-                        analysis.status = "done"
-                        analysis.wcs_score = report.get("scoring", {}).get("wcs")
-                        analysis.tier = report.get("scoring", {}).get("tier", "")
-                        analysis.tier_badge = report.get("scoring", {}).get("badge", "")
-                        if not work.author:
-                            llm_author = raw.get("metadata", {}).get("author", "")
-                            if llm_author:
-                                work.author = llm_author
-                    else:
-                        analysis.status = "failed"
-                    db.commit()
-                except Exception as e:
-                    logger.error(
-                        "报告保存异常 work_id=%s: %s\n%s",
-                        work_id,
-                        e,
-                        traceback.format_exc(),
-                    )
-                    analysis.report_json = {"ok": False, "error": f"报告保存异常: {e}", "error_code": "E004", "error_detail": "报告数据写入数据库失败，可能是磁盘空间不足或数据库锁冲突"}
-                    analysis.status = "failed"
+                if event["type"] == "done":
+                    # Send done event FIRST so frontend starts polling immediately
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    # Then build report + save to DB (frontend polls in parallel)
+                    raw = result_holder["data"] or {}
                     try:
-                        db.commit()
-                    except Exception:
-                        pass
-                # Refund quota if analysis failed (not for admin)
-                if analysis.status == "failed" and user.role != "admin":
-                    try:
-                        db.query(User).filter(User.id == user.id).update(
-                            {"permanent_quota": User.permanent_quota + 1},
-                            synchronize_session="fetch",
+                        report = build_report(
+                            raw, work.mode, raw.get("metadata", {}).get("genre", "")
                         )
+                    except Exception as e:
+                        logger.error(
+                            "报告构建异常 work_id=%s: %s\n%s",
+                            work_id,
+                            e,
+                            traceback.format_exc(),
+                        )
+                        report = {
+                            "ok": False,
+                            "error": f"报告构建异常: {e}",
+                            "error_code": "E003",
+                            "error_detail": "后端评分计算或数据处理时发生异常，原始 LLM 输出已保存",
+                            "raw_preview": str(raw)[:500],
+                        }
+                    try:
+                        analysis.report_json = report
+                        usage = result_holder.get("usage") or {}
+                        if usage.get("total"):
+                            analysis.prompt_tokens = usage.get("prompt")
+                            analysis.completion_tokens = usage.get("completion")
+                            analysis.total_tokens = usage.get("total")
+                        if report.get("ok"):
+                            analysis.status = "done"
+                            analysis.wcs_score = report.get("scoring", {}).get("wcs")
+                            analysis.tier = report.get("scoring", {}).get("tier", "")
+                            analysis.tier_badge = report.get("scoring", {}).get("badge", "")
+                            if not work.author:
+                                llm_author = raw.get("metadata", {}).get("author", "")
+                                if llm_author:
+                                    work.author = llm_author
+                        else:
+                            analysis.status = "failed"
                         db.commit()
-                        logger.info("配额已返还 user_id=%s analysis_id=%s", user.id, analysis.id)
-                    except Exception:
-                        pass
-                return
-            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    except Exception as e:
+                        logger.error(
+                            "报告保存异常 work_id=%s: %s\n%s",
+                            work_id,
+                            e,
+                            traceback.format_exc(),
+                        )
+                        analysis.report_json = {"ok": False, "error": f"报告保存异常: {e}", "error_code": "E004", "error_detail": "报告数据写入数据库失败，可能是磁盘空间不足或数据库锁冲突"}
+                        analysis.status = "failed"
+                        try:
+                            db.commit()
+                        except Exception:
+                            pass
+                    # Refund quota if analysis failed (not for admin)
+                    if analysis.status == "failed" and user.role != "admin":
+                        try:
+                            db.query(User).filter(User.id == user.id).update(
+                                {"permanent_quota": User.permanent_quota + 1},
+                                synchronize_session="fetch",
+                            )
+                            db.commit()
+                            logger.info("配额已返还 user_id=%s analysis_id=%s", user.id, analysis.id)
+                        except Exception:
+                            pass
+                    return
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.error("SSE 流异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
             # Mark analysis as failed + refund quota
