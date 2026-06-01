@@ -281,4 +281,3 @@ let _stepTimer = null;
 let _cursorTimer = null;
 let _quoteTimer = null;
 let _elapsedTimer = null;
-}

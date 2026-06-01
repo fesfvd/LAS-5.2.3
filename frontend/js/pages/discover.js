@@ -53,12 +53,12 @@ App.register('/discover', async () => {
       var pagerEl = document.getElementById('discoverPager');
       if (pages <= 1) { pagerEl.innerHTML = ''; return; }
       var pagerHTML = '<span class="text-xs" style="color:var(--muted)">共 ' + total + ' 篇 · </span>';
-      pagerHTML += '<button data-p="0" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:' + (page > 0 ? 'var(--ink)' : 'var(--muted)') + '" ' + (page <= 0 ? 'disabled' : '') + '>«</button> ';
+      pagerHTML += '<button data-p="0" style="font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:' + (page > 0 ? 'var(--ink)' : 'var(--muted)') + '" ' + (page <= 0 ? 'disabled' : '') + '>«</button> ';
       pagerHTML += '<span class="text-xs" style="color:var(--muted);margin:0 4px">' + (page + 1) + '/' + pages + '</span> ';
-      pagerHTML += '<button data-p="' + (page + 1) + '" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:' + (page < pages - 1 ? 'var(--ink)' : 'var(--muted)') + '" ' + (page >= pages - 1 ? 'disabled' : '') + '>»</button>';
+      pagerHTML += '<button data-p="' + (page + 1) + '" style="font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:' + (page < pages - 1 ? 'var(--ink)' : 'var(--muted)') + '" ' + (page >= pages - 1 ? 'disabled' : '') + '>»</button>';
       pagerEl.innerHTML = pagerHTML;
       pagerEl.querySelectorAll('button').forEach(function(b) { b.addEventListener('click', function() { load(parseInt(this.dataset.p)); }); });
-    } catch (e) { document.getElementById('discoverGrid').innerHTML = '<p class="text-sm" style="text-align:center;padding:40px;color:var(--crimson);grid-column:1/-1">加载失败</p>'; }
+    } catch (e) { document.getElementById('discoverGrid').innerHTML = '<p class="text-sm" style="text-align:center;padding:40px;color:var(--semantic-error);grid-column:1/-1">⚠ 加载失败 <button onclick="location.reload()" style="font-size:11px;padding:4px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);margin-left:8px">重试</button></p>'; }
   }
   load(0);
 });

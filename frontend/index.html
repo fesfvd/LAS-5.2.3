@@ -50,7 +50,7 @@ document.addEventListener('click',function(e){
 <link href="https://fonts.googleapis.cn/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--crimson:#8b0000;--jade:#2d6a4f;--muted:#8a8578;--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15)}
+:root{--ink:#1a1a1a;--paper:#faf8f3;--gold:#b8860b;--crimson:#8b0000;--jade:#2d6a4f;--muted:#6b6558;--rule:rgba(26,26,26,.08);--rule-strong:rgba(26,26,26,.15)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
@@ -138,12 +138,12 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 .wf-title{font-size:.95rem;font-weight:600;margin:2px 0 4px}
 .wf-desc{font-size:.8rem;color:var(--muted);line-height:1.8}
 
-.side-nav{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:10px;align-items:center}
+.side-nav{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:var(--z-sticky,100);display:flex;flex-direction:column;gap:10px;align-items:center}
 .nav-pip{width:8px;height:8px;border-radius:50%;background:rgba(26,26,26,.12);cursor:pointer;transition:all .3s}
 .nav-pip.active{background:var(--gold);transform:scale(1.4)}
 .nav-pip:hover{background:rgba(184,134,11,.4)}
 
-.progress-bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--crimson),var(--gold));z-index:200;transition:width .15s linear}
+.progress-bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--crimson),var(--gold));z-index:var(--z-raised,200);transition:width .15s linear}
 
 footer{border-top:1px solid var(--rule);padding:40px 24px 24px;text-align:center}
 footer a{color:var(--gold);text-decoration:none}
@@ -219,7 +219,7 @@ nav a[href="/app"]:hover{background:var(--gold);color:var(--paper)}
 </head>
 <body>
 
-<nav style="position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--rule)">
+<nav style="position:fixed;top:0;left:0;right:0;z-index:var(--z-raised,200);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;background:rgba(250,248,243,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--rule)">
   <a class="serif" href="/" style="color:var(--gold);text-decoration:none;font-weight:700;font-size:1.1rem">LAS</a>
   <div style="display:flex;align-items:center;gap:4px">
     <a href="#philosophy" class="text-xs" style="color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:4px;transition:all .2s">体系</a>

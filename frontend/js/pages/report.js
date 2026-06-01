@@ -26,7 +26,7 @@ App.register('/report', async () => {
     root.innerHTML = `<main class="max-w-3xl mx-auto px-6" style="padding-top:80px;padding-bottom:80px">
       <section class="text-center fade-up d1">
         <p class="mono text-xs text-muted tracking-[4px] mb-2 uppercase">Report Error${errCode ? ' [' + esc(errCode) + ']' : ''}</p>
-        <h1 class="serif text-2xl font-bold mb-3" style="color:var(--crimson)">${esc(title)}</h1>
+        <h1 class="serif text-2xl font-bold mb-3" style="color:var(--semantic-error)">${esc(title)}</h1>
         ${detail ? `<p class="text-sm text-muted mb-4">${esc(detail)}</p>` : ''}
         ${rawPreview ? '<div class="card" style="max-width:600px;margin:0 auto;text-align:left"><p class="text-xs text-muted">LLM 原始输出片段:</p><pre class="text-xs text-muted mt-2" style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto">' + esc(rawPreview) + '</pre></div>' : ''}
         ${extra || ''}

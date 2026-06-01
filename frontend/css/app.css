@@ -83,7 +83,7 @@ textarea.input-underline.textarea:focus{border-color:var(--gold);box-shadow:0 0 
 textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(184,134,11,.08)!important;background:rgba(184,134,11,.02)!important}
 
 /* ── dashboard ── */
-.work-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer;font-size:11px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.work-btn{width:40px;height:40px;border-radius:var(--rounded-sm,4px);border:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;transition:all .2s;display:flex;align-items:center;justify-content:center}
 .work-btn:hover{border-color:var(--gold);color:var(--gold)}
 .work-btn.del:hover{border-color:var(--crimson);color:var(--crimson)}
 .work-item:hover{border-color:var(--rule-strong)}
