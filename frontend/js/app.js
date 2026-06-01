@@ -468,12 +468,28 @@ function showError(code, detail) {
   var box = document.getElementById('errorBox');
   if (!box) return;
   var suggest = ERROR_SUGGEST[code] || ERROR_SUGGEST['E000'];
+  var copyText = '[' + code + '] ' + detail + ' — ' + suggest;
   box.style.display = 'block';
   box.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px">'
     + '<span class="mono" style="font-size:13px;font-weight:700;color:var(--semantic-error);white-space:nowrap">' + code + '</span>'
-    + '<div><p style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:4px">' + esc(detail) + '</p>'
+    + '<div style="flex:1"><p style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:4px">' + esc(detail) + '</p>'
     + '<p style="font-size:12px;color:var(--muted);line-height:1.6">' + suggest + '</p></div>'
+    + '<button class="copyErrBtn" data-text="' + esc(copyText) + '" style="flex-shrink:0;font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:\'JetBrains Mono\',monospace;min-height:32px" title="一键复制错误信息">COPY</button>'
     + '</div>';
+  var btn = box.querySelector('.copyErrBtn');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var t = this.dataset.text;
+      navigator.clipboard.writeText(t).then(function() {
+        btn.textContent = 'OK';
+        btn.style.color = 'var(--jade)';
+        btn.style.borderColor = 'var(--jade)';
+        setTimeout(function() { btn.textContent = 'COPY'; btn.style.color = 'var(--muted)'; btn.style.borderColor = 'var(--rule)'; }, 1500);
+      }).catch(function() {
+        prompt('复制以下错误信息：', t);
+      });
+    });
+  }
 }
 
 function onComplete() {
