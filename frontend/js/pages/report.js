@@ -89,7 +89,7 @@ App.register('/report', async () => {
 async function renderFromTemplate(data, r, id) {
   const mode = data.mode || 'original';
   const isOriginal = mode === 'original';
-  const tplUrl = isOriginal ? '/templates/original.html' : '/templates/classic.html';
+  const tplUrl = (isOriginal ? '/templates/original.html' : '/templates/classic.html') + '?_=' + Date.now();
   let res; try { res = await fetch(tplUrl); } catch (e) { console.error('[LAS] 模板加载失败:', e); return null; }
   if (!res.ok) { console.error('[LAS] 模板HTTP错误:', res.status); return null; }
   let tpl = await res.text();
@@ -207,15 +207,165 @@ async function renderFromTemplate(data, r, id) {
     var aid = data.analysis_id || id;
     if (!aid) { alert('无法生成分享链接：缺少分析ID'); return; }
     var shareUrl = window.location.origin + '/share/' + aid;
-    var btn = document.getElementById('shareBtn');
-    navigator.clipboard.writeText(shareUrl).then(function() {
-      btn.innerHTML = '<i class="fas fa-check"></i>';
-      setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 2000);
-    }).catch(function() {
-      // Clipboard API failed — show the URL for manual copy
-      prompt('复制以下链接分享报告：', shareUrl);
-      btn.innerHTML = '<i class="fas fa-check"></i>';
-      setTimeout(function() { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 2000);
+
+    // Build share card
+    var title = (data.title || '').replace(/</g,'&lt;');
+    var author = (data.author || '').replace(/</g,'&lt;');
+    var score = data.wcs_score != null ? parseFloat(data.wcs_score) : 0;
+    var scoreFixed = score.toFixed(2);
+    var tier = (data.tier || '').replace(/</g,'&lt;');
+    var mode = data.mode || 'classic';
+    var primaryColor = mode === 'original' ? '#6b21a8' : '#8b0000';
+    var primaryRgb = mode === 'original' ? '107,33,168' : '139,0,0';
+    var reportNumber = data.report_number != null ? 'LAS-' + String(data.report_number).padStart(6,'0') : 'LAS-' + String(aid || '000000').slice(0,6).toUpperCase();
+
+    var ac = (r.analysis_content && typeof r.analysis_content === 'object') ? r.analysis_content : {};
+    var honor = (ac.nickname || '').replace(/</g,'&lt;');
+    var golden = (ac.golden_quote || '').replace(/</g,'&lt;');
+    var div = ac.divination || {};
+    var divGrade = (div.grade || '').replace(/</g,'&lt;');
+    var divWord = (div.word || '').replace(/</g,'&lt;');
+    var divPoem = (div.poem || '').replace(/</g,'&lt;');
+    var divSource = (div.source || '').replace(/</g,'&lt;');
+
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin);
+    var homeUrl = window.location.origin;
+
+    // SVG score ring
+    var ringR = 48, ringC = 2 * Math.PI * ringR;
+    var ringOffset = ringC * (1 - score / 150);
+    var ringSvg = '<svg width="120" height="120" viewBox="0 0 120 120" style="display:block;margin:0 auto">'
+      + '<circle cx="60" cy="60" r="' + ringR + '" fill="none" stroke="rgba(' + primaryRgb + ',.1)" stroke-width="5"/>'
+      + '<circle cx="60" cy="60" r="' + ringR + '" fill="none" stroke="' + primaryColor + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + ringC.toFixed(1) + '" stroke-dashoffset="' + ringOffset.toFixed(1) + '" transform="rotate(-90 60 60)" opacity=".85"/>'
+      + '<text x="60" y="56" text-anchor="middle" fill="' + primaryColor + '" font-family="\'JetBrains Mono\',monospace" font-size="22" font-weight="700">' + scoreFixed + '</text>'
+      + '<text x="60" y="74" text-anchor="middle" fill="var(--muted,#6b6558)" font-family="\'JetBrains Mono\',monospace" font-size="9">/ 150</text>'
+      + '</svg>';
+
+    // Quote font sizing
+    var qLen = golden.length;
+    var qSize = qLen <= 30 ? '20px' : qLen <= 60 ? '17px' : qLen <= 100 ? '15px' : '14px';
+
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeShare(); });
+
+    var cardW = 500;
+    var poemStyle = 'font-size:22px;font-weight:400;line-height:2.8;color:var(--ink,#1a1a1a);font-style:italic;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.12em;opacity:.6';
+
+    // Build couplet columns as absolute-positioned side elements
+    var coupletLeft = '', coupletRight = '';
+    if (divPoem) {
+      var parts = divPoem.split(/[，,]/);
+      var c1 = (parts[0] || '').replace(/[。！？；.!?;]/g, '').trim();
+      var c2 = (parts.length > 1 ? parts.slice(1).join('，').replace(/[。！？；.!?;]/g, '').trim() : '');
+      coupletLeft = '<div style="position:absolute;left:28px;top:120px;bottom:0;display:flex;align-items:flex-start"><p style="' + poemStyle + '">' + c1 + '</p></div>';
+      if (c2) {
+        coupletRight = '<div style="position:absolute;right:28px;top:120px;bottom:0;display:flex;align-items:flex-start"><p style="' + poemStyle + '">' + c2 + '</p></div>';
+      }
+    }
+
+    overlay.innerHTML =
+      '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule);border-radius:12px;overflow:hidden;width:' + cardW + 'px;max-width:92vw;position:relative">'
+      + '<div id="shareCard" style="padding:0;box-sizing:border-box;font-family:\'Noto Serif SC\',Georgia,serif;background:var(--paper,#faf8f3);color:var(--ink,#1a1a1a);position:relative">'
+
+      // Brand
+      + '<div style="text-align:center;padding:18px 28px 0">'
+      + '<span class="mono" style="font-size:9px;color:var(--muted,#6b6558);letter-spacing:3px">LAS 文学分析系统</span>'
+      + '</div>'
+
+      // Divination header above ring
+      + ((divGrade || divWord) ? '<div style="text-align:center;padding:12px 28px 2px"><p style="font-size:14px;font-weight:600;color:var(--gold,#b8860b);letter-spacing:.06em">' + [divGrade, divWord].filter(Boolean).join(' · ') + '</p></div>' : '')
+
+      // Couplet absolute-positioned side elements
+      + coupletLeft
+      + coupletRight
+      + '<div style="padding:0 36px">'
+
+      // Score ring
+      + '<div style="text-align:center;padding:12px 0 4px">'
+      + ringSvg
+      + '<div style="margin-top:8px"><span style="display:inline-block;padding:5px 18px;border-radius:99px;font-size:13px;font-weight:700;background:rgba(' + primaryRgb + ',.1);color:' + primaryColor + ';letter-spacing:.08em">' + tier + '</span></div>'
+      + '</div>'
+
+      // Title
+      + '<div style="text-align:center;padding:10px 0 4px">'
+      + '<p style="font-size:22px;font-weight:900;letter-spacing:.04em;line-height:1.25;color:var(--ink,#1a1a1a);margin-bottom:2px">《' + title + '》</p>'
+      + '<p style="font-size:12px;color:var(--muted,#6b6558)">' + author + ' 著</p>'
+      + '</div>'
+
+      // Honor
+      + (honor ? '<div style="text-align:center;padding:10px 4px 4px"><p style="font-size:9px;color:var(--muted,#6b6558);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;">荣 誉 称 号</p><p style="font-size:16px;font-weight:700;color:' + primaryColor + ';line-height:1.4;letter-spacing:.04em">「' + honor + '」</p></div>' : '')
+
+      // Golden quote
+      + (golden ? '<div style="margin:10px 0;padding:14px 12px;background:var(--card-tint-gold);border-radius:8px;text-align:center">'
+        + '<p style="font-size:9px;color:var(--muted,#6b6558);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">金 句</p>'
+        + '<p style="font-size:' + qSize + ';font-weight:500;line-height:1.8;color:var(--ink,#1a1a1a);font-style:italic">' + golden + '</p>'
+        + '</div>' : '')
+
+      // Divination source
+      + (divSource ? '<p style="text-align:center;font-size:10px;color:var(--muted,#6b6558);padding:2px 0 6px">—— ' + divSource + '</p>' : '')
+
+      // QR + URL
+      + '<div style="display:flex;align-items:center;gap:12px;padding:10px 0 4px;border-top:1px solid var(--rule)">'
+      + '<img src="' + qrUrl + '" alt="扫码体验LAS" style="width:64px;height:64px;border-radius:var(--rounded-sm,4px);flex-shrink:0" crossorigin="anonymous">'
+      + '<div style="flex:1;min-width:0">'
+      + '<p style="font-size:10px;color:var(--ink,#1a1a1a);font-weight:500;margin-bottom:2px">扫码体验 LAS 文学分析</p>'
+      + '<p class="mono" style="font-size:9px;color:var(--muted,#6b6558);word-break:break-all;line-height:1.3">' + homeUrl + '</p>'
+      + '</div>'
+      + '</div>'
+
+      // Footer
+      + '<div style="text-align:center;padding:8px 0 16px">'
+      + '<p style="font-size:8px;color:var(--muted,#6b6558);opacity:.5">LAS · 文学分析 · AI 生成仅供参考</p>'
+      + '</div>'
+
+      + '</div>'  // close center content
+
+      + '</div>'  // close shareCard
+      // Button bar
+      + '<div style="display:flex;gap:10px;justify-content:center;padding:14px 28px;border-top:1px solid var(--rule)">'
+      + '<button id="shareDlBtn" style="padding:8px 24px;border:1px solid ' + primaryColor + ';border-radius:var(--rounded-sm,4px);background:transparent;color:' + primaryColor + ';cursor:pointer;font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s">SAVE <span class="btn-zh">保存卡片</span></button>'
+      + '<button id="shareCopyBtn" style="padding:8px 24px;border:1px solid var(--rule);border-radius:var(--rounded-sm,4px);background:transparent;color:var(--muted,#6b6558);cursor:pointer;font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:1px;transition:all .15s">COPY <span class="btn-zh">复制链接</span></button>'
+      + '<button id="shareCloseBtn" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper,#faf8f3);cursor:pointer;color:var(--muted,#6b6558);font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>'
+      + '</div>'
+      + '</div>';  // close outer container
+    document.body.appendChild(overlay);
+
+    function closeShare() {
+      if (overlay.parentNode) document.body.removeChild(overlay);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') closeShare(); }
+
+    document.getElementById('shareCloseBtn').addEventListener('click', closeShare);
+    document.addEventListener('keydown', onKey);
+
+    // Download as image
+    document.getElementById('shareDlBtn').addEventListener('click', function() {
+      var card = document.getElementById('shareCard');
+      if (typeof html2canvas === 'undefined') {
+        alert('html2canvas 未加载，请尝试截图保存');
+        return;
+      }
+      html2canvas(card, { backgroundColor: '#faf8f3', scale: 2, useCORS: true }).then(function(canvas) {
+        var link = document.createElement('a');
+        link.download = 'LAS_' + reportNumber.replace(/\s/g,'_') + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(function() {
+        alert('图片生成失败，请尝试截图保存');
+      });
+    });
+
+    // Copy link
+    document.getElementById('shareCopyBtn').addEventListener('click', function() {
+      var btn = this;
+      navigator.clipboard.writeText(shareUrl).then(function() {
+        btn.innerHTML = 'COPIED <span class="btn-zh">已复制</span>';
+        setTimeout(function() { btn.innerHTML = 'COPY <span class="btn-zh">复制链接</span>'; }, 2000);
+      }).catch(function() {
+        prompt('复制以下链接分享报告：', shareUrl);
+      });
     });
   });
 

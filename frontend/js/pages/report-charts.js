@@ -253,8 +253,8 @@ function initTableEvents() {
 
 function initNav(isOriginal) {
   const secs = isOriginal
-    ? ['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix']
-    : ['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix'];
+    ? ['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix','pageFooter']
+    : ['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix','pageFooter'];
 
   document.querySelectorAll('.nav-pip').forEach(p => p.addEventListener('click', () => scrollTo(p.dataset.target)));
 
@@ -275,14 +275,14 @@ function initSectionNav(isOriginal) {
   const container = document.getElementById('sectionNavInner');
   if (!container) return;
   const secs = isOriginal
-    ? ['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix']
-    : ['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix'];
+    ? ['hero','assessmentSummary','verification','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix','pageFooter']
+    : ['hero','assessmentSummary','table','coreBenchmarks','deepAnalysis','professional','conclusion','appendix','pageFooter'];
   const labels = isOriginal
-    ? ['概览','评估','校验','详表','基准','分析','专业','结论','附录']
-    : ['概览','评估','详表','基准','分析','专业','结论','附录'];
+    ? ['概览','评估','校验','详表','基准','分析','专业','结论','附录','信息']
+    : ['概览','评估','详表','基准','分析','专业','结论','附录','信息'];
   const enLabels = isOriginal
-    ? ['HERO','ASSESS','VERIFY','TABLE','BENCH','DEEP','PRO','VERDICT','EXTRA']
-    : ['HERO','ASSESS','TABLE','BENCH','DEEP','PRO','VERDICT','EXTRA'];
+    ? ['HERO','ASSESS','VERIFY','TABLE','BENCH','DEEP','PRO','VERDICT','EXTRA','INFO']
+    : ['HERO','ASSESS','TABLE','BENCH','DEEP','PRO','VERDICT','EXTRA','INFO'];
 
   secs.forEach((id, i) => {
     const btn = document.createElement('button');
@@ -376,3 +376,29 @@ function toggleRow(i) {
 function scrollTo(id) {
   document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+window.LAS_showReward = function() {
+  if (document.getElementById('rewardClose')) return;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+
+  overlay.innerHTML =
+    '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule,rgba(26,26,26,.08));border-radius:12px;padding:36px 32px 28px;max-width:380px;width:92vw;text-align:center;position:relative">'
+    + '<button id="rewardClose" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper);cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center">&times;</button>'
+    + '<p class="serif" style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:8px;line-height:1.6">感觉报告不错？<br>请开发者喝一杯柠檬水吧</p>'
+    + '<p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:20px">LAS 由个人独立开发与维护，服务器、API 调用及持续迭代均需成本。每一份支持，都能让这个项目走得更远。</p>'
+    + '<img src="/static/reward.png" alt="赞赏码" style="width:180px;border-radius:6px;border:1px solid var(--rule);display:block;margin:0 auto">'
+    + '</div>';
+
+  document.body.appendChild(overlay);
+
+  function close() {
+    if (overlay.parentNode) document.body.removeChild(overlay);
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+
+  document.getElementById('rewardClose').addEventListener('click', close);
+  document.addEventListener('keydown', onKey);
+};

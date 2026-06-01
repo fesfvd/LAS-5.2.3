@@ -31,7 +31,7 @@ echo   Press Ctrl+C in the server window to stop
 echo.
 
 set LAS_DEV=true
-start "LAS Server" cmd /c "set LAS_DEV=true && python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
+start "LAS Server" cmd /c "set LAS_DEV=true&& python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo   Waiting for server to be ready...
 timeout /t 5 /nobreak >nul

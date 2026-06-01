@@ -33,11 +33,11 @@ App.register('/upload', () => {
             </div>
             <input type="hidden" name="mode" id="modeInput" value="original">
           </div>
-          <div class="field-group">
+          <div class="field-group" style="position:relative">
             <label class="field-label">MODEL <span class="field-label-zh">推理模型</span></label>
             <div class="model-selector" id="modelSelector">
               <button type="button" class="model-selector-trigger" id="modelTrigger">
-                <span id="modelLabel">V4 Flash</span>
+                <span id="modelLabel">DeepSeek V4 Flash</span>
                 <span class="chevron">&#9660;</span>
               </button>
               <div class="model-selector-dropdown" id="modelDropdown">
@@ -45,6 +45,7 @@ App.register('/upload', () => {
                 <div class="model-option selected" data-model="deepseek-v4-flash">DeepSeek V4 Flash</div>
               </div>
             </div>
+            <div class="model-badge" id="modelBadge" style="position:absolute;left:calc(100% + 20px);top:0;width:260px"></div>
           </div>
         </div>
 
@@ -107,7 +108,24 @@ App.register('/upload', () => {
     });
   });
 
-  // Model selector
+  // ── Model config (multi-vendor ready) ──
+  const MODEL_CONFIG = {
+    'deepseek-v4-pro': {
+      name: 'DeepSeek V4 Pro',
+      vendor: 'DeepSeek',
+      high: '百万级上下文',
+      desc: '一次性送入整部长篇，不拆章节不损结构。深度推理对叙事肌理的洞察媲美专业评论家，十六维全量标尺逐项诊断。定稿前你需要的那份不留情面的批评。',
+      tags: ['深度推理', '全量标尺', '定稿批评'],
+    },
+    'deepseek-v4-flash': {
+      name: 'DeepSeek V4 Flash',
+      vendor: 'DeepSeek',
+      high: '百万级上下文',
+      desc: '同等上下文窗口，更快响应。保持完整批评框架的同时大幅缩短等待——适合写作中途停下来看一眼，看看这一章的方向对不对。灵感不等服务器。',
+      tags: ['敏捷响应', '同等框架', '迭代伴侣'],
+    },
+  };
+
   window.__LAS_MODEL = 'deepseek-v4-flash';
   const modelSel = document.getElementById('modelSelector');
   const modelTrigger = document.getElementById('modelTrigger');
@@ -116,13 +134,36 @@ App.register('/upload', () => {
   modelTrigger.addEventListener('click', (e) => { e.stopPropagation(); modelSel.classList.toggle('open'); });
   var _docClickHandler = function() { modelSel.classList.remove('open'); };
   document.addEventListener('click', _docClickHandler);
+
+  var modelBadge = document.getElementById('modelBadge');
+
+  function updateModelCard(modelId) {
+    var cfg = MODEL_CONFIG[modelId];
+    if (!cfg) { modelBadge.innerHTML = ''; return; }
+    var visible = window.innerWidth >= 1100;
+    modelBadge.innerHTML = visible ? (
+      '<div class="glass-card" style="padding:16px 18px">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+      + '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(184,134,11,.1);color:var(--gold);font-weight:500">' + cfg.vendor + '</span>'
+      + '<span class="serif" style="font-size:15px;font-weight:700;color:var(--ink)">' + cfg.name.replace(cfg.vendor + ' ', '') + '</span>'
+      + '</div>'
+      + '<p style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px">' + cfg.high + '</p>'
+      + '<p style="font-size:12px;color:var(--muted);line-height:1.8;margin-bottom:8px">' + cfg.desc + '</p>'
+      + '<div style="display:flex;gap:4px">' + cfg.tags.map(function(t) { return '<span style="font-size:10px;padding:2px 8px;border-radius:4px;color:var(--gold);border:1px solid rgba(184,134,11,.25);white-space:nowrap">' + t + '</span>'; }).join('') + '</div>'
+      + '</div>'
+    ) : '';
+  }
+  updateModelCard('deepseek-v4-flash');
+  window.addEventListener('resize', function() { updateModelCard(window.__LAS_MODEL); });
+
   modelDropdown.querySelectorAll('.model-option').forEach(opt => {
     opt.addEventListener('click', () => {
       window.__LAS_MODEL = opt.dataset.model;
-      modelLabel.textContent = opt.dataset.model === 'deepseek-v4-pro' ? 'V4 Pro' : 'V4 Flash';
+      modelLabel.textContent = MODEL_CONFIG[opt.dataset.model].name;
       modelDropdown.querySelectorAll('.model-option').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       modelSel.classList.remove('open');
+      updateModelCard(opt.dataset.model);
     });
   });
 

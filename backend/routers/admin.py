@@ -132,3 +132,28 @@ def generate_invite_codes(
         codes.append(code)
     db.commit()
     return {"ok": True, "codes": codes, "count": len(codes)}
+
+
+@router.get("/invite-codes")
+def list_invite_codes(
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_session),
+):
+    codes = db.query(InviteCode).order_by(InviteCode.created_at.desc()).limit(100).all()
+    # Batch user lookup — avoid N+1
+    used_ids = [c.used_by for c in codes if c.used_by]
+    user_map = {}
+    if used_ids:
+        users = db.query(User).filter(User.id.in_(used_ids)).all()
+        user_map = {u.id: u.username for u in users}
+    items = []
+    for c in codes:
+        items.append({
+            "id": c.id,
+            "code": c.code,
+            "created_at": c.created_at.isoformat() if c.created_at else "",
+            "is_used": c.is_used,
+            "used_by": user_map.get(c.used_by) if c.used_by else None,
+            "used_at": c.used_at.isoformat() if c.used_at else None,
+        })
+    return {"ok": True, "items": items, "total": len(items)}

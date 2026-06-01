@@ -115,6 +115,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .model-option{padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;border-radius:4px;transition:all .15s}
 .model-option:hover{background:var(--gold-soft);color:var(--gold)}
 .model-option.selected{color:var(--gold);font-weight:500}
+.model-badge{display:none}@media(min-width:1100px){.model-badge{display:block}}
 .terminal-window{flex:1;background:rgba(26,26,26,.02);border:1px solid var(--rule);padding:20px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:var(--ink)}
 .log-line{margin-bottom:6px;opacity:0.35;transform:translateY(0);transition:all .3s cubic-bezier(.4,0,.2,1);color:var(--muted)}
 .log-line.show{opacity:0.7}
