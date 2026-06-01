@@ -39,14 +39,16 @@ frontend/
   spa.html             # SPA 入口 /app
   index.html           # 首页 /
   css/app.css          # 全局样式（40+ CSS 变量、z-index 层级、motion token）
-  js/app.js            # 路由 + 转场状态机 + 离线检测 + 隐私路由 + 分析页内联
+  js/app.js            # 路由 + 转场状态机 + 全局错误码(showError/E001-E010)
   js/api.js            # API 客户端（含 getWorksPaginated 分页）
+  js/pages/progress.js # 分析进度（SSE流+进度环+里程碑+watchdog+配额返还）
   js/pages/auth.js     # 登录/注册/忘记密码（密码显隐切换、⚠ 错误图标）
-  js/pages/upload.js   # 提交作品（提交取消按钮、maxlength 50万字）
-  js/pages/report.js   # 报告渲染（CDN 守卫、card-tint 替换旧彩色左边框）
-  js/pages/works.js    # 作品管理（选择模式、对比页、统计图、glass-card Modal）
-  js/pages/profile.js  # 个人中心（管理后台入口）
-  js/pages/admin.js    # 管理后台（统计卡片/用户列表/邀请码生成）
+  js/pages/upload.js   # 提交作品（模型选择器+介绍卡片+配额显示+游客Pro拦截）
+  js/pages/report.js   # 报告渲染（分享卡片flex楹联+赞赏nudge 3→10→20）
+  js/pages/works.js    # 作品管理（选择模式/对比页/统计图+公开/私密切换）
+  js/pages/discover.js # 发现页（公开作品网格+分页）
+  js/pages/profile.js  # 个人中心（配额卡片+管理后台入口）
+  js/pages/admin.js    # 管理后台（粘性导航/分页/分析记录角色色/弹窗测试）
   js/pages/quotes.js   # 金句广场（筛选/网格/换一批）
   templates/           # 报告 HTML 模板（classic.html / original.html）
 ```
