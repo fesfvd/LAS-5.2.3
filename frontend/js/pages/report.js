@@ -225,7 +225,6 @@ async function renderFromTemplate(data, r, id) {
     var div = ac.divination || {};
     var divGrade = (div.grade || '').replace(/</g,'&lt;');
     var divWord = (div.word || '').replace(/</g,'&lt;');
-    var divPoem = (div.poem || '').replace(/</g,'&lt;');
     var divSource = (div.source || '').replace(/</g,'&lt;');
 
     var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin);
@@ -249,31 +248,13 @@ async function renderFromTemplate(data, r, id) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeShare(); });
 
-    var poemStyle = 'font-size:20px;font-weight:400;line-height:2.4;color:var(--ink,#1a1a1a);font-style:italic;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.12em;opacity:.5;margin:0';
-    var poemPadX = 20;  // horizontal padding for couplet columns
-
-    // Build couplet columns (flex side columns — grow with poem length)
-    var coupletLeft = '', coupletRight = '';
-    if (divPoem) {
-      var parts = divPoem.split(/[，,]/);
-      var c1 = (parts[0] || '').replace(/[。！？；.!?;]/g, '').trim();
-      var c2 = (parts.length > 1 ? parts.slice(1).join('，').replace(/[。！？；.!?;]/g, '').trim() : '');
-      coupletLeft = '<div style="flex-shrink:0;display:flex;align-items:center;padding:80px ' + poemPadX + 'px 0"><p style="' + poemStyle + '">' + c1 + '</p></div>';
-      if (c2) {
-        coupletRight = '<div style="flex-shrink:0;display:flex;align-items:center;padding:80px ' + poemPadX + 'px 0"><p style="' + poemStyle + '">' + c2 + '</p></div>';
-      }
-    }
-
-    var cardMaxW = divPoem ? 580 : 420;
+    var cardMaxW = 420;
 
     overlay.innerHTML =
       '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule);border-radius:12px;overflow:hidden;max-width:' + cardMaxW + 'px;width:92vw;position:relative">'
       + '<div id="shareCard" style="box-sizing:border-box;font-family:\'Noto Serif SC\',Georgia,serif;background:var(--paper,#faf8f3);color:var(--ink,#1a1a1a)">'
 
-      // Couplets + Center in flex row
-      + (divPoem ? '<div style="display:flex;flex-direction:row;justify-content:center">' + coupletLeft : '')
-
-      + '<div style="flex:1;min-width:0;padding:0 28px">'
+      + '<div style="padding:0 28px">'
 
       // Brand
       + '<div style="text-align:center;padding:18px 0 0">'
@@ -323,7 +304,6 @@ async function renderFromTemplate(data, r, id) {
 
       + '</div>'  // close center content
 
-      + (divPoem ? coupletRight + '</div>' : '')  // close flex row
       + '</div>'  // close shareCard
       // Button bar
       + '<div style="display:flex;gap:10px;justify-content:center;padding:14px 28px;border-top:1px solid var(--rule)">'
