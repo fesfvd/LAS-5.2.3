@@ -39,9 +39,8 @@ frontend/
   spa.html             # SPA 入口 /app
   index.html           # 首页 /
   css/app.css          # 全局样式（40+ CSS 变量、z-index 层级、motion token）
-  js/app.js            # 路由 + 转场状态机 + 全局错误码(showError/E001-E010)
   js/api.js            # API 客户端（含 getWorksPaginated 分页）
-  js/pages/flow.js     # 分析进度（SSE流+进度环+里程碑+watchdog+配额返还）
+  js/app.js            # 路由 + 转场状态机 + 分析流程(SSE流+进度环+里程碑+watchdog+配额返还) + 全局错误码(showError/E001-E010)
   js/pages/auth.js     # 登录/注册/忘记密码（密码显隐切换、⚠ 错误图标）
   js/pages/upload.js   # 提交作品（模型选择器+介绍卡片+配额显示+游客Pro拦截）
   js/pages/report.js   # 报告渲染（分享卡片flex楹联+赞赏nudge 3→10→20）

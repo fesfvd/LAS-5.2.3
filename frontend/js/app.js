@@ -114,7 +114,10 @@ var App = {
 
   navigate: function(hash) {
     console.log('[APP] navigate: ' + hash + ' _transitionPhase=' + _transitionPhase);
-    if (_transitionPhase !== 'idle') return;
+    if (_transitionPhase !== 'idle') {
+      _pendingRoute = hash;
+      return;
+    }
 
     // Update URL without triggering hashchange
     if (window.location.hash !== hash) {
@@ -134,13 +137,14 @@ var App = {
     var hash = raw || '/upload';
     var parts = hash.replace(/^\/+/, '').split('/');
     var path = '/' + (parts[0] || 'upload');
+    var prevPage = this.state.page;
     this.state.params = { id: parts[1] || null };
     this.state.page = path;
 
     var handler = this.routes[path];
 
     // Abort running SSE stream when leaving analyze page
-    if (this.state.page === '/analyze' && path !== '/analyze') {
+    if (prevPage === '/analyze' && path !== '/analyze') {
       if (window.__LAS_ANALYZE_CTRL) { window.__LAS_ANALYZE_CTRL.abort(); window.__LAS_ANALYZE_CTRL = null; }
       if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
     }
@@ -301,6 +305,7 @@ let _quoteIdx = 0;
 let _quoteActive = false;
 let _stepEls = [];
 let _lastPct = 0;
+let _cancelPolling = false;
 
 App.register('/analyze', () => {
   const id = App.state.params.id;
@@ -310,6 +315,7 @@ App.register('/analyze', () => {
   _shownStepIndex = -1;
   _completed = false;
   _lastPct = 0;
+  _cancelPolling = false;
   _pageEnter = Date.now();
   if (_stepTimer) { clearInterval(_stepTimer); _stepTimer = null; }
   if (_cursorTimer) { clearInterval(_cursorTimer); _cursorTimer = null; }
@@ -382,6 +388,7 @@ App.register('/analyze', () => {
     if (_elapsedTimer) clearInterval(_elapsedTimer);
     _quoteActive = false;
     _completed = true;
+    _cancelPolling = true;
     App.navigate('#/works');
   });
   cancelBtn.addEventListener('mouseenter', function() { this.style.borderColor = 'var(--crimson)'; this.style.color = 'var(--crimson)'; });
@@ -648,6 +655,11 @@ async function startStream(workId, model) {
             showError(code, msg);
             if (statusText) { statusText.textContent = '分析失败 [' + code + ']'; statusText.style.color = 'var(--semantic-error)'; }
             if (_elapsedTimer) clearInterval(_elapsedTimer);
+            if (_stepTimer) clearInterval(_stepTimer);
+            if (_cursorTimer) clearInterval(_cursorTimer);
+            if (_quoteTimer) clearTimeout(_quoteTimer);
+            _quoteActive = false;
+            _completed = true;
             var retryBtn2 = document.createElement('button');
             retryBtn2.textContent = '重试';
             retryBtn2.className = 'mono text-xs';
@@ -789,6 +801,7 @@ function cycleQuote() {
 async function waitForReport(workId) {
   var maxRetries = 90;
   for (let i = 0; i < maxRetries; i++) {
+    if (_cancelPolling) return false;
     const delay = i === 0 ? 0 : i <= 5 ? 500 : i <= 20 ? 1000 : 2000;
     await new Promise(r => setTimeout(r, delay));
     try {
