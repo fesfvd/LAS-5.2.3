@@ -41,10 +41,10 @@ App.register('/admin', async () => {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <p class="serif text-sm font-bold" style="color:var(--ink)">分析记录</p>
           <div style="display:flex;gap:4px" id="analysisFilter">
-            <button class="analysisFilterBtn active" data-status="" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--ink);font-family:'JetBrains Mono',monospace;transition:all .2s">ALL</button>
-            <button class="analysisFilterBtn" data-status="done" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">DONE</button>
-            <button class="analysisFilterBtn" data-status="failed" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">FAIL</button>
-            <button class="analysisFilterBtn" data-status="running" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">RUN</button>
+            <button class="analysisFilterBtn active" data-status="" style="font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--gold);border-radius:4px;background:var(--gold-soft);cursor:pointer;color:var(--gold);font-family:'JetBrains Mono',monospace;transition:all .2s">ALL</button>
+            <button class="analysisFilterBtn" data-status="done" style="font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">DONE</button>
+            <button class="analysisFilterBtn" data-status="failed" style="font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">FAIL</button>
+            <button class="analysisFilterBtn" data-status="running" style="font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">RUN</button>
           </div>
         </div>
         <div id="analysisTable" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
@@ -225,7 +225,7 @@ App.register('/admin', async () => {
       var foot = '</tbody></table>';
       var moreBtn = '';
       if (_analysisMore) {
-        moreBtn = '<div style="text-align:center;margin-top:12px"><button id="loadMoreAnalyses" style="font-size:11px;padding:6px 24px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);transition:all .2s;font-family:\'JetBrains Mono\',monospace">LOAD MORE</button></div>';
+        moreBtn = '<div style="text-align:center;margin-top:12px"><button id="loadMoreAnalyses" style="font-size:11px;padding:10px 28px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);transition:all .2s;font-family:\'JetBrains Mono\',monospace">LOAD MORE</button></div>';
       } else if (_analysisOffset > 0) {
         moreBtn = '<p class="text-xs" style="text-align:center;margin-top:12px;color:var(--muted)">共 ' + _analysisOffset + ' 条记录</p>';
       }
@@ -251,9 +251,9 @@ App.register('/admin', async () => {
   document.getElementById('analysisFilter').querySelectorAll('.analysisFilterBtn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.getElementById('analysisFilter').querySelectorAll('.analysisFilterBtn').forEach(function(b) {
-        b.classList.remove('active'); b.style.color = 'var(--muted)'; b.style.borderColor = 'var(--rule)';
+        b.classList.remove('active'); b.style.color = 'var(--muted)'; b.style.borderColor = 'var(--rule)'; b.style.background = 'transparent';
       });
-      btn.classList.add('active'); btn.style.color = 'var(--ink)'; btn.style.borderColor = 'var(--ink)';
+      btn.classList.add('active'); btn.style.color = 'var(--gold)'; btn.style.borderColor = 'var(--gold)'; btn.style.background = 'var(--gold-soft)';
       _analysisStatus = btn.dataset.status;
       loadAnalyses();
     });

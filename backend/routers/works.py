@@ -350,7 +350,7 @@ async def start_analysis(
         db.commit()
 
     model_used = req.model or ""
-    if user.role == "guest" and model_used and "flash" not in model_used.lower():
+    if user.role == "guest" and "flash" not in (model_used or "").lower():
         model_used = "deepseek-v4-flash"  # force flash for guests
 
     # Assign sequential report number

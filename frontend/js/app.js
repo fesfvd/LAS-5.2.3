@@ -137,6 +137,12 @@ var App = {
 
     var handler = this.routes[path];
 
+    // Abort running SSE stream when leaving analyze page
+    if (this.state.page === '/analyze' && path !== '/analyze') {
+      if (window.__LAS_ANALYZE_CTRL) { window.__LAS_ANALYZE_CTRL.abort(); window.__LAS_ANALYZE_CTRL = null; }
+      if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
+    }
+
     // Queue navigation if transition is in progress — replay when idle
     if (_transitionPhase !== 'idle') {
       _pendingRoute = '#' + hash;
@@ -285,6 +291,7 @@ let _pageEnter = 0;
 let _stepTimer = null;
 let _cursorTimer = null;
 let _quoteTimer = null;
+let _elapsedTimer = null;
 let _quotes = [];
 let _quoteIdx = 0;
 let _quoteActive = false;
@@ -337,7 +344,7 @@ App.register('/analyze', () => {
               <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
             </div>
           </div>
-          <div id="errorBox" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;background:var(--surface-warning);border:1px solid rgba(180,120,30,.15)"></div>
+          <div id="errorBox" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;background:var(--surface-warning);border:1px solid var(--rule-strong)"></div>
           <hr class="rule" style="margin:24px 0">
           <div style="text-align:center">
             <span class="section-label">LITERARY MUSES</span>
@@ -474,14 +481,14 @@ function showError(code, detail) {
     + '<span class="mono" style="font-size:13px;font-weight:700;color:var(--semantic-error);white-space:nowrap">' + code + '</span>'
     + '<div style="flex:1"><p style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:4px">' + esc(detail) + '</p>'
     + '<p style="font-size:12px;color:var(--muted);line-height:1.6">' + suggest + '</p></div>'
-    + '<button class="copyErrBtn" data-text="' + esc(copyText) + '" style="flex-shrink:0;font-size:10px;padding:4px 10px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:\'JetBrains Mono\',monospace;min-height:32px" title="一键复制错误信息">COPY</button>'
+    + '<button class="copyErrBtn" data-text="' + esc(copyText) + '" style="flex-shrink:0;font-size:11px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:\'JetBrains Mono\',monospace" title="一键复制错误信息">COPY</button>'
     + '</div>';
   var btn = box.querySelector('.copyErrBtn');
   if (btn) {
     btn.addEventListener('click', function() {
       var t = this.dataset.text;
       navigator.clipboard.writeText(t).then(function() {
-        btn.textContent = 'OK';
+        btn.textContent = '已复制';
         btn.style.color = 'var(--jade)';
         btn.style.borderColor = 'var(--jade)';
         setTimeout(function() { btn.textContent = 'COPY'; btn.style.color = 'var(--muted)'; btn.style.borderColor = 'var(--rule)'; }, 1500);
@@ -489,6 +496,11 @@ function showError(code, detail) {
         prompt('复制以下错误信息：', t);
       });
     });
+    btn.addEventListener('mouseenter', function() { if (this.textContent === 'COPY') { this.style.color = 'var(--ink)'; this.style.borderColor = 'var(--ink)'; } });
+    btn.addEventListener('mouseleave', function() { if (this.textContent === 'COPY') { this.style.color = 'var(--muted)'; this.style.borderColor = 'var(--rule)'; } });
+    btn.addEventListener('mousedown', function() { this.style.transform = 'scale(0.97)'; });
+    btn.addEventListener('mouseup', function() { this.style.transform = ''; });
+    btn.addEventListener('mouseout', function() { this.style.transform = ''; });
   }
 }
 
@@ -555,7 +567,7 @@ async function startStream(workId, model) {
     const FIRST_BYTE_WARN = 30000;
 
     var _startTime = Date.now();
-    var _elapsedTimer = setInterval(function() {
+    _elapsedTimer = setInterval(function() {
       var elapsed = Math.floor((Date.now() - _startTime) / 1000);
       if (statusText && elapsed > 10 && !firstEvent) {
         statusText.textContent = '等待 LLM 响应... (' + elapsed + 's)';
@@ -621,6 +633,12 @@ async function startStream(workId, model) {
             showError(code, msg);
             if (statusText) { statusText.textContent = '分析失败 [' + code + ']'; statusText.style.color = 'var(--semantic-error)'; }
             if (_elapsedTimer) clearInterval(_elapsedTimer);
+            var retryBtn2 = document.createElement('button');
+            retryBtn2.textContent = '重试';
+            retryBtn2.className = 'mono text-xs';
+            retryBtn2.style.cssText = 'margin-left:12px;padding:8px 16px;min-height:40px;border:1px solid var(--gold);border-radius:4px;background:transparent;color:var(--gold);cursor:pointer;transition:all .2s;font-family:JetBrains Mono,monospace';
+            retryBtn2.addEventListener('click', function() { if (retryBtn2.parentNode) retryBtn2.remove(); startStream(workId, model); });
+            if (statusText && statusText.parentNode) statusText.parentNode.insertBefore(retryBtn2, statusText.nextSibling);
             return;
           }
           if (firstEvent) {
