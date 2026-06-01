@@ -400,7 +400,7 @@ async function renderFromTemplate(data, r, id) {
     function triggerNudge() {
       if (nudgeTriggered) return;
       nudgeTriggered = true;
-      window.LAS_showReward();
+      window.LAS_showReward(milestone);
 
       // Retry finding modal DOM (up to 10×100ms)
       var tries = 0;

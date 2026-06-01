@@ -377,17 +377,20 @@ function scrollTo(id) {
   document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-window.LAS_showReward = function() {
+window.LAS_showReward = function(milestone) {
   if (document.getElementById('rewardOverlay')) return;
   var overlay = document.createElement('div');
   overlay.id = 'rewardOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
   overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
 
+  var TITLES = { 3: '已经分析 3 次了，感觉怎么样？', 10: '第 10 次分析，谢谢你的信任', 20: '你已经分析 20 次了，这真的很酷' };
+  var title = TITLES[milestone] || '觉得 LAS 有帮助吗？';
+
   var cardHTML =
     '<div class="reward-card" style="background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:36px 32px 28px;max-width:360px;width:92vw;text-align:center;position:relative;animation:pageIn .35s ease">'
     + '<button class="reward-close-btn" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper);cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s">&times;</button>'
-    + '<p class="serif" style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:16px;line-height:1.6">觉得 LAS 有帮助吗？</p>'
+    + '<p class="serif" style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:16px;line-height:1.6">' + title + '</p>'
     + '<p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:24px">LAS 由个人独立开发维护，<br>服务器与 API 均自费承担。<br>如果它曾陪你度过一段写作时光，<br>请我喝杯柠檬水吧 🍋</p>'
     + '<div style="display:flex;gap:12px;justify-content:center">'
     + '<button class="reward-yes-btn" style="padding:10px 28px;min-height:40px;border:1px solid var(--gold);border-radius:4px;background:var(--gold);color:var(--paper);cursor:pointer;font-family:\'JetBrains Mono\',monospace;font-size:12px;letter-spacing:1px;transition:all .2s">SUPPORT <span style="font-family:\'Noto Sans SC\',sans-serif;font-size:11px">请喝柠檬水</span></button>'
