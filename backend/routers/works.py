@@ -134,13 +134,30 @@ def batch_delete_works(
     db: Session = Depends(get_session),
 ):
     deleted = 0
+    refunded = 0
     for wid in ids:
         work = db.query(Work).filter(Work.id == wid, Work.user_id == user.id).first()
-        if work:
-            db.delete(work)
-            deleted += 1
+        if not work:
+            continue
+        latest = (
+            db.query(Analysis)
+            .filter(Analysis.work_id == work.id)
+            .order_by(Analysis.created_at.desc())
+            .first()
+        )
+        if latest and latest.status in ("failed", "running") and user.role != "admin":
+            try:
+                db.query(User).filter(User.id == user.id).update(
+                    {"permanent_quota": User.permanent_quota + 1},
+                    synchronize_session="fetch",
+                )
+                refunded += 1
+            except Exception:
+                pass
+        db.delete(work)
+        deleted += 1
     db.commit()
-    return {"ok": True, "deleted": deleted}
+    return {"ok": True, "deleted": deleted, "refunded": refunded}
 
 
 @router.get("/compare")
@@ -295,6 +312,23 @@ def delete_work(
     work = db.query(Work).filter(Work.id == work_id, Work.user_id == user.id).first()
     if not work:
         raise HTTPException(404, "作品不存在")
+    # Refund quota if the only/latest analysis didn't succeed
+    latest = (
+        db.query(Analysis)
+        .filter(Analysis.work_id == work.id)
+        .order_by(Analysis.created_at.desc())
+        .first()
+    )
+    if latest and latest.status in ("failed", "running") and user.role != "admin":
+        try:
+            db.query(User).filter(User.id == user.id).update(
+                {"permanent_quota": User.permanent_quota + 1},
+                synchronize_session="fetch",
+            )
+            db.commit()
+            logger.info("删除作品时返还配额 user_id=%s work_id=%s", user.id, work_id)
+        except Exception:
+            pass
     db.delete(work)
     db.commit()
     return {"ok": True}
