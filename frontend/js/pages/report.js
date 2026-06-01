@@ -371,6 +371,24 @@ async function renderFromTemplate(data, r, id) {
 
   initReport(root, { dimData, layerAvgs, wcs, tier });
 
+  // ── Lightweight support nudge: every 3 successful analyses ──
+  (function() {
+    var key = 'las_success_count';
+    var seenKey = 'las_seen_analyses';
+    var count = parseInt(localStorage.getItem(key) || '0', 10);
+    var seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+    if (seen.indexOf(id) === -1) {
+      seen.push(id);
+      if (seen.length > 50) seen = seen.slice(-50);  // keep last 50 IDs max
+      localStorage.setItem(seenKey, JSON.stringify(seen));
+      count++;
+      localStorage.setItem(key, String(count));
+      if (count % 3 === 0 && typeof window.LAS_showReward === 'function') {
+        setTimeout(function() { window.LAS_showReward(); }, 2000);
+      }
+    }
+  })();
+
   // ── Quote contribution (original mode only) ──
   var contributeBox = document.getElementById('contributeBox');
   if (contributeBox && isOriginal) {
