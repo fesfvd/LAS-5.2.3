@@ -106,6 +106,7 @@ class Analysis(Base):
     prompt_tokens = Column(Integer, nullable=True)
     completion_tokens = Column(Integer, nullable=True)
     total_tokens = Column(Integer, nullable=True)
+    quota_refunded = Column(Boolean, default=False, nullable=False)  # prevent double-refund
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     work = relationship("Work", back_populates="analyses")
@@ -160,6 +161,13 @@ def init_db():
         for col, dtype in [("is_deleted", "BOOLEAN DEFAULT 0"), ("deleted_at", "DATETIME")]:
             try:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
+                conn.commit()
+            except Exception:
+                pass
+        # Quota refund tracking (v5.2.3)
+        for col, dtype in [("quota_refunded", "BOOLEAN DEFAULT 0")]:
+            try:
+                conn.execute(text(f"ALTER TABLE analyses ADD COLUMN {col} {dtype}"))
                 conn.commit()
             except Exception:
                 pass

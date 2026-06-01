@@ -45,7 +45,7 @@ def get_stats(user: User = Depends(require_admin), db: Session = Depends(get_ses
 
 @router.get("/users")
 def list_users(
-    limit: int = 20,
+    limit: int = Query(default=20, le=100),
     offset: int = 0,
     search: str = "",
     user: User = Depends(require_admin),
@@ -136,7 +136,7 @@ def generate_invite_codes(
 
 @router.get("/invite-codes")
 def list_invite_codes(
-    limit: int = 30,
+    limit: int = Query(default=30, le=100),
     offset: int = 0,
     user: User = Depends(require_admin),
     db: Session = Depends(get_session),
@@ -164,7 +164,7 @@ def list_invite_codes(
 
 @router.get("/analyses")
 def list_analyses(
-    limit: int = 30,
+    limit: int = Query(default=30, le=100),
     offset: int = 0,
     status: str = "",
     user: User = Depends(require_admin),

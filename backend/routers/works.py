@@ -145,15 +145,16 @@ def batch_delete_works(
             .order_by(Analysis.created_at.desc())
             .first()
         )
-        if latest and latest.status in ("failed", "running") and user.role != "admin":
+        if latest and latest.status in ("failed", "running") and not latest.quota_refunded and user.role != "admin":
             try:
                 db.query(User).filter(User.id == user.id).update(
                     {"permanent_quota": User.permanent_quota + 1},
                     synchronize_session="fetch",
                 )
+                latest.quota_refunded = True
                 refunded += 1
             except Exception:
-                pass
+                logger.exception("批量删除返还配额失败 user_id=%s work_id=%s", user.id, wid)
         db.delete(work)
         deleted += 1
     db.commit()
@@ -319,16 +320,16 @@ def delete_work(
         .order_by(Analysis.created_at.desc())
         .first()
     )
-    if latest and latest.status in ("failed", "running") and user.role != "admin":
+    if latest and latest.status in ("failed", "running") and not latest.quota_refunded and user.role != "admin":
         try:
             db.query(User).filter(User.id == user.id).update(
                 {"permanent_quota": User.permanent_quota + 1},
                 synchronize_session="fetch",
             )
-            db.commit()
+            latest.quota_refunded = True
             logger.info("删除作品时返还配额 user_id=%s work_id=%s", user.id, work_id)
         except Exception:
-            pass
+            logger.exception("删除返还配额失败 user_id=%s work_id=%s", user.id, work_id)
     db.delete(work)
     db.commit()
     return {"ok": True}
@@ -464,32 +465,35 @@ async def start_analysis(
                         except Exception:
                             pass
                     # Refund quota if analysis failed (not for admin)
-                    if analysis.status == "failed" and user.role != "admin":
+                    if analysis.status == "failed" and not analysis.quota_refunded and user.role != "admin":
                         try:
                             db.query(User).filter(User.id == user.id).update(
                                 {"permanent_quota": User.permanent_quota + 1},
                                 synchronize_session="fetch",
                             )
+                            analysis.quota_refunded = True
                             db.commit()
                             logger.info("配额已返还 user_id=%s analysis_id=%s", user.id, analysis.id)
                         except Exception:
-                            pass
+                            logger.exception("配额返还失败 user_id=%s analysis_id=%s", user.id, analysis.id)
                     return
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.error("SSE 流异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
             # Mark analysis as failed + refund quota
             try:
-                analysis.status = "failed"
-                db.commit()
-                if user.role != "admin":
-                    db.query(User).filter(User.id == user.id).update(
-                        {"permanent_quota": User.permanent_quota + 1},
-                        synchronize_session="fetch",
-                    )
+                if not analysis.quota_refunded:
+                    analysis.status = "failed"
                     db.commit()
+                    if user.role != "admin":
+                        db.query(User).filter(User.id == user.id).update(
+                            {"permanent_quota": User.permanent_quota + 1},
+                            synchronize_session="fetch",
+                        )
+                        analysis.quota_refunded = True
+                        db.commit()
             except Exception:
-                pass
+                logger.exception("SSE异常返还配额失败 work_id=%s", work_id)
             yield f"data: {json.dumps({'type': 'error', 'error_code': 'E010', 'text': '服务器内部错误，请稍后重试'}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
