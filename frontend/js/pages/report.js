@@ -249,37 +249,39 @@ async function renderFromTemplate(data, r, id) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeShare(); });
 
-    var cardW = 500;
-    var poemStyle = 'font-size:22px;font-weight:400;line-height:2.8;color:var(--ink,#1a1a1a);font-style:italic;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.12em;opacity:.6';
+    var poemStyle = 'font-size:20px;font-weight:400;line-height:2.4;color:var(--ink,#1a1a1a);font-style:italic;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.12em;opacity:.5;margin:0';
+    var poemPadX = 20;  // horizontal padding for couplet columns
 
-    // Build couplet columns as absolute-positioned side elements
+    // Build couplet columns (flex side columns — grow with poem length)
     var coupletLeft = '', coupletRight = '';
     if (divPoem) {
       var parts = divPoem.split(/[，,]/);
       var c1 = (parts[0] || '').replace(/[。！？；.!?;]/g, '').trim();
       var c2 = (parts.length > 1 ? parts.slice(1).join('，').replace(/[。！？；.!?;]/g, '').trim() : '');
-      coupletLeft = '<div style="position:absolute;left:28px;top:120px;bottom:0;display:flex;align-items:flex-start"><p style="' + poemStyle + '">' + c1 + '</p></div>';
+      coupletLeft = '<div style="flex-shrink:0;display:flex;align-items:center;padding:80px ' + poemPadX + 'px 0"><p style="' + poemStyle + '">' + c1 + '</p></div>';
       if (c2) {
-        coupletRight = '<div style="position:absolute;right:28px;top:120px;bottom:0;display:flex;align-items:flex-start"><p style="' + poemStyle + '">' + c2 + '</p></div>';
+        coupletRight = '<div style="flex-shrink:0;display:flex;align-items:center;padding:80px ' + poemPadX + 'px 0"><p style="' + poemStyle + '">' + c2 + '</p></div>';
       }
     }
 
+    var cardMaxW = divPoem ? 580 : 420;
+
     overlay.innerHTML =
-      '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule);border-radius:12px;overflow:hidden;width:' + cardW + 'px;max-width:92vw;position:relative">'
-      + '<div id="shareCard" style="padding:0;box-sizing:border-box;font-family:\'Noto Serif SC\',Georgia,serif;background:var(--paper,#faf8f3);color:var(--ink,#1a1a1a);position:relative">'
+      '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule);border-radius:12px;overflow:hidden;max-width:' + cardMaxW + 'px;width:92vw;position:relative">'
+      + '<div id="shareCard" style="box-sizing:border-box;font-family:\'Noto Serif SC\',Georgia,serif;background:var(--paper,#faf8f3);color:var(--ink,#1a1a1a)">'
+
+      // Couplets + Center in flex row
+      + (divPoem ? '<div style="display:flex;flex-direction:row;justify-content:center">' + coupletLeft : '')
+
+      + '<div style="flex:1;min-width:0;padding:0 28px">'
 
       // Brand
-      + '<div style="text-align:center;padding:18px 28px 0">'
+      + '<div style="text-align:center;padding:18px 0 0">'
       + '<span class="mono" style="font-size:9px;color:var(--muted,#6b6558);letter-spacing:3px">LAS 文学分析系统</span>'
       + '</div>'
 
       // Divination header above ring
-      + ((divGrade || divWord) ? '<div style="text-align:center;padding:12px 28px 2px"><p style="font-size:14px;font-weight:600;color:var(--gold,#b8860b);letter-spacing:.06em">' + [divGrade, divWord].filter(Boolean).join(' · ') + '</p></div>' : '')
-
-      // Couplet absolute-positioned side elements
-      + coupletLeft
-      + coupletRight
-      + '<div style="padding:0 36px">'
+      + ((divGrade || divWord) ? '<div style="text-align:center;padding:12px 0 2px"><p style="font-size:14px;font-weight:600;color:var(--gold,#b8860b);letter-spacing:.06em">' + [divGrade, divWord].filter(Boolean).join(' · ') + '</p></div>' : '')
 
       // Score ring
       + '<div style="text-align:center;padding:12px 0 4px">'
@@ -321,6 +323,7 @@ async function renderFromTemplate(data, r, id) {
 
       + '</div>'  // close center content
 
+      + (divPoem ? coupletRight + '</div>' : '')  // close flex row
       + '</div>'  // close shareCard
       // Button bar
       + '<div style="display:flex;gap:10px;justify-content:center;padding:14px 28px;border-top:1px solid var(--rule)">'

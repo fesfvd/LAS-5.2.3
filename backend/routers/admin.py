@@ -80,7 +80,7 @@ def list_users(
 
 @router.get("/works")
 def list_works(
-    limit: int = 20,
+    limit: int = Query(default=20, le=100),
     offset: int = 0,
     mode: str = "",
     search: str = "",
