@@ -53,14 +53,16 @@ function _buildOverlay(zh, en) {
 function _startTransition(targetHash, zh, en) {
   if (_transitionPhase !== 'idle') return;
 
-  // Safety: force reset after 800ms in case animation stalls
+  // Safety: force reset after 1200ms in case animation stalls
   var safety = setTimeout(function() {
     if (_transitionPhase !== 'idle') {
+      console.warn('[APP] 转场超时，强制重置 phase=' + _transitionPhase);
       _transitionPhase = 'idle';
       var ov = document.getElementById('transitionOverlay');
       if (ov) { ov.classList.remove('enter', 'exit'); }
+      if (_pendingRoute) { var pr = _pendingRoute; _pendingRoute = null; window.location.hash = pr; }
     }
-  }, 800);
+  }, 1200);
 
   // Phase: enter — slide overlay up from bottom
   _transitionPhase = 'enter';
@@ -181,6 +183,8 @@ var App = {
       result = handler ? handler() : null;
     } catch (e) {
       console.error('[APP] _render handler ERROR:', e);
+      _transitionPhase = 'idle';
+      if (_pendingRoute) { var pr = _pendingRoute; _pendingRoute = null; window.location.hash = pr; }
       return;
     }
     console.log('[APP] _render handler ok, result=' + (typeof result));
