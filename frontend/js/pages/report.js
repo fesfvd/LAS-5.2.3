@@ -394,8 +394,11 @@ async function renderFromTemplate(data, r, id) {
       }
     }
     if (!milestone || typeof window.LAS_showReward !== 'function') return;
+    var nudgeTriggered = false;
 
-    setTimeout(function() {
+    function triggerNudge() {
+      if (nudgeTriggered) return;
+      nudgeTriggered = true;
       window.LAS_showReward();
 
       // Retry finding modal DOM (up to 10×100ms)
@@ -433,7 +436,20 @@ async function renderFromTemplate(data, r, id) {
         }
       }
       setTimeout(hookModal, 100);
-    }, 2000);
+    }
+
+    // Trigger nudge when user scrolls near bottom of report — don't interrupt reading
+    var sentinel = document.getElementById('contributeBox') || document.querySelector('footer') || document.getElementById('dynamicContent');
+    if (sentinel) {
+      var obs = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) { obs.disconnect(); triggerNudge(); }
+      }, { threshold: 0 });
+      obs.observe(sentinel);
+      // Fallback: if user never reaches bottom within 90s, trigger anyway
+      setTimeout(function() { obs.disconnect(); triggerNudge(); }, 90000);
+    } else {
+      triggerNudge();
+    }
   })();
 
   // ── Quote contribution (original mode only) ──
