@@ -15,36 +15,34 @@ App.register('/admin', async () => {
         <h1 class="serif text-3xl font-black leading-[1.1]">管理后台</h1>
       </div>
       <!-- Admin section nav -->
-      <div class="admin-nav" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;position:sticky;top:0;z-index:var(--z-sticky,100);background:var(--paper);padding:12px 0;border-bottom:1px solid var(--rule)">
-        <a href="#admin-stats" class="admin-nav-link active mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--gold);border-radius:4px;background:var(--gold-soft);color:var(--gold);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">概览</a>
-        <a href="#admin-users" class="admin-nav-link mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">用户</a>
-        <a href="#admin-invites" class="admin-nav-link mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">邀请码</a>
-        <a href="#admin-analyses" class="admin-nav-link mono text-xs" style="padding:6px 14px;min-height:36px;border:1px solid var(--rule);border-radius:4px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">分析</a>
-      </div>
+      <nav class="admin-nav" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;position:sticky;top:0;z-index:var(--z-sticky,100);background:var(--paper);padding:12px 0;border-bottom:1px solid var(--rule);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
+        <a href="#admin-stats" class="admin-nav-link active mono text-xs" style="padding:8px 16px;min-height:40px;border:1px solid var(--gold);border-radius:8px;background:var(--gold-soft);color:var(--gold);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">概览</a>
+        <a href="#admin-users" class="admin-nav-link mono text-xs" style="padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:8px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">用户</a>
+        <a href="#admin-invites" class="admin-nav-link mono text-xs" style="padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:8px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">邀请码</a>
+        <a href="#admin-analyses" class="admin-nav-link mono text-xs" style="padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:8px;background:transparent;color:var(--muted);text-decoration:none;transition:all .2s;font-family:'JetBrains Mono',monospace;white-space:nowrap">分析</a>
+      </nav>
 
-      <div id="admin-stats"><div id="adminStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <section id="admin-stats" style="scroll-margin-top:70px"><div id="adminStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
         <div class="spinner mx-auto" style="margin-top:20px"></div>
-      </div></div>
-      <div id="admin-users" class="glass-card" style="padding:20px;margin-bottom:12px">
+      </div></section>
+      <section id="admin-users" class="glass-card" style="padding:20px;margin-bottom:12px;scroll-margin-top:70px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <p class="serif text-sm font-bold" style="color:var(--ink)">用户列表</p>
-          <input id="userSearch" class="input-underline" placeholder="搜索用户名或邮箱..." style="width:200px;font-size:13px">
+          <label style="display:flex;align-items:center;gap:4px"><span class="text-xs" style="color:var(--muted)">搜索</span><input id="userSearch" class="input-underline" placeholder="用户名或邮箱..." style="width:200px;font-size:13px;min-height:40px"></label>
         </div>
         <div id="userTable" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
         <div id="userPager" style="text-align:center;margin-top:12px"></div>
-      </div>
-      <div id="admin-invites" class="glass-card" style="padding:20px;margin-bottom:12px">
+      </section>
+      <section id="admin-invites" class="glass-card" style="padding:20px;margin-bottom:12px;scroll-margin-top:70px">
         <p class="serif text-sm font-bold mb-3" style="color:var(--ink)">生成邀请码</p>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <input id="inviteCount" type="number" min="1" max="100" value="5" style="width:64px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:transparent;font-size:13px;text-align:center;font-family:'JetBrains Mono',monospace">
-          <button id="genInviteBtn" class="btn" style="font-size:11px;padding:6px 18px">GENERATE <span class="btn-zh">生成</span></button>
-        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="text-xs" style="color:var(--muted)">数量</span><input id="inviteCount" type="number" min="1" max="20" value="5" style="width:64px;padding:8px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;font-size:13px;text-align:center;font-family:'JetBrains Mono',monospace"></label>
+        <button id="genInviteBtn" class="btn" style="font-size:11px;padding:8px 20px;min-height:40px;margin-bottom:12px">GENERATE <span class="btn-zh">生成</span></button>
         <div id="inviteResult" style="display:flex;flex-direction:column;gap:6px"></div>
         <p class="serif text-sm font-bold mb-3" style="color:var(--ink);margin-top:16px">邀请码列表</p>
         <div id="inviteList" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
         <div id="invitePager" style="text-align:center;margin-top:12px"></div>
-      </div>
-      <div id="admin-analyses" class="glass-card" style="padding:20px;margin-top:12px">
+      </section>
+      <section id="admin-analyses" class="glass-card" style="padding:20px;margin-top:12px;scroll-margin-top:70px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <p class="serif text-sm font-bold" style="color:var(--ink)">分析记录</p>
           <div style="display:flex;gap:4px" id="analysisFilter">
@@ -321,9 +319,11 @@ App.register('/admin', async () => {
       _analysisStatus = btn.dataset.status;
       loadAnalyses();
     });
+    btn.addEventListener('mouseenter', function() { if (!this.classList.contains('active')) { this.style.color = 'var(--ink)'; this.style.borderColor = 'var(--ink)'; } });
+    btn.addEventListener('mouseleave', function() { if (!this.classList.contains('active')) { this.style.color = 'var(--muted)'; this.style.borderColor = 'var(--rule)'; } });
   });
 
-  // ── Admin nav: scroll to section + update active state ──
+  // ── Admin nav: scroll to section + update active state + hover ──
   document.querySelectorAll('.admin-nav-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
       e.preventDefault();
@@ -334,6 +334,8 @@ App.register('/admin', async () => {
       });
       this.classList.add('active'); this.style.color = 'var(--gold)'; this.style.borderColor = 'var(--gold)'; this.style.background = 'var(--gold-soft)';
     });
+    link.addEventListener('mouseenter', function() { if (!this.classList.contains('active')) { this.style.color = 'var(--ink)'; this.style.borderColor = 'var(--ink)'; } });
+    link.addEventListener('mouseleave', function() { if (!this.classList.contains('active')) { this.style.color = 'var(--muted)'; this.style.borderColor = 'var(--rule)'; } });
   });
 
   // Refresh invite list after generating codes
