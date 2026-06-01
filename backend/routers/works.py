@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from backend.models.orm import Work, Analysis, User, get_session
 from backend.routers.deps import get_user
 from backend.schemas.models import WorkCreate, WorkResponse, AnalyzeRequest
-from backend.services.llm import analyze_stream
+from backend.services.llm import analyze_stream, LLMError
 from backend.services.analyzer import build_report
 
 logger = logging.getLogger("las.works")
@@ -479,8 +479,12 @@ async def start_analysis(
                             logger.exception("配额返还失败 user_id=%s analysis_id=%s", user.id, analysis.id)
                     return
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-        except Exception as e:
+        except BaseException as e:
+            if isinstance(e, (KeyboardInterrupt, SystemExit)):
+                raise
             logger.error("SSE 流异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
+            err_code = getattr(e, "code", "E010")
+            err_text = getattr(e, "text", "服务器内部错误，请稍后重试") if isinstance(e, LLMError) else "服务器内部错误，请稍后重试"
             # Mark analysis as failed + refund quota
             try:
                 if not analysis.quota_refunded:
@@ -495,7 +499,7 @@ async def start_analysis(
                         db.commit()
             except Exception:
                 logger.exception("SSE异常返还配额失败 work_id=%s", work_id)
-            yield f"data: {json.dumps({'type': 'error', 'error_code': 'E010', 'text': '服务器内部错误，请稍后重试'}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'error_code': err_code, 'text': err_text}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

@@ -4,9 +4,10 @@ import re
 import time
 from typing import AsyncIterator, Tuple
 
+import httpx
 from json_repair import repair_json
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
 from backend.config import (
     LLM_API_KEY,
@@ -20,6 +21,13 @@ from backend.prompts.las import get_system_prompt
 
 logger = logging.getLogger("las.llm")
 _client = None
+
+
+class LLMError(Exception):
+    def __init__(self, code: str, text: str):
+        self.code = code
+        self.text = text
+        super().__init__(f"[{code}] {text}")
 
 
 def _get_client():
@@ -88,19 +96,23 @@ async def analyze_stream(
         extra = {}
         if user_id:
             extra["user_id"] = user_id
-        stream = await _get_client().chat.completions.create(
-            model=m,
-            max_tokens=LLM_MAX_TOKENS,
-            temperature=LLM_TEMPERATURE,
-            timeout=300,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            stream=True,
-            stream_options={"include_usage": True},
-            extra_body=extra if extra else None,
-        )
+        try:
+            stream = await _get_client().chat.completions.create(
+                model=m,
+                max_tokens=LLM_MAX_TOKENS,
+                temperature=LLM_TEMPERATURE,
+                timeout=httpx.Timeout(600, connect=30),
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                stream=True,
+                stream_options={"include_usage": True},
+                extra_body=extra if extra else None,
+            )
+        except RateLimitError:
+            logger.warning("LLM 并发限流(429) user_id=%s", user_id)
+            raise LLMError("E012", "当前使用人数过多，请稍后重试")
         reached = 0
         first_token = False
         last_heartbeat = time.time()
