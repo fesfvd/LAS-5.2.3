@@ -157,3 +157,46 @@ def list_invite_codes(
             "used_at": c.used_at.isoformat() if c.used_at else None,
         })
     return {"ok": True, "items": items, "total": len(items)}
+
+
+@router.get("/analyses")
+def list_analyses(
+    limit: int = 50,
+    offset: int = 0,
+    status: str = "",
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_session),
+):
+    """List recent analyses with user/work info — admin only, no report content."""
+    q = (
+        db.query(Analysis, User.username, Work.title)
+        .join(Work, Analysis.work_id == Work.id)
+        .join(User, Work.user_id == User.id)
+    )
+    if status and status in ("done", "failed", "running"):
+        q = q.filter(Analysis.status == status)
+    rows = (
+        q.order_by(Analysis.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    items = []
+    for a, username, title in rows:
+        items.append({
+            "id": a.id,
+            "username": username,
+            "title": title,
+            "status": a.status,
+            "model": a.model or "default",
+            "wcs_score": round(a.wcs_score, 1) if a.wcs_score else None,
+            "tier": a.tier or "",
+            "tokens": {
+                "prompt": a.prompt_tokens or 0,
+                "completion": a.completion_tokens or 0,
+                "total": a.total_tokens or 0,
+            },
+            "report_number": a.report_number,
+            "created_at": a.created_at.isoformat() if a.created_at else "",
+        })
+    return {"ok": True, "items": items, "total": len(items), "limit": limit, "offset": offset}

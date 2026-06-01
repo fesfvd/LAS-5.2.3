@@ -351,7 +351,7 @@ async def start_analysis(
 
     model_used = req.model or ""
     if user.role == "guest" and model_used and "flash" not in model_used.lower():
-        model_used = ""  # fallback to default (flash)
+        model_used = "deepseek-v4-flash"  # force flash for guests
 
     # Assign sequential report number
     last = db.query(Analysis.report_number).filter(Analysis.report_number.isnot(None)).order_by(Analysis.report_number.desc()).first()
@@ -429,10 +429,33 @@ async def start_analysis(
                         db.commit()
                     except Exception:
                         pass
+                # Refund quota if analysis failed (not for admin)
+                if analysis.status == "failed" and user.role != "admin":
+                    try:
+                        db.query(User).filter(User.id == user.id).update(
+                            {"permanent_quota": User.permanent_quota + 1},
+                            synchronize_session="fetch",
+                        )
+                        db.commit()
+                        logger.info("配额已返还 user_id=%s analysis_id=%s", user.id, analysis.id)
+                    except Exception:
+                        pass
                 return
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.error("SSE 流异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
+            # Mark analysis as failed + refund quota
+            try:
+                analysis.status = "failed"
+                db.commit()
+                if user.role != "admin":
+                    db.query(User).filter(User.id == user.id).update(
+                        {"permanent_quota": User.permanent_quota + 1},
+                        synchronize_session="fetch",
+                    )
+                    db.commit()
+            except Exception:
+                pass
             yield f"data: {json.dumps({'type': 'error', 'error_code': 'E010', 'text': '服务器内部错误，请稍后重试'}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

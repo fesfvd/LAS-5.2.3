@@ -37,6 +37,18 @@ App.register('/admin', async () => {
         <p class="serif text-sm font-bold mb-3" style="color:var(--ink)">邀请码列表</p>
         <div id="inviteList" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
       </div>
+      <div class="glass-card" style="padding:20px;margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <p class="serif text-sm font-bold" style="color:var(--ink)">分析记录</p>
+          <div style="display:flex;gap:4px" id="analysisFilter">
+            <button class="analysisFilterBtn active" data-status="" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--ink);font-family:'JetBrains Mono',monospace;transition:all .2s">ALL</button>
+            <button class="analysisFilterBtn" data-status="done" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">DONE</button>
+            <button class="analysisFilterBtn" data-status="failed" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">FAIL</button>
+            <button class="analysisFilterBtn" data-status="running" style="font-size:11px;padding:4px 10px;border:1px solid var(--rule);border-radius:99px;background:transparent;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;transition:all .2s">RUN</button>
+          </div>
+        </div>
+        <div id="analysisTable" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
+      </div>
     </div>`;
 
   // Load stats
@@ -168,4 +180,55 @@ App.register('/admin', async () => {
     } catch (e) { document.getElementById('inviteList').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; }
   }
   loadInvites();
+
+  // ── Analysis records ──
+  var _analysisStatus = '';
+  async function loadAnalyses() {
+    try {
+      var res = await API._fetch('/admin/analyses?limit=50&status=' + _analysisStatus + '&_t=' + Date.now());
+      if (!res.ok) { document.getElementById('analysisTable').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; return; }
+      if (!res.items.length) { document.getElementById('analysisTable').innerHTML = '<p class="text-sm" style="text-align:center;padding:20px;color:var(--muted)">无记录</p>'; return; }
+      var statusBadge = {
+        done: '<span style="color:var(--jade);font-size:11px">完成</span>',
+        failed: '<span style="color:var(--crimson);font-size:11px">失败</span>',
+        running: '<span style="color:var(--gold);font-size:11px">进行中</span>',
+      };
+      var html = '<table style="width:100%;font-size:12px"><thead><tr style="border-bottom:2px solid var(--rule-strong)">'
+        + '<th style="text-align:left;padding:6px 4px;color:var(--muted);font-size:10px">#</th>'
+        + '<th style="text-align:left;padding:6px 4px;color:var(--muted);font-size:10px">用户</th>'
+        + '<th style="text-align:left;padding:6px 4px;color:var(--muted);font-size:10px">作品</th>'
+        + '<th style="text-align:center;padding:6px 4px;color:var(--muted);font-size:10px">模型</th>'
+        + '<th style="text-align:center;padding:6px 4px;color:var(--muted);font-size:10px">状态</th>'
+        + '<th style="text-align:center;padding:6px 4px;color:var(--muted);font-size:10px">评分</th>'
+        + '<th style="text-align:right;padding:6px 4px;color:var(--muted);font-size:10px">Tokens</th>'
+        + '<th style="text-align:left;padding:6px 4px;color:var(--muted);font-size:10px">时间</th>'
+        + '</tr></thead><tbody>';
+      res.items.forEach(function(a) {
+        html += '<tr style="border-bottom:1px solid var(--rule)">'
+          + '<td style="padding:6px 4px" class="mono text-xs">' + (a.report_number ? 'LAS-' + String(a.report_number).padStart(6,'0') : '—') + '</td>'
+          + '<td style="padding:6px 4px;color:var(--ink)">' + esc(a.username) + '</td>'
+          + '<td style="padding:6px 4px;color:var(--ink);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(a.title) + '</td>'
+          + '<td style="padding:6px 4px;text-align:center" class="mono text-xs">' + (a.model === 'deepseek-v4-pro' ? '<span style="color:var(--purple)">Pro</span>' : a.model === 'deepseek-v4-flash' ? 'Flash' : esc(a.model)) + '</td>'
+          + '<td style="padding:6px 4px;text-align:center">' + (statusBadge[a.status] || a.status) + '</td>'
+          + '<td style="padding:6px 4px;text-align:center" class="mono text-xs">' + (a.wcs_score != null ? a.wcs_score.toFixed(1) : '—') + '</td>'
+          + '<td style="padding:6px 4px;text-align:right" class="mono text-xs" style="color:var(--muted)">' + (a.tokens.total ? (a.tokens.total >= 1000 ? (a.tokens.total/1000).toFixed(0) + 'K' : a.tokens.total) : '—') + '</td>'
+          + '<td style="padding:6px 4px;font-size:10px;color:var(--muted);white-space:nowrap">' + (a.created_at || '').slice(0, 16).replace('T',' ') + '</td>'
+          + '</tr>';
+      });
+      html += '</tbody></table>';
+      document.getElementById('analysisTable').innerHTML = html;
+    } catch (e) { document.getElementById('analysisTable').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; }
+  }
+  loadAnalyses();
+
+  document.getElementById('analysisFilter').querySelectorAll('.analysisFilterBtn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('analysisFilter').querySelectorAll('.analysisFilterBtn').forEach(function(b) {
+        b.classList.remove('active'); b.style.color = 'var(--muted)'; b.style.borderColor = 'var(--rule)';
+      });
+      btn.classList.add('active'); btn.style.color = 'var(--ink)'; btn.style.borderColor = 'var(--ink)';
+      _analysisStatus = btn.dataset.status;
+      loadAnalyses();
+    });
+  });
 });
