@@ -49,6 +49,16 @@ App.register('/admin', async () => {
         </div>
         <div id="analysisTable" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
       </div>
+      <hr class="rule" style="margin:16px 0">
+      <details style="opacity:.5">
+        <summary class="text-xs" style="color:var(--muted);cursor:pointer">弹窗测试</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+          <button id="testReward" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">赞赏弹窗</button>
+          <button id="testErrorE005" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">E005 超时</button>
+          <button id="testErrorE006" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">E006 配额</button>
+          <button id="testErrorE010" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">E010 内部错误</button>
+        </div>
+      </details>
     </div>`;
 
   // Load stats
@@ -247,6 +257,16 @@ App.register('/admin', async () => {
     } catch (e) { document.getElementById('analysisTable').innerHTML = '<p class="text-xs" style="color:var(--crimson);text-align:center;padding:20px">加载失败</p>'; }
   }
   loadAnalyses();
+
+  // ── Modal test buttons (admin only) ──
+  var testReward = document.getElementById('testReward');
+  if (testReward) testReward.addEventListener('click', function() { if (window.LAS_showReward) window.LAS_showReward(); });
+  var testE005 = document.getElementById('testErrorE005');
+  if (testE005) testE005.addEventListener('click', function() { if (window.showError) window.showError('E005', 'API 长时间无响应（超过 120 秒），请缩短文本或稍后重试'); });
+  var testE006 = document.getElementById('testErrorE006');
+  if (testE006) testE006.addEventListener('click', function() { if (window.showError) window.showError('E006', '今日分析次数已用完，明日自动刷新'); });
+  var testE010 = document.getElementById('testErrorE010');
+  if (testE010) testE010.addEventListener('click', function() { if (window.showError) window.showError('E010', '服务器内部错误，请稍后重试'); });
 
   document.getElementById('analysisFilter').querySelectorAll('.analysisFilterBtn').forEach(function(btn) {
     btn.addEventListener('click', function() {

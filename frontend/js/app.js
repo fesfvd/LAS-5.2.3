@@ -473,7 +473,16 @@ var ERROR_SUGGEST = {
 
 function showError(code, detail) {
   var box = document.getElementById('errorBox');
-  if (!box) return;
+  // Fallback: floating toast when called outside analyze page (e.g. admin test)
+  if (!box) {
+    var toast = document.createElement('div');
+    var suggest = ERROR_SUGGEST[code] || ERROR_SUGGEST['E000'];
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:var(--z-overlay,1000);max-width:420px;padding:16px 20px;background:var(--paper);border:1px solid var(--rule-strong);border-radius:8px;box-shadow:0 2px 16px rgba(26,26,26,.08);animation:pageIn .35s ease';
+    toast.innerHTML = '<span class="mono" style="font-size:12px;font-weight:700;color:var(--semantic-error)">' + code + '</span> <span style="font-size:13px;color:var(--ink)">' + esc(detail) + '</span><p style="font-size:11px;color:var(--muted);margin-top:4px">' + suggest + '</p>';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(function() { toast.remove(); }, 300); }, 4000);
+    return;
+  }
   var suggest = ERROR_SUGGEST[code] || ERROR_SUGGEST['E000'];
   var copyText = '[' + code + '] ' + detail + ' — ' + suggest;
   box.style.display = 'block';
