@@ -207,7 +207,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_session)):
         password_hash=hash_password(req.password),
         role=role,
         permanent_quota=20 if role == "user" else 3,
-        daily_quota=5 if role == "user" else 3,
+        daily_quota=8 if role == "user" else 4,
     )
     db.add(user)
     db.flush()
@@ -233,7 +233,7 @@ def guest_login(db: Session = Depends(get_session)):
         password_hash=hash_password(guest_id),
         role="guest",
         permanent_quota=3,
-        daily_quota=3,
+        daily_quota=4,
     )
     db.add(user)
     db.commit()

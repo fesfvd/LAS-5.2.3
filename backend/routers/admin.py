@@ -1,7 +1,12 @@
 import logging
 import random
 import string
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+def _bjt(dt):
+    """Convert UTC datetime to Beijing time (UTC+8) ISO string."""
+    if not dt: return ""
+    return (dt + timedelta(hours=8)).isoformat()
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -71,7 +76,7 @@ def list_users(
             "email": u.email or "",
             "role": u.role,
             "email_verified": u.email_verified,
-            "created_at": u.created_at.isoformat() if u.created_at else "",
+            "created_at": _bjt(u.created_at),
             "work_count": work_count,
             "analysis_count": analysis_count,
         })
@@ -110,7 +115,7 @@ def list_works(
             "mode": w.mode,
             "user_id": w.user_id,
             "username": owner.username if owner else "?",
-            "created_at": w.created_at.isoformat() if w.created_at else "",
+            "created_at": _bjt(w.created_at),
             "latest_status": latest.status if latest else None,
             "latest_score": latest.wcs_score if latest else None,
             "latest_tier": latest.tier if latest else None,
@@ -154,10 +159,10 @@ def list_invite_codes(
         items.append({
             "id": c.id,
             "code": c.code,
-            "created_at": c.created_at.isoformat() if c.created_at else "",
+            "created_at": _bjt(c.created_at),
             "is_used": c.is_used,
             "used_by": user_map.get(c.used_by) if c.used_by else None,
-            "used_at": c.used_at.isoformat() if c.used_at else None,
+            "used_at": _bjt(c.used_at),
         })
     return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}
 
@@ -202,6 +207,6 @@ def list_analyses(
                 "total": a.total_tokens or 0,
             },
             "report_number": a.report_number,
-            "created_at": a.created_at.isoformat() if a.created_at else "",
+            "created_at": _bjt(a.created_at),
         })
     return {"ok": True, "items": items, "total": total, "limit": limit, "offset": offset}

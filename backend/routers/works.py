@@ -352,7 +352,7 @@ async def start_analysis(
     today = _date.today()
     if user.role != "admin":
         # Step 1: Atomic daily refresh (UPDATE with WHERE, idempotent)
-        DAILY_LIMIT = {"guest": 3, "user": 5}.get(user.role, 0)
+        DAILY_LIMIT = {"guest": 4, "user": 8}.get(user.role, 0)
         db.query(User).filter(
             User.id == user.id,
             User.last_quota_refresh == None,  # noqa: E711

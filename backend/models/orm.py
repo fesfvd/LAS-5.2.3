@@ -193,7 +193,7 @@ def init_db():
             # Users: 20 permanent
             conn.execute(text("UPDATE users SET permanent_quota = 20 WHERE role = 'user' AND permanent_quota = 0"))
             conn.commit()
-            logger.info("已回填用户初始配额: guest=3, user=20")
+            logger.info("已回填用户初始配额: guest=4+3, user=8+20")
         except Exception:
             pass
         # Backfill: mark existing users with emails as verified
