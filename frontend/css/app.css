@@ -294,5 +294,43 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
   .side-nav{display:none!important}
   .mob-nav{display:flex!important}
   .nav-top{padding:12px 16px}
+  /* ── Submit page ── */
+  .submit-container{padding:20px 16px 16px;max-width:100%}
+  .submit-row-2{flex-direction:column;gap:12px}
+  .submit-row-2 .field-group{flex:auto}
+  .model-selector-trigger{font-size:10px;padding:5px 8px}
+  /* ── Admin ── */
+  #adminStats{grid-template-columns:repeat(2,1fr)!important}
+  .admin-nav-link{font-size:10px!important;padding:6px 10px!important;min-height:32px!important}
+  /* ── Works ── */
+  .work-item .serif{font-size:14px!important}
+  /* ── Report ── */
+  .section-nav-btn{gap:0;padding:4px 8px}
+  .section-nav-btn .section-nav-num{font-size:0.55rem}
+  .section-nav-btn .section-nav-zh{font-size:0.65rem}
+  /* ── Analyze ── */
+  .analyze-container{padding:24px 12px}
+  .muse-quote{font-size:15px;max-width:100%}
+}
+@media(max-width:480px){
+  /* ── Submit ── */
+  .submit-container{padding:16px 10px 12px}
+  .textarea-wrap{min-height:160px}
+  .upload-bar{flex-direction:column;gap:6px;align-items:flex-start}
+  /* ── Admin ── */
+  #adminStats{grid-template-columns:1fr!important}
+  .admin-nav{flex-wrap:nowrap;overflow-x:auto;gap:4px}
+  .admin-nav-link{flex-shrink:0;font-size:9px!important;padding:5px 8px!important;min-height:30px!important}
+  .glass-card table{font-size:10px!important}
+  .glass-card th,.glass-card td{padding:4px 2px!important}
+  /* ── Works ── */
+  .work-item{padding:12px 14px!important}
+  /* ── Discover ── */
+  #discoverGrid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))!important}
+  /* ── Report ── */
+  .export-bar{gap:6px;padding:8px}
+  .sticky-bar{padding:8px 10px}
+  /* ── Discover + Works pager ── */
+  .pager-btn{min-width:28px;height:28px;font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}}
