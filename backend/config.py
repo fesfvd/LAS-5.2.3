@@ -1,8 +1,11 @@
 import logging
 import sys
+from datetime import timedelta, timezone
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BJ_TZ = timezone(timedelta(hours=8))  # 北京时间 UTC+8
 
 logger = logging.getLogger("las.config")
 

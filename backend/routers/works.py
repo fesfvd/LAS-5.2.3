@@ -94,8 +94,9 @@ def create_work(
         if content_len > 50000:
             raise HTTPException(400, "游客单次提交上限 5 万字")
         # Daily 10万字 total
+        from backend.config import BJ_TZ
         from datetime import datetime as _dt, timezone as _tz
-        today = _dt.now(_tz.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today = _dt.now(BJ_TZ).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(_tz.utc)
         today_total = (
             db.query(Work)
             .filter(
@@ -349,8 +350,9 @@ async def start_analysis(
         raise HTTPException(404, "作品不存在")
 
     # ── Quota check (atomic: single UPDATE per path, no TOCTOU gap) ──
-    from datetime import date as _date
-    today = _date.today()
+    from backend.config import BJ_TZ as _bjtz
+    from datetime import datetime as _dt2
+    today = _dt2.now(_bjtz).date()
     if user.role != "admin":
         # Step 1: Atomic daily refresh (UPDATE with WHERE, idempotent)
         DAILY_LIMIT = {"guest": 4, "user": 8}.get(user.role, 0)

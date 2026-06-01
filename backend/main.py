@@ -129,7 +129,7 @@ app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 @app.get("/api/health")
 def health():
     from backend.models.orm import _engine, Analysis
-    from backend.config import DB_PATH
+    from backend.config import DB_PATH, BJ_TZ
     from datetime import datetime, timezone
     try:
         with _engine.connect() as conn:
@@ -142,7 +142,7 @@ def health():
         try:
             from backend.models.orm import SessionLocal
             db = SessionLocal()
-            today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            today = datetime.now(BJ_TZ).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
             today_count = db.query(Analysis).filter(Analysis.created_at >= today, Analysis.status == "done").count()
             db.close()
         except Exception:

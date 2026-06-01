@@ -1,7 +1,8 @@
 import logging
 import random
 import string
-from datetime import datetime, timezone, timedelta
+from backend.config import BJ_TZ
+from datetime import datetime, timedelta, timezone
 
 def _bjt(dt):
     """Convert UTC datetime to Beijing time (UTC+8) ISO string."""
@@ -26,7 +27,7 @@ def require_admin(user: User = Depends(get_user)) -> User:
 
 @router.get("/stats")
 def get_stats(user: User = Depends(require_admin), db: Session = Depends(get_session)):
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime.now(BJ_TZ).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
     total_users = db.query(User).filter(User.is_deleted == False).count()
     total_works = db.query(Work).count()
     total_analyses = db.query(Analysis).count()
