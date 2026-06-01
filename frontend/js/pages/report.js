@@ -409,18 +409,11 @@ async function renderFromTemplate(data, r, id) {
       var tries = 0;
       var maxTries = 10;
       function hookModal() {
-        var closeBtn = document.getElementById('rewardClose');
-        if (!closeBtn) { if (++tries < maxTries) setTimeout(hookModal, 100); return; }
-        // Walk up to find the modal overlay (the outermost fixed container)
-        var overlay = closeBtn.parentNode;  // inner card
-        while (overlay && overlay.tagName !== 'BODY') {
-          var s = overlay.style || {};
-          if (s.position === 'fixed' && (s.inset === '0px' || s.inset === '0')) break;
-          overlay = overlay.parentNode;
-        }
-        if (!overlay || overlay.tagName === 'BODY') return;
+        var overlay = document.getElementById('rewardOverlay');
+        if (!overlay) { if (++tries < maxTries) setTimeout(hookModal, 100); return; }
 
         var ended = false;
+        var newState = nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone;
         var mark = function(result) {
           if (ended) return;
           ended = true;
@@ -428,16 +421,34 @@ async function renderFromTemplate(data, r, id) {
           document.removeEventListener('keydown', onEsc);
         };
 
-        var newState = nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone;
-        closeBtn.addEventListener('click', function() { mark(newState); }, { once: true });
-
-        overlay.addEventListener('click', function(e) { if (e.target === overlay) mark(newState); }, { once: true });
-
         var onEsc = function(e) { if (e.key === 'Escape') mark(newState); };
         document.addEventListener('keydown', onEsc);
 
-        var img = overlay.querySelector('img');
-        if (img) img.addEventListener('click', function() { mark('done'); }, { once: true });
+        // Decline: close button (×) or backdrop click
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) mark(newState); }, { once: true });
+        var closeBtn = overlay.querySelector('.reward-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', function() { mark(newState); }, { once: true });
+
+        // Decline: "下次再说" button
+        var noBtn = overlay.querySelector('.reward-no-btn');
+        if (noBtn) noBtn.addEventListener('click', function() { mark(newState); }, { once: true });
+
+        // Accept: QR image click (image appears after clicking "支持")
+        var yesBtn = overlay.querySelector('.reward-yes-btn');
+        if (yesBtn) {
+          yesBtn.addEventListener('click', function() {
+            // After "支持" clicked, wait for QR image to appear
+            var checkImg = setInterval(function() {
+              var img = overlay.querySelector('.reward-qr-img');
+              if (img) {
+                clearInterval(checkImg);
+                img.addEventListener('click', function() { mark('done'); }, { once: true });
+              }
+            }, 50);
+            // Stop checking after 5s
+            setTimeout(function() { clearInterval(checkImg); }, 5000);
+          }, { once: true });
+        }
       }
       setTimeout(hookModal, 100);
     }, 2000);

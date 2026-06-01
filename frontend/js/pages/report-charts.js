@@ -378,19 +378,24 @@ function scrollTo(id) {
 }
 
 window.LAS_showReward = function() {
-  if (document.getElementById('rewardClose')) return;
+  if (document.getElementById('rewardOverlay')) return;
   var overlay = document.createElement('div');
+  overlay.id = 'rewardOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
   overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
 
-  overlay.innerHTML =
-    '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule,rgba(26,26,26,.08));border-radius:12px;padding:36px 32px 28px;max-width:380px;width:92vw;text-align:center;position:relative">'
-    + '<button id="rewardClose" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper);cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center">&times;</button>'
-    + '<p class="serif" style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:8px;line-height:1.6">感觉报告不错？<br>请开发者喝一杯柠檬水吧</p>'
-    + '<p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:20px">LAS 由个人独立开发与维护，服务器、API 调用及持续迭代均需成本。每一份支持，都能让这个项目走得更远。</p>'
-    + '<img src="/static/reward.png" alt="赞赏码" style="width:180px;border-radius:6px;border:1px solid var(--rule);display:block;margin:0 auto">'
+  var cardHTML =
+    '<div class="reward-card" style="background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:36px 32px 28px;max-width:360px;width:92vw;text-align:center;position:relative;animation:pageIn .35s ease">'
+    + '<button class="reward-close-btn" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper);cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s">&times;</button>'
+    + '<p class="serif" style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:16px;line-height:1.6">觉得 LAS 有帮助吗？</p>'
+    + '<p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:24px">LAS 由个人独立开发维护，<br>服务器与 API 均自费承担。<br>如果它曾陪你度过一段写作时光，<br>请我喝杯柠檬水吧 🍋</p>'
+    + '<div style="display:flex;gap:12px;justify-content:center">'
+    + '<button class="reward-yes-btn" style="padding:10px 28px;min-height:40px;border:1px solid var(--gold);border-radius:4px;background:var(--gold);color:var(--paper);cursor:pointer;font-family:\'JetBrains Mono\',monospace;font-size:12px;letter-spacing:1px;transition:all .2s">SUPPORT <span style="font-family:\'Noto Sans SC\',sans-serif;font-size:11px">请喝柠檬水</span></button>'
+    + '<button class="reward-no-btn" style="padding:10px 28px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);font-family:\'JetBrains Mono\',monospace;font-size:12px;letter-spacing:1px;transition:all .2s">NOT NOW <span style="font-family:\'Noto Sans SC\',sans-serif;font-size:11px">下次再说</span></button>'
+    + '</div>'
     + '</div>';
 
+  overlay.innerHTML = cardHTML;
   document.body.appendChild(overlay);
 
   function close() {
@@ -399,6 +404,27 @@ window.LAS_showReward = function() {
   }
   function onKey(e) { if (e.key === 'Escape') close(); }
 
-  document.getElementById('rewardClose').addEventListener('click', close);
+  // Bind step-1 buttons
+  overlay.querySelector('.reward-close-btn').addEventListener('click', close);
   document.addEventListener('keydown', onKey);
+
+  overlay.querySelector('.reward-yes-btn').addEventListener('click', function() {
+    var card = overlay.querySelector('.reward-card');
+    card.innerHTML =
+      '<button class="reward-close-btn" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper);cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s">&times;</button>'
+      + '<p class="serif" style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:16px">谢谢你的支持 ☀️</p>'
+      + '<img src="/static/reward.png" alt="赞赏码" class="reward-qr-img" style="width:180px;border-radius:6px;border:1px solid var(--rule);display:block;margin:0 auto 16px">'
+      + '<p style="font-size:12px;color:var(--muted);line-height:1.7">扫码请我喝杯柠檬水<br>每一份支持都让 LAS 走得更远</p>';
+    card.querySelector('.reward-close-btn').addEventListener('click', close);
+  });
+
+  overlay.querySelector('.reward-no-btn').addEventListener('click', function() {
+    var card = overlay.querySelector('.reward-card');
+    card.innerHTML =
+      '<button class="reward-close-btn" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper);cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s">&times;</button>'
+      + '<p class="serif" style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px">没关系，祝你写作愉快 ✍️</p>'
+      + '<p style="font-size:12px;color:var(--muted);line-height:1.7">LAS 会继续免费开放，<br>随时欢迎回来。</p>';
+    card.querySelector('.reward-close-btn').addEventListener('click', close);
+    setTimeout(close, 2500);
+  });
 };
