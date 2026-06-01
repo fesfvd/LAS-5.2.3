@@ -516,3 +516,4 @@ async function waitForReport(workId) {
     }
   }
   return false;
+}
