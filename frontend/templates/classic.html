@@ -226,13 +226,13 @@
 <p class="text-xs text-center" style="color:var(--muted);margin-bottom:12px;line-height:1.8">
   如果这句金句打动了你，将它加入句子库，在分析页与更多读者偶遇。
 </p>
-<label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;cursor:pointer">
+<label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;padding:4px 0;cursor:pointer">
   <input type="checkbox" id="contributeAnon" style="width:14px;height:14px;accent-color:var(--gold);cursor:pointer">
   <span class="text-xs" style="color:var(--muted)">隐藏作者名（以"匿名"署名）</span>
 </label>
 <div style="display:flex;gap:10px;justify-content:center">
-  <button id="contributeBtn" class="text-xs" style="padding:6px 18px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);cursor:pointer;transition:all .2s">贡献到句子库</button>
-  <button id="contributeDismiss" class="text-xs" style="padding:6px 18px;border:1px solid var(--rule);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s">不了，谢谢</button>
+  <button id="contributeBtn" class="text-xs" style="padding:10px 24px;min-height:40px;border:1px solid var(--gold);border-radius:var(--rounded-sm);background:transparent;color:var(--gold);cursor:pointer;transition:all var(--duration-fast)" onmouseenter="this.style.background='var(--gold)';this.style.color='var(--paper)'" onmouseleave="this.style.background='transparent';this.style.color='var(--gold)'">贡献到句子库</button>
+  <button id="contributeDismiss" class="text-xs" style="padding:10px 24px;min-height:40px;border:1px solid var(--rule);border-radius:var(--rounded-sm);background:transparent;color:var(--muted);cursor:pointer;transition:all var(--duration-fast)" onmouseenter="this.style.borderColor='var(--ink)';this.style.color='var(--ink)'" onmouseleave="this.style.borderColor='var(--rule)';this.style.color='var(--muted)'">不了，谢谢</button>
 </div>
 <p id="contributeMsg" class="text-xs text-center" style="color:var(--jade);margin-top:10px;display:none"></p>
 </div>

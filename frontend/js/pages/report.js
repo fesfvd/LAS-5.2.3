@@ -245,13 +245,13 @@ async function renderFromTemplate(data, r, id) {
     var qSize = qLen <= 30 ? '20px' : qLen <= 60 ? '17px' : qLen <= 100 ? '15px' : '14px';
 
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:rgba(26,26,26,.3);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-overlay,1000);background:var(--overlay-bg,rgba(26,26,26,.3));display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeShare(); });
 
     var cardMaxW = 420;
 
     overlay.innerHTML =
-      '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule);border-radius:12px;overflow:hidden;max-width:' + cardMaxW + 'px;width:92vw;position:relative">'
+      '<div style="background:var(--paper,#faf8f3);border:1px solid var(--rule);border-radius:var(--rounded-lg,12px);overflow:hidden;max-width:' + cardMaxW + 'px;width:92vw;position:relative">'
       + '<div id="shareCard" style="box-sizing:border-box;font-family:\'Noto Serif SC\',Georgia,serif;background:var(--paper,#faf8f3);color:var(--ink,#1a1a1a)">'
 
       + '<div style="padding:0 28px">'
@@ -280,7 +280,7 @@ async function renderFromTemplate(data, r, id) {
       + (honor ? '<div style="text-align:center;padding:10px 4px 4px"><p style="font-size:9px;color:var(--muted,#6b6558);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;">荣 誉 称 号</p><p style="font-size:16px;font-weight:700;color:' + primaryColor + ';line-height:1.4;letter-spacing:.04em">「' + honor + '」</p></div>' : '')
 
       // Golden quote
-      + (golden ? '<div style="margin:10px 0;padding:14px 12px;background:var(--card-tint-gold);border-radius:8px;text-align:center">'
+      + (golden ? '<div style="margin:10px 0;padding:14px 12px;background:var(--card-tint-gold);border-radius:var(--rounded-md,8px);text-align:center">'
         + '<p style="font-size:9px;color:var(--muted,#6b6558);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">金 句</p>'
         + '<p style="font-size:' + qSize + ';font-weight:500;line-height:1.8;color:var(--ink,#1a1a1a);font-style:italic">' + golden + '</p>'
         + '</div>' : '')
@@ -307,9 +307,9 @@ async function renderFromTemplate(data, r, id) {
       + '</div>'  // close shareCard
       // Button bar
       + '<div style="display:flex;gap:10px;justify-content:center;padding:14px 28px;border-top:1px solid var(--rule)">'
-      + '<button id="shareDlBtn" style="padding:8px 24px;border:1px solid ' + primaryColor + ';border-radius:var(--rounded-sm,4px);background:transparent;color:' + primaryColor + ';cursor:pointer;font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .15s">SAVE <span class="btn-zh">保存卡片</span></button>'
-      + '<button id="shareCopyBtn" style="padding:8px 24px;border:1px solid var(--rule);border-radius:var(--rounded-sm,4px);background:transparent;color:var(--muted,#6b6558);cursor:pointer;font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:1px;transition:all .15s">COPY <span class="btn-zh">复制链接</span></button>'
-      + '<button id="shareCloseBtn" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper,#faf8f3);cursor:pointer;color:var(--muted,#6b6558);font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>'
+      + '<button id="shareDlBtn" class="mono" style="padding:10px 24px;min-height:40px;border:1px solid ' + primaryColor + ';border-radius:var(--rounded-sm,4px);background:transparent;color:' + primaryColor + ';cursor:pointer;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all var(--duration-fast)">SAVE <span class="btn-zh">保存卡片</span></button>'
+      + '<button id="shareCopyBtn" class="mono" style="padding:10px 24px;min-height:40px;border:1px solid var(--rule);border-radius:var(--rounded-sm,4px);background:transparent;color:var(--muted,#6b6558);cursor:pointer;font-size:11px;letter-spacing:1px;transition:all var(--duration-fast)">COPY <span class="btn-zh">复制链接</span></button>'
+      + '<button id="shareCloseBtn" aria-label="关闭" style="position:absolute;top:8px;right:12px;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--paper,#faf8f3);cursor:pointer;color:var(--muted,#6b6558);font-size:16px;display:flex;align-items:center;justify-content:center;transition:all var(--duration-fast)">✕</button>'
       + '</div>'
       + '</div>';  // close outer container
     document.body.appendChild(overlay);
@@ -468,12 +468,14 @@ async function renderFromTemplate(data, r, id) {
       } else {
       var preview = document.getElementById('contributeQuotePreview');
       if (preview) preview.textContent = qt;
-      var anon = document.getElementById('contributeAnon');
-      var qsrc = anon && anon.checked ? (data.title || '') + ' 匿名' : (data.title || '') + ' ' + (data.author || '');
+      var anonEl = document.getElementById('contributeAnon');
+      var qsrcBase = (data.title || '') + ' ' + (data.author || '');
       var qmode = data.mode || 'classic';
       contributeBox.style.display = '';
       document.getElementById('contributeBtn').addEventListener('click', function() {
         var btn = this;
+        var anon = anonEl && anonEl.checked;
+        var qsrc = anon ? (data.title || '') + ' 匿名' : qsrcBase;
         btn.disabled = true;
         btn.textContent = '提交中...';
         API._post('/quotes', { quote: qt, source: qsrc, mode: qmode }).then(function() {
@@ -494,7 +496,7 @@ async function renderFromTemplate(data, r, id) {
           btn.textContent = '贡献到句子库';
           var msg = document.getElementById('contributeMsg');
           msg.textContent = '添加失败，请稍后重试';
-          msg.style.color = 'var(--crimson)';
+          msg.style.color = 'var(--semantic-error)';
           msg.style.display = '';
         });
       });
