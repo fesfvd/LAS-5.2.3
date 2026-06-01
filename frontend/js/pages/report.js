@@ -468,7 +468,8 @@ async function renderFromTemplate(data, r, id) {
       } else {
       var preview = document.getElementById('contributeQuotePreview');
       if (preview) preview.textContent = qt;
-      var qsrc = (data.title || '') + ' ' + (data.author || '');
+      var anon = document.getElementById('contributeAnon');
+      var qsrc = anon && anon.checked ? (data.title || '') + ' 匿名' : (data.title || '') + ' ' + (data.author || '');
       var qmode = data.mode || 'classic';
       contributeBox.style.display = '';
       document.getElementById('contributeBtn').addEventListener('click', function() {

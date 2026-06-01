@@ -358,6 +358,9 @@ App.register('/analyze', () => {
           <hr class="rule" style="margin:24px 0">
           <div style="text-align:center">
             <span class="section-label">LITERARY MUSES</span>
+            <label id="quoteModeToggle" class="mono text-xs" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted);margin-left:12px;user-select:none">
+              <input type="checkbox" id="quoteModeCheck" style="width:13px;height:13px;accent-color:var(--gold);cursor:pointer"> 仅原创
+            </label>
             <div class="rule-gold" style="margin:12px auto 20px"></div>
             <blockquote class="muse-quote" id="museQuote">
               <span class="quote-bracket">&#x300C;</span>
@@ -396,6 +399,15 @@ App.register('/analyze', () => {
 
   startStream(id, window.__LAS_MODEL || '');
   startQuoteCarousel();
+
+  var quoteModeCheck = document.getElementById('quoteModeCheck');
+  if (quoteModeCheck) {
+    quoteModeCheck.addEventListener('change', function() {
+      _quoteActive = false;
+      if (_quoteTimer) { clearTimeout(_quoteTimer); _quoteTimer = null; }
+      startQuoteCarousel(this.checked);
+    });
+  }
 
   window.addEventListener('beforeunload', () => {
     if (_stepTimer) clearInterval(_stepTimer);
@@ -752,9 +764,10 @@ async function startStream(workId, model) {
   }
 }
 
-async function startQuoteCarousel() {
+async function startQuoteCarousel(originalsOnly) {
   try {
-    const res = await fetch('/api/quotes');
+    var url = originalsOnly ? '/api/quotes?mode=original' : '/api/quotes';
+    const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
     _quotes = data.quotes || [];
