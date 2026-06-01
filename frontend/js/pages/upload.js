@@ -215,6 +215,22 @@ App.register('/upload', () => {
   }
   loadQuota();
 
+  function checkGuestModel() {
+    var submitBtn = document.getElementById('submitBtn');
+    var quotaEl = document.getElementById('quotaInfo');
+    if (isGuest && window.__LAS_MODEL === 'deepseek-v4-pro') {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.4';
+      submitBtn.style.cursor = 'not-allowed';
+      quotaEl.innerHTML = '<span style="color:var(--crimson)">Pro 模型仅限注册用户使用，请切换至 Flash 或注册账号</span>';
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
+      loadQuota();  // restore normal quota display
+    }
+  }
+
   modelDropdown.querySelectorAll('.model-option').forEach(opt => {
     opt.addEventListener('click', () => {
       window.__LAS_MODEL = opt.dataset.model;
@@ -223,8 +239,10 @@ App.register('/upload', () => {
       opt.classList.add('selected');
       modelSel.classList.remove('open');
       updateModelCard(opt.dataset.model);
+      checkGuestModel();
     });
   });
+  checkGuestModel();
 
   // ── File upload & word count ──
   const fileInput = document.getElementById('fileInput');
