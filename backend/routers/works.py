@@ -311,17 +311,43 @@ async def start_analysis(
     if not work:
         raise HTTPException(404, "作品不存在")
 
-    if user.role == "guest":
-        from datetime import datetime as _dt, timezone as _tz
-        today = _dt.now(_tz.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        count = (
-            db.query(Analysis)
-            .join(Work, Analysis.work_id == Work.id)
-            .filter(Work.user_id == user.id, Analysis.created_at >= today, Analysis.created_at.isnot(None))
-            .count()
+    # ── Quota check (atomic: single UPDATE per path, no TOCTOU gap) ──
+    from datetime import date as _date
+    today = _date.today()
+    if user.role != "admin":
+        # Step 1: Atomic daily refresh (UPDATE with WHERE, idempotent)
+        DAILY_LIMIT = {"guest": 3, "user": 5}.get(user.role, 0)
+        db.query(User).filter(
+            User.id == user.id,
+            User.last_quota_refresh == None,  # noqa: E711
+        ).update(
+            {"daily_quota": DAILY_LIMIT, "last_quota_refresh": today},
+            synchronize_session="fetch",
         )
-        if count >= 3:
-            raise HTTPException(429, "游客每日限 3 次分析，请使用邀请码注册正式账号")
+        db.query(User).filter(
+            User.id == user.id,
+            User.last_quota_refresh < today,
+        ).update(
+            {"daily_quota": DAILY_LIMIT, "last_quota_refresh": today},
+            synchronize_session="fetch",
+        )
+
+        # Step 2: Atomic consume — try daily first, then permanent
+        result = (
+            db.query(User)
+            .filter(User.id == user.id, User.daily_quota > 0)
+            .update({"daily_quota": User.daily_quota - 1}, synchronize_session="fetch")
+        )
+        if result == 0:
+            result = (
+                db.query(User)
+                .filter(User.id == user.id, User.permanent_quota > 0)
+                .update({"permanent_quota": User.permanent_quota - 1}, synchronize_session="fetch")
+            )
+        if result == 0:
+            role_label = {"guest": "游客", "user": "正式用户"}.get(user.role, "用户")
+            raise HTTPException(429, f"{role_label}今日分析次数已用完，永久额度也已耗尽。请通过打赏获取更多次数。")
+        db.commit()
 
     model_used = req.model or ""
     if user.role == "guest" and model_used and "flash" not in model_used.lower():
@@ -342,6 +368,7 @@ async def start_analysis(
         work.mode,
         model_used,
         ancestor_dialogue=work.ancestor_dialogue == "true",
+        user_id=user.id,
     )
 
     async def event_generator():

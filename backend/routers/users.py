@@ -93,6 +93,8 @@ def get_profile(authorization: str | None = Header(None), db: Session = Depends(
             "email_verified": user.email_verified,
             "role": user.role,
             "created_at": user.created_at.isoformat() if user.created_at else "",
+            "daily_quota": user.daily_quota or 0,
+            "permanent_quota": user.permanent_quota or 0,
             "analysis_count": analysis_count,
             "best_score": best.wcs_score if best else None,
             "best_tier": best.tier if best else None,

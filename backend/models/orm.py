@@ -8,6 +8,7 @@ logger = logging.getLogger("las.orm")
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     Float,
     ForeignKey,
     Integer,
@@ -37,6 +38,10 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(16), default="user", nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    daily_quota = Column(Integer, default=0, nullable=False)
+    permanent_quota = Column(Integer, default=0, nullable=False)
+    last_quota_refresh = Column(Date, nullable=True)
 
     email_verified = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False, index=True)
@@ -158,6 +163,23 @@ def init_db():
                 conn.commit()
             except Exception:
                 pass
+        # Quota columns (v5.2.3 analysis quota system)
+        for col, dtype in [("daily_quota", "INTEGER DEFAULT 0"), ("permanent_quota", "INTEGER DEFAULT 0"), ("last_quota_refresh", "DATE")]:
+            try:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {dtype}"))
+                conn.commit()
+            except Exception:
+                pass
+        # Backfill: give new users their initial quotas
+        try:
+            # Guests: 3 permanent
+            conn.execute(text("UPDATE users SET permanent_quota = 3 WHERE role = 'guest' AND permanent_quota = 0"))
+            # Users: 20 permanent
+            conn.execute(text("UPDATE users SET permanent_quota = 20 WHERE role = 'user' AND permanent_quota = 0"))
+            conn.commit()
+            logger.info("已回填用户初始配额: guest=3, user=20")
+        except Exception:
+            pass
         # Backfill: mark existing users with emails as verified
         # (accounts created before email_verified column existed defaulted to 0)
         try:

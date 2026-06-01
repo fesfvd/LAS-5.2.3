@@ -43,6 +43,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--paper);color:var(--i
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* ── submit page ── */
+.submit-layout{min-height:100vh}
 .submit-container{max-width:860px;margin:0 auto;padding:32px 24px 24px;display:flex;flex-direction:column;height:100%}
 .submit-header{margin-bottom:24px;flex-shrink:0}
 .submit-form{flex:1;display:flex;flex-direction:column;gap:20px;min-height:0;transition:opacity .5s,filter .5s}
@@ -115,7 +116,7 @@ textarea.dragover{border-color:var(--gold)!important;box-shadow:0 0 0 2px rgba(1
 .model-option{padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;border-radius:4px;transition:all .15s}
 .model-option:hover{background:var(--gold-soft);color:var(--gold)}
 .model-option.selected{color:var(--gold);font-weight:500}
-.model-badge{display:none}@media(min-width:1100px){.model-badge{display:block}}
+.model-badge{scrollbar-width:none}.model-badge::-webkit-scrollbar{display:none}
 .terminal-window{flex:1;background:rgba(26,26,26,.02);border:1px solid var(--rule);padding:20px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:var(--ink)}
 .log-line{margin-bottom:6px;opacity:0.35;transform:translateY(0);transition:all .3s cubic-bezier(.4,0,.2,1);color:var(--muted)}
 .log-line.show{opacity:0.7}

@@ -92,9 +92,9 @@ App.register('/admin', async () => {
       if (res.ok) {
         var container = document.getElementById('inviteResult');
         container.innerHTML = res.codes.map(function(c) {
-          return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--card-tint-jade,rgba(45,106,79,.04))">'
+          return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--surface-glass)">'
             + '<span class="mono" style="font-size:13px;color:var(--ink);flex:1">' + esc(c) + '</span>'
-            + '<button class="copyCodeBtn" data-code="' + esc(c) + '" style="font-size:11px;padding:3px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .15s">复制</button>'
+            + '<button class="copyCodeBtn" data-code="' + esc(c) + '" style="font-size:12px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s">复制</button>'
             + '</div>';
         }).join('');
         // Bind copy buttons
@@ -147,7 +147,7 @@ App.register('/admin', async () => {
           + '<td style="padding:8px 6px;font-size:12px;color:var(--muted)">' + esc(c.used_by || '—') + '</td>'
           + '<td style="padding:8px 6px;font-size:11px;color:var(--muted)">' + (c.created_at || '').slice(0, 16).replace('T',' ') + '</td>'
           + '<td style="padding:8px 6px;font-size:11px;color:var(--muted)">' + (c.used_at ? c.used_at.slice(0, 16).replace('T',' ') : '—') + '</td>'
-          + '<td style="padding:8px 6px;text-align:center"><button class="copyListBtn" data-code="' + esc(c.code) + '" style="font-size:10px;padding:2px 8px;border:1px solid var(--rule);border-radius:3px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">复制</button></td>'
+          + '<td style="padding:8px 6px;text-align:center"><button class="copyListBtn" data-code="' + esc(c.code) + '" style="font-size:12px;padding:8px 16px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">复制</button></td>'
           + '</tr>';
       });
       html += '</tbody></table>';
@@ -156,7 +156,7 @@ App.register('/admin', async () => {
         b.addEventListener('click', function() {
           var code = this.dataset.code;
           navigator.clipboard.writeText(code).then(function() {
-            b.textContent = 'OK';
+            b.textContent = '已复制';
             b.style.color = 'var(--jade)';
             b.style.borderColor = 'var(--jade)';
             setTimeout(function() { b.textContent = '复制'; b.style.color = 'var(--muted)'; b.style.borderColor = 'var(--rule)'; }, 1500);

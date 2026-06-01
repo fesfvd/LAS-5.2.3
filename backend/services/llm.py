@@ -59,6 +59,7 @@ async def analyze_stream(
     mode: str,
     model: str = "",
     ancestor_dialogue: bool = False,
+    user_id: str = "",
 ) -> Tuple[dict, AsyncIterator[dict]]:
     m = model or LLM_MODEL
     system_prompt = get_system_prompt(PROMPT_VERSION, mode)
@@ -84,6 +85,9 @@ async def analyze_stream(
     async def _stream() -> AsyncIterator[dict]:
         nonlocal full_text
         logger.info("LLM 调用开始 model=%s title=%s len=%d", m, title, len(content))
+        extra = {}
+        if user_id:
+            extra["user_id"] = user_id
         stream = await _get_client().chat.completions.create(
             model=m,
             max_tokens=LLM_MAX_TOKENS,
@@ -95,6 +99,7 @@ async def analyze_stream(
             ],
             stream=True,
             stream_options={"include_usage": True},
+            extra_body=extra if extra else None,
         )
         reached = 0
         first_token = False

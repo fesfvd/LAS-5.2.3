@@ -56,6 +56,8 @@ App.register('/profile', async () => {
 
     var stats = [
       { label: '作品总数', value: u.total_works ?? '—', icon: '📚' },
+      { label: '今日剩余', value: u.role === 'admin' ? '∞' : (u.daily_quota || 0), icon: '☀️' },
+      { label: '永久额度', value: u.role === 'admin' ? '∞' : (u.permanent_quota || 0), icon: '💎' },
       { label: '分析次数', value: u.analysis_count ?? '—', icon: '🔬' },
       { label: '平均分', value: u.avg_score != null ? u.avg_score.toFixed(1) : '—', icon: '📊' },
       { label: '最高分', value: u.best_score ? u.best_score.toFixed(1) : '—', sub: u.best_tier || '', icon: '🏆' },
@@ -96,7 +98,7 @@ App.register('/profile', async () => {
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
         ${stats.map(function(s) {
-          return '<div style="text-align:center;padding:12px 8px;background:var(--card-tint-gold);border-radius:8px">'
+          return '<div style="text-align:center;padding:12px 8px;background:var(--surface-glass);border:1px solid var(--rule);border-radius:8px">'
             + '<span style="font-size:20px">' + s.icon + '</span>'
             + '<p class="mono" style="font-size:20px;font-weight:700;line-height:1.2;color:var(--ink);margin-top:4px">' + s.value + '</p>'
             + (s.sub ? '<p class="text-xs" style="color:var(--muted);margin-top:2px">' + esc(s.sub) + '</p>' : '')
