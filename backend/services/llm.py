@@ -135,7 +135,7 @@ async def analyze_stream(
                 last_heartbeat = now
             # Watchdog: abort if no content for 120s (API stalled)
             if now - last_content_time >= 120:
-                yield {"type": "error", "text": "分析超时：API 无响应超过 120 秒，请重试"}
+                yield {"type": "error", "error_code": "E005", "text": "API 长时间无响应（超过 120 秒），请缩短文本或稍后重试"}
                 return
             if hasattr(chunk, "usage") and chunk.usage:
                 total = getattr(chunk.usage, "total_tokens", 0) or 0

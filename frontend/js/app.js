@@ -337,6 +337,7 @@ App.register('/analyze', () => {
               <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
             </div>
           </div>
+          <div id="errorBox" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;background:var(--surface-warning);border:1px solid rgba(180,120,30,.15)"></div>
           <hr class="rule" style="margin:24px 0">
           <div style="text-align:center">
             <span class="section-label">LITERARY MUSES</span>
@@ -450,6 +451,31 @@ function updateRing() {
   text.textContent = pct + '%';
 }
 
+// ── Error display ──
+var ERROR_SUGGEST = {
+  E001: 'LLM 返回了无法解析的格式，系统已尝试自动修复。若持续出现请缩短文本后重试。',
+  E002: '模型判断当前文本无法完成有效分析，请尝试缩短文本或更换模型。',
+  E003: '后端评分计算时发生异常，原始分析数据已保存，请重试或联系管理员。',
+  E004: '报告写入数据库失败，可能是磁盘空间不足，请联系管理员。',
+  E005: 'API 超过 120 秒无响应，可能是文本过长或模型负载过高，建议缩短文本或稍后重试。',
+  E008: '与分析服务的连接意外中断，报告可能已部分生成，请返回作品页查看。',
+  E009: '无法连接到服务器，请检查网络连接后重试。',
+  E010: '服务器内部错误，请稍后重试。若持续出现请联系管理员。',
+  E000: '未知错误，请截图此页面反馈给管理员。',
+};
+
+function showError(code, detail) {
+  var box = document.getElementById('errorBox');
+  if (!box) return;
+  var suggest = ERROR_SUGGEST[code] || ERROR_SUGGEST['E000'];
+  box.style.display = 'block';
+  box.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px">'
+    + '<span class="mono" style="font-size:13px;font-weight:700;color:var(--semantic-error);white-space:nowrap">' + code + '</span>'
+    + '<div><p style="font-size:13px;color:var(--ink);font-weight:600;margin-bottom:4px">' + esc(detail) + '</p>'
+    + '<p style="font-size:12px;color:var(--muted);line-height:1.6">' + suggest + '</p></div>'
+    + '</div>';
+}
+
 function onComplete() {
   _completed = true;
   if (_stepTimer) { clearTimeout(_stepTimer); _stepTimer = null; }
@@ -488,10 +514,12 @@ async function startStream(workId, model) {
     if (!res.ok) {
       if (res.status === 429) {
         const err = await res.json().catch(() => ({}));
+        showError('E006', err.detail || '今日分析次数已用完');
         throw new Error(err.detail || '请求过于频繁，请 5 分钟后再试');
       }
-      if (res.status === 401) throw new Error('请先登录');
+      if (res.status === 401) { showError('E007', '请先登录后再进行分析'); throw new Error('请先登录'); }
       const err = await res.json().catch(() => ({}));
+      showError('E010', err.detail || '服务器异常 (HTTP ' + res.status + ')');
       throw new Error(err.detail || '服务器异常 (HTTP ' + res.status + ')');
     }
     if (statusText) statusText.textContent = 'EXECUTING...';
@@ -571,6 +599,14 @@ async function startStream(workId, model) {
         try {
           const event = JSON.parse(raw);
           if (event.type === 'heartbeat') continue;
+          if (event.type === 'error') {
+            var code = event.error_code || 'E000';
+            var msg = event.text || '分析过程发生未知错误';
+            showError(code, msg);
+            if (statusText) { statusText.textContent = '分析失败 [' + code + ']'; statusText.style.color = 'var(--semantic-error)'; }
+            if (_elapsedTimer) clearInterval(_elapsedTimer);
+            return;
+          }
           if (firstEvent) {
             firstEvent = false;
             if (_elapsedTimer) { clearInterval(_elapsedTimer); _elapsedTimer = null; }
@@ -626,6 +662,7 @@ async function startStream(workId, model) {
       if (done) {
         if (!receivedDone) {
           console.warn('[LAS] 流在收到 done 事件前断开');
+          showError('E008', '与分析服务的连接意外中断');
           if (statusText) { statusText.textContent = '连接意外中断'; statusText.style.color = 'var(--semantic-warning)'; }
           const ok = await waitForReport(workId);
           if (ok) { App.navigate('#/report/' + workId); }
@@ -636,7 +673,8 @@ async function startStream(workId, model) {
   } catch (err) {
     if (err.name === 'AbortError') { console.log('[LAS] 分析流已取消'); return; }
     console.error('[LAS] 分析流异常:', err);
-    if (statusText) { statusText.textContent = '连接失败，请重试'; statusText.style.color = 'var(--semantic-error)'; }
+    if (statusText) { statusText.textContent = '分析失败'; statusText.style.color = 'var(--semantic-error)'; }
+    showError('E009', err.message || '网络连接失败，请检查网络后重试');
     var retryBtn = document.createElement('button');
     retryBtn.textContent = '重新连接';
     retryBtn.className = 'mono text-xs';

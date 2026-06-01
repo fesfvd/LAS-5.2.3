@@ -372,7 +372,8 @@ async def start_analysis(
     )
 
     async def event_generator():
-        async for event in stream:
+        try:
+            async for event in stream:
             if event["type"] == "done":
                 # Send done event FIRST so frontend starts polling immediately
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
@@ -430,5 +431,8 @@ async def start_analysis(
                         pass
                 return
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            logger.error("SSE 流异常 work_id=%s: %s\n%s", work_id, e, traceback.format_exc())
+            yield f"data: {json.dumps({'type': 'error', 'error_code': 'E010', 'text': '服务器内部错误，请稍后重试'}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
