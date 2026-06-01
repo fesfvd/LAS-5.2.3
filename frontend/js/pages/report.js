@@ -391,10 +391,11 @@ async function renderFromTemplate(data, r, id) {
     count++;
     localStorage.setItem(countKey, String(count));
 
-    // Find next pending milestone
+    // Find next pending milestone (split to avoid substring match)
+    var declined = nudgeState.replace('declined_', '').split('_').filter(Boolean);
     var milestone = 0;
     for (var i = 0; i < MILESTONES.length; i++) {
-      if (count >= MILESTONES[i] && nudgeState.indexOf(String(MILESTONES[i])) === -1) {
+      if (count >= MILESTONES[i] && declined.indexOf(String(MILESTONES[i])) === -1) {
         milestone = MILESTONES[i];
         break;
       }
@@ -404,35 +405,41 @@ async function renderFromTemplate(data, r, id) {
     setTimeout(function() {
       window.LAS_showReward();
 
-      // Hook into the just-created modal: dismiss = decline, img click = accept
-      setTimeout(function() {
-        var overlay = document.querySelector('#rewardClose');
-        if (!overlay) return;
-        overlay = overlay.closest('[style*="fixed"]') || overlay.parentNode.parentNode;
-        if (!overlay) return;
+      // Retry finding modal DOM (up to 10×100ms)
+      var tries = 0;
+      var maxTries = 10;
+      function hookModal() {
+        var closeBtn = document.getElementById('rewardClose');
+        if (!closeBtn) { if (++tries < maxTries) setTimeout(hookModal, 100); return; }
+        // Walk up to find the modal overlay (the outermost fixed container)
+        var overlay = closeBtn.parentNode;  // inner card
+        while (overlay && overlay.tagName !== 'BODY') {
+          var s = overlay.style || {};
+          if (s.position === 'fixed' && (s.inset === '0px' || s.inset === '0')) break;
+          overlay = overlay.parentNode;
+        }
+        if (!overlay || overlay.tagName === 'BODY') return;
 
-        var declined = false;
+        var ended = false;
         var mark = function(result) {
-          if (declined) return;
-          declined = true;
+          if (ended) return;
+          ended = true;
           localStorage.setItem(nudgeKey, result);
-          // cleanup listeners
           document.removeEventListener('keydown', onEsc);
         };
 
-        var onEsc = function(e) { if (e.key === 'Escape') mark(nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone); };
+        var newState = nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone;
+        closeBtn.addEventListener('click', function() { mark(newState); }, { once: true });
+
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) mark(newState); }, { once: true });
+
+        var onEsc = function(e) { if (e.key === 'Escape') mark(newState); };
         document.addEventListener('keydown', onEsc);
-
-        var closeBtn = document.getElementById('rewardClose');
-        if (closeBtn) closeBtn.addEventListener('click', function() { mark(nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone); }, { once: true });
-
-        overlay.addEventListener('click', function(e) {
-          if (e.target === overlay) mark(nudgeState ? nudgeState + '_' + milestone : 'declined_' + milestone);
-        });
 
         var img = overlay.querySelector('img');
         if (img) img.addEventListener('click', function() { mark('done'); }, { once: true });
-      }, 100);
+      }
+      setTimeout(hookModal, 100);
     }, 2000);
   })();
 

@@ -50,13 +50,13 @@ App.register('/admin', async () => {
         <div id="analysisTable" style="overflow-x:auto"><div class="spinner mx-auto" style="margin-top:20px"></div></div>
       </div>
       <hr class="rule" style="margin:16px 0">
-      <details style="opacity:.5">
-        <summary class="text-xs" style="color:var(--muted);cursor:pointer">弹窗测试</summary>
+      <details>
+        <summary class="text-xs" style="color:var(--muted);cursor:pointer;opacity:.4">弹窗测试</summary>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
-          <button id="testReward" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">赞赏弹窗</button>
-          <button id="testErrorE005" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">E005 超时</button>
-          <button id="testErrorE006" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">E006 配额</button>
-          <button id="testErrorE010" class="mono text-xs" style="padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap">E010 内部错误</button>
+          <button id="testReward" class="testModalBtn mono text-xs" style="padding:8px 14px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:'JetBrains Mono',monospace">赞赏弹窗</button>
+          <button id="testErrorE005" class="testModalBtn mono text-xs" style="padding:8px 14px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:'JetBrains Mono',monospace">E005 超时</button>
+          <button id="testErrorE006" class="testModalBtn mono text-xs" style="padding:8px 14px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:'JetBrains Mono',monospace">E006 配额</button>
+          <button id="testErrorE010" class="testModalBtn mono text-xs" style="padding:8px 14px;min-height:40px;border:1px solid var(--rule);border-radius:4px;background:transparent;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .2s;font-family:'JetBrains Mono',monospace">E010 内部错误</button>
         </div>
       </details>
     </div>`;
@@ -259,6 +259,13 @@ App.register('/admin', async () => {
   loadAnalyses();
 
   // ── Modal test buttons (admin only) ──
+  document.querySelectorAll('.testModalBtn').forEach(function(btn) {
+    btn.addEventListener('mouseenter', function() { this.style.color = 'var(--ink)'; this.style.borderColor = 'var(--ink)'; });
+    btn.addEventListener('mouseleave', function() { this.style.color = 'var(--muted)'; this.style.borderColor = 'var(--rule)'; });
+    btn.addEventListener('mousedown', function() { this.style.transform = 'scale(0.97)'; });
+    btn.addEventListener('mouseup', function() { this.style.transform = ''; });
+    btn.addEventListener('mouseout', function() { this.style.transform = ''; });
+  });
   var testReward = document.getElementById('testReward');
   if (testReward) testReward.addEventListener('click', function() { if (window.LAS_showReward) window.LAS_showReward(); });
   var testE005 = document.getElementById('testErrorE005');
