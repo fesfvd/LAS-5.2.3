@@ -350,12 +350,18 @@ async function renderFromTemplate(data, r, id) {
         alert('html2canvas 未加载，请尝试截图保存');
         return;
       }
+      // html2canvas struggles with writing-mode:vertical-rl — temporarily flatten couplets
+      var poems = card.querySelectorAll('[style*="writing-mode:vertical-rl"]');
+      var saved = [];
+      poems.forEach(function(p) { saved.push({ el: p, mode: p.style.writingMode, orient: p.style.textOrientation }); p.style.writingMode = 'horizontal-tb'; p.style.textOrientation = 'mixed'; p.style.letterSpacing = '0'; p.style.fontStyle = 'normal'; p.style.opacity = '0.6'; p.style.fontSize = '14px'; p.style.lineHeight = '1.8'; });
       html2canvas(card, { backgroundColor: '#faf8f3', scale: 2, useCORS: true }).then(function(canvas) {
+        saved.forEach(function(s) { s.el.style.writingMode = s.mode; s.el.style.textOrientation = s.orient; s.el.style.letterSpacing = ''; s.el.style.fontStyle = ''; s.el.style.opacity = ''; s.el.style.fontSize = ''; s.el.style.lineHeight = ''; });
         var link = document.createElement('a');
         link.download = 'LAS_' + reportNumber.replace(/\s/g,'_') + '.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
       }).catch(function() {
+        saved.forEach(function(s) { s.el.style.writingMode = s.mode; s.el.style.textOrientation = s.orient; s.el.style.letterSpacing = ''; s.el.style.fontStyle = ''; s.el.style.opacity = ''; s.el.style.fontSize = ''; s.el.style.lineHeight = ''; });
         alert('图片生成失败，请尝试截图保存');
       });
     });
