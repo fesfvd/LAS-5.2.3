@@ -698,6 +698,7 @@ async function startStream(workId, model) {
               return;
             }
             if (statusText) statusText.textContent = '报告就绪，正在加载...';
+            window.__LAS_JUST_ANALYZED = workId;
             App.navigate('#/report/' + workId);
             return;
           }
@@ -726,7 +727,7 @@ async function startStream(workId, model) {
           showError('E008', '与分析服务的连接意外中断');
           if (statusText) { statusText.textContent = '连接意外中断'; statusText.style.color = 'var(--semantic-warning)'; }
           const ok = await waitForReport(workId);
-          if (ok) { App.navigate('#/report/' + workId); }
+          if (ok) { window.__LAS_JUST_ANALYZED = workId; App.navigate('#/report/' + workId); }
         }
         return;
       }

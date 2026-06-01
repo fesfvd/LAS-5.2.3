@@ -390,6 +390,10 @@ async function renderFromTemplate(data, r, id) {
     var nudgeState = localStorage.getItem(nudgeKey) || '';  // '' | 'declined_3' | 'declined_3_10' | 'done'
     if (nudgeState === 'done') return;
 
+    // Only count reports the user just generated themselves
+    if (window.__LAS_JUST_ANALYZED !== id) return;
+    window.__LAS_JUST_ANALYZED = null;
+
     var count = parseInt(localStorage.getItem(countKey) || '0', 10);
     var seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
     if (seen.indexOf(id) !== -1) return;
