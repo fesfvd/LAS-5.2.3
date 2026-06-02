@@ -347,13 +347,20 @@ App.register('/analyze', () => {
             </div>
           </div>
           <hr class="rule" style="margin:24px 0">
-          <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
             <span class="analyze-status-line" id="statusText" style="color:var(--muted)">序列启动中...</span>
             <div style="display:flex;align-items:center;gap:14px">
               <button id="cancelAnalyze" class="mono text-xs" style="display:inline-block;padding:5px 14px;border:1px solid var(--rule-strong);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace">ESC 取消</button>
               <span class="analyze-status-line" id="statusIndicator" style="color:var(--jade);display:none">&bull; 分析完成</span>
             </div>
           </div>
+          <label class="toggle-switch" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:6px">
+            <input type="checkbox" id="quoteModeCheck" style="position:absolute;opacity:0;pointer-events:none">
+            <span class="toggle-track" style="position:relative;width:32px;height:18px;border-radius:9px;background:var(--rule);transition:background var(--duration-fast)">
+              <span class="toggle-thumb" style="position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform var(--duration-fast)"></span>
+            </span>
+            <span class="text-xs" style="color:var(--muted);font-size:10px;font-family:'Noto Sans SC',Helvetica,sans-serif">仅原创</span>
+          </label>
           <div id="errorBox" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;background:var(--surface-warning);border:1px solid var(--rule-strong)"></div>
           <hr class="rule" style="margin:24px 0">
           <div style="text-align:center">
@@ -366,21 +373,12 @@ App.register('/analyze', () => {
             </blockquote>
             <cite class="muse-source" id="quoteSource"></cite>
           </div>
-          <div style="text-align:center;margin-top:4px">
-            <p class="text-xs" id="moduleHint" style="display:none;color:var(--muted)"></p>
-            <label class="toggle-switch" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-              <input type="checkbox" id="quoteModeCheck" style="position:absolute;opacity:0;pointer-events:none">
-              <span class="toggle-track" style="position:relative;width:40px;height:22px;border-radius:11px;background:var(--rule);transition:background var(--duration-fast)">
-                <span class="toggle-thumb" style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform var(--duration-fast)"></span>
-              </span>
-              <span class="text-xs" style="color:var(--muted);font-family:'Noto Sans SC',Helvetica,sans-serif">仅原创</span>
-            </label>
-          </div>
+          <p class="text-xs text-muted mt-1" id="moduleHint" style="display:none"></p>
       </div>
     </div>
     <style>
       #quoteModeCheck:checked + .toggle-track { background:var(--gold); }
-      #quoteModeCheck:checked + .toggle-track .toggle-thumb { transform:translateX(20px); }
+      #quoteModeCheck:checked + .toggle-track .toggle-thumb { transform:translateX(14px); }
     </style>`;
 
   API.getWork(id).then(w => {
