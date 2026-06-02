@@ -242,10 +242,16 @@ class QuoteBody(BaseModel):
     quote: str
     source: str = ""
     mode: str = "classic"
+    anon: bool = False
 
 
+import hashlib
 import threading
 _quote_lock = threading.Lock()
+
+
+def _uid(user_id: str) -> str:
+    return hashlib.sha256(user_id.encode()).hexdigest()[:12]
 
 
 def _get_quotes_file() -> str:
@@ -264,8 +270,12 @@ def _get_quotes_file() -> str:
 
 @app.post("/api/quotes")
 async def contribute_quote(data: QuoteBody, authorization: str = Header(None)):
+    from backend.routers.auth import decode_token
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "请先登录")
+    user = decode_token(authorization.split(" ", 1)[1])
+    if not user:
+        raise HTTPException(401, "登录已过期")
     quote_file = _get_quotes_file()
     with _quote_lock:
         try:
@@ -273,10 +283,11 @@ async def contribute_quote(data: QuoteBody, authorization: str = Header(None)):
                 quotes = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             quotes = []
-        quotes.append({"t": data.quote.strip(), "s": data.source.strip(), "m": data.mode})
+        entry = {"t": data.quote.strip(), "s": data.source.strip(), "m": data.mode, "uid": _uid(user["id"]), "visible": True}
+        quotes.append(entry)
         with open(quote_file, "w", encoding="utf-8") as f:
             json.dump(quotes, f, ensure_ascii=False, indent=2)
-    return {"ok": True, "count": len(quotes)}
+    return {"ok": True, "count": len(quotes), "idx": len(quotes) - 1}
 
 
 @app.get("/api/quotes")
@@ -287,9 +298,57 @@ async def get_quotes(mode: str = "", random: int = 0):
             quotes = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         quotes = []
+    quotes = [q for q in quotes if q.get("visible", True)]
     if mode:
         quotes = [q for q in quotes if q.get("m") == mode]
     if random and random < len(quotes):
         import random as _random
         quotes = _random.sample(quotes, random)
     return {"quotes": quotes}
+
+
+@app.get("/api/users/me/quotes")
+async def my_quotes(authorization: str = Header(None)):
+    from backend.routers.auth import decode_token
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "请先登录")
+    user = decode_token(authorization.split(" ", 1)[1])
+    if not user:
+        raise HTTPException(401, "登录已过期")
+    quote_file = _get_quotes_file()
+    uid = _uid(user["id"])
+    try:
+        with open(quote_file, "r", encoding="utf-8") as f:
+            quotes = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        quotes = []
+    mine = [{"idx": i, **q} for i, q in enumerate(quotes) if q.get("uid") == uid]
+    mine.sort(key=lambda x: x["idx"], reverse=True)
+    return {"quotes": mine}
+
+
+@app.put("/api/quotes/{idx}/toggle")
+async def toggle_quote_visibility(idx: int, authorization: str = Header(None)):
+    from backend.routers.auth import decode_token
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "请先登录")
+    user = decode_token(authorization.split(" ", 1)[1])
+    if not user:
+        raise HTTPException(401, "登录已过期")
+    quote_file = _get_quotes_file()
+    uid = _uid(user["id"])
+    with _quote_lock:
+        try:
+            with open(quote_file, "r", encoding="utf-8") as f:
+                quotes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            raise HTTPException(404, "句子库为空")
+        if idx < 0 or idx >= len(quotes):
+            raise HTTPException(404, "金句不存在")
+        q = quotes[idx]
+        if q.get("uid") != uid:
+            raise HTTPException(403, "只能管理自己贡献的金句")
+        q["visible"] = not q.get("visible", True)
+        with open(quote_file, "w", encoding="utf-8") as f:
+            json.dump(quotes, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "visible": q["visible"]}
