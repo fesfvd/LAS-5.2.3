@@ -46,52 +46,6 @@ App.register('/profile', async () => {
       '<p class="text-sm" style="color:var(--crimson);text-align:center;padding:40px 0">加载失败: ' + esc(e.message || '') + '</p>';
   }
 
-  async function loadMyQuotes() {
-    var list = document.getElementById('myQuotesList');
-    var count = document.getElementById('myQuotesCount');
-    try {
-      var data = await API._req('GET', '/users/me/quotes');
-      if (!data || !data.ok) throw new Error('fail');
-      var quotes = data.quotes || [];
-      count.textContent = quotes.length + ' 条';
-      if (!quotes.length) {
-        list.innerHTML = '<p class="text-xs" style="color:var(--muted)">暂无贡献的金句</p>';
-        return;
-      }
-      list.innerHTML = quotes.map(function(q) {
-        var hidden = q.visible === false;
-        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);'
-          + (hidden ? 'opacity:.5' : '') + '">'
-          + '<div style="flex:1;min-width:0">'
-            + '<blockquote class="serif" style="font-size:14px;line-height:1.6;color:var(--ink);font-style:italic;margin-bottom:4px">' + esc(q.t) + '</blockquote>'
-            + '<span class="text-xs" style="color:var(--muted)">—— ' + esc(q.s || '佚名') + '</span>'
-            + (hidden ? '<span class="mono text-xs" style="margin-left:8px;color:var(--semantic-error)">已隐藏</span>' : '')
-          + '</div>'
-          + '<button class="toggle-quote-btn mono text-xs" data-idx="' + q.idx + '" style="flex-shrink:0;padding:4px 10px;min-height:32px;border:1px solid var(--rule);border-radius:var(--rounded-sm);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all var(--duration-fast)">'
-            + (hidden ? '恢复' : '撤回')
-          + '</button>'
-          + '</div>';
-      }).join('');
-      // Bind toggle buttons
-      list.querySelectorAll('.toggle-quote-btn').forEach(function(btn) {
-        btn.addEventListener('click', async function() {
-          btn.disabled = true;
-          btn.textContent = '...';
-          try {
-            var res = await API._req('PUT', '/quotes/' + btn.dataset.idx + '/toggle');
-            if (res && res.ok) {
-              loadMyQuotes();
-            }
-          } catch(e) {
-            btn.disabled = false;
-            btn.textContent = '失败';
-          }
-        });
-      });
-    } catch(e) {
-      list.innerHTML = '<p class="text-xs" style="color:var(--muted)">加载失败</p>';
-    }
-  }
 
   function renderProfile(u) {
     var roleNames = { user: '正式用户', guest: '游客', admin: '管理员' };
@@ -222,15 +176,9 @@ App.register('/profile', async () => {
       <button id="deleteAccountBtn" class="btn" style="font-size:11px;padding:6px 18px;border-color:var(--crimson);color:var(--crimson)">DELETE <span class="btn-zh">注销账号</span></button>
     </div>
 
-    <div class="glass-card" style="padding:20px;margin-bottom:12px">
-      <p class="serif text-sm font-bold mb-3" style="color:var(--ink)">我的金句 <span class="mono text-xs" style="color:var(--muted);margin-left:6px" id="myQuotesCount"></span></p>
-      <div id="myQuotesList"><p class="text-xs" style="color:var(--muted)">加载中...</p></div>
-    </div>`;
+`;
 
     document.getElementById('profileContent').innerHTML = html;
-
-    // ── My quotes management ──
-    loadMyQuotes();
 
     // ── Password change ──
     document.getElementById('pwdForm').addEventListener('submit', async function(e) {
