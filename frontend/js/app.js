@@ -376,10 +376,7 @@ App.register('/analyze', () => {
           <p class="text-xs text-muted mt-1" id="moduleHint" style="display:none"></p>
       </div>
     </div>
-    <style>
-      #quoteModeCheck:checked + .toggle-track { background:var(--gold); }
-      #quoteModeCheck:checked + .toggle-track .toggle-thumb { transform:translateX(14px); }
-    </style>`;
+`;
 
   API.getWork(id).then(w => {
     if (w.ancestor_dialogue) {
@@ -409,10 +406,17 @@ App.register('/analyze', () => {
   startQuoteCarousel();
 
   var quoteModeCheck = document.getElementById('quoteModeCheck');
+  var toggleTrack = quoteModeCheck ? quoteModeCheck.parentElement.querySelector('.toggle-track') : null;
+  var toggleThumb = toggleTrack ? toggleTrack.querySelector('.toggle-thumb') : null;
+  function updateToggle() {
+    if (toggleTrack) toggleTrack.style.background = quoteModeCheck.checked ? 'var(--gold)' : 'var(--rule)';
+    if (toggleThumb) toggleThumb.style.transform = quoteModeCheck.checked ? 'translateX(14px)' : 'translateX(0)';
+  }
   if (quoteModeCheck) {
     quoteModeCheck.addEventListener('change', function() {
       _quoteActive = false;
       if (_quoteTimer) { clearTimeout(_quoteTimer); _quoteTimer = null; }
+      updateToggle();
       startQuoteCarousel(this.checked);
     });
   }
