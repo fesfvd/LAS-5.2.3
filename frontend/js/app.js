@@ -359,13 +359,6 @@ App.register('/analyze', () => {
           <div style="text-align:center">
             <span class="section-label">LITERARY MUSES</span>
             <div class="rule-gold" style="margin:12px auto 20px"></div>
-            <label class="toggle-switch" style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none;margin-bottom:8px">
-              <input type="checkbox" id="quoteModeCheck" style="position:absolute;opacity:0;pointer-events:none">
-              <span class="toggle-track" style="position:relative;width:42px;height:24px;border-radius:12px;background:var(--rule);transition:background var(--duration-fast)">
-                <span class="toggle-thumb" style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform var(--duration-fast)"></span>
-              </span>
-              <span class="text-xs" style="color:var(--muted);font-family:'Noto Sans SC',Helvetica,sans-serif">仅原创</span>
-            </label>
             <blockquote class="muse-quote" id="museQuote">
               <span class="quote-bracket">&#x300C;</span>
               <span id="quoteText"></span>
@@ -373,12 +366,21 @@ App.register('/analyze', () => {
             </blockquote>
             <cite class="muse-source" id="quoteSource"></cite>
           </div>
-          <p class="text-xs text-muted mt-1" id="moduleHint" style="display:none"></p>
+          <div style="text-align:center;margin-top:4px">
+            <p class="text-xs" id="moduleHint" style="display:none;color:var(--muted)"></p>
+            <label class="toggle-switch" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+              <input type="checkbox" id="quoteModeCheck" style="position:absolute;opacity:0;pointer-events:none">
+              <span class="toggle-track" style="position:relative;width:40px;height:22px;border-radius:11px;background:var(--rule);transition:background var(--duration-fast)">
+                <span class="toggle-thumb" style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform var(--duration-fast)"></span>
+              </span>
+              <span class="text-xs" style="color:var(--muted);font-family:'Noto Sans SC',Helvetica,sans-serif">仅原创</span>
+            </label>
+          </div>
       </div>
     </div>
     <style>
       #quoteModeCheck:checked + .toggle-track { background:var(--gold); }
-      #quoteModeCheck:checked + .toggle-track .toggle-thumb { transform:translateX(18px); }
+      #quoteModeCheck:checked + .toggle-track .toggle-thumb { transform:translateX(20px); }
     </style>`;
 
   API.getWork(id).then(w => {
