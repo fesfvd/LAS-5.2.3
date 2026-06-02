@@ -355,9 +355,9 @@ App.register('/analyze', () => {
             </div>
           </div>
           <label class="toggle-switch" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:6px">
-            <input type="checkbox" id="quoteModeCheck" style="position:absolute;opacity:0;pointer-events:none">
-            <span class="toggle-track" style="position:relative;width:32px;height:18px;border-radius:9px;background:var(--rule);transition:background var(--duration-fast)">
-              <span class="toggle-thumb" style="position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform var(--duration-fast)"></span>
+            <input type="checkbox" id="quoteModeCheck" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden">
+            <span class="toggle-track" style="position:relative;width:32px;height:18px;border-radius:9px;background:var(--rule);transition:background .25s ease">
+              <span class="toggle-thumb" style="position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.1);transition:transform .25s ease"></span>
             </span>
             <span class="text-xs" style="color:var(--muted);font-size:10px;font-family:'Noto Sans SC',Helvetica,sans-serif">仅原创</span>
           </label>
