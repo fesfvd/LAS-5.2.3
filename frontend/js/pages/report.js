@@ -470,13 +470,13 @@ async function renderFromTemplate(data, r, id) {
       var preview = document.getElementById('contributeQuotePreview');
       if (preview) preview.textContent = qt;
       var anonEl = document.getElementById('contributeAnon');
-      var qsrcBase = (data.title || '') + ' ' + (data.author || '');
+      var qsrcBase = '《' + (data.title || '') + '》 ' + (data.author || '');
       var qmode = data.mode || 'classic';
       contributeBox.style.display = '';
       document.getElementById('contributeBtn').addEventListener('click', function() {
         var btn = this;
         var anon = anonEl && anonEl.checked;
-        var qsrc = anon ? (data.title || '') + ' 匿名' : qsrcBase;
+        var qsrc = anon ? '《' + (data.title || '') + '》 匿名' : qsrcBase;
         btn.disabled = true;
         btn.textContent = '提交中...';
         API._post('/quotes', { quote: qt, source: qsrc, mode: qmode }).then(function() {

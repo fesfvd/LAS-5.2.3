@@ -802,7 +802,14 @@ function cycleQuote() {
     const q = _quotes[_quoteIdx % _quotes.length];
     const src = document.getElementById('quoteSource');
     el.textContent = typeof q === 'string' ? q : q.t;
-    if (src) src.textContent = typeof q === 'string' ? '' : '—— ' + q.s;
+    if (src) {
+      var raw = typeof q === 'string' ? '' : q.s;
+      if (raw && !raw.startsWith('《')) {
+        var sp = raw.indexOf(' ');
+        raw = sp > 0 ? '《' + raw.slice(0, sp) + '》' + raw.slice(sp) : '《' + raw + '》';
+      }
+      src.textContent = raw ? '—— ' + raw : '';
+    }
     _quoteIdx++;
     mq.style.height = 'auto';
     const newH = mq.offsetHeight;

@@ -94,6 +94,12 @@ App.register('/quotes', async () => {
       }
     </style>`;
 
+  function fmtSource(s) {
+    if (!s || s.startsWith('《')) return s || '佚名';
+    var sp = s.indexOf(' ');
+    return sp > 0 ? '《' + s.slice(0, sp) + '》' + s.slice(sp) : '《' + s + '》';
+  }
+
   function renderCard(q, idx) {
     var isOrig = q.m === 'original';
 
@@ -110,7 +116,7 @@ App.register('/quotes', async () => {
 
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto">'
           + '<span style="font-family:\'Noto Sans SC\',Helvetica,sans-serif;font-size:12px;line-height:1.5;color:var(--muted)">'
-            + '—— ' + esc(q.s || '佚名')
+            + '—— ' + esc(fmtSource(q.s))
           + '</span>'
           + (isOrig
             ? '<span style="font-family:\'Noto Sans SC\',Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;padding:3px 10px;border-radius:9999px;color:var(--purple);border:1px solid rgba(107,33,168,0.25);background:transparent">原创</span>'
