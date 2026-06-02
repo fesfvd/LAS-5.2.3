@@ -409,8 +409,9 @@ App.register('/analyze', () => {
   var toggleTrack = quoteModeCheck ? quoteModeCheck.parentElement.querySelector('.toggle-track') : null;
   var toggleThumb = toggleTrack ? toggleTrack.querySelector('.toggle-thumb') : null;
   function updateToggle() {
-    if (toggleTrack) toggleTrack.style.background = quoteModeCheck.checked ? 'var(--gold)' : 'var(--rule)';
-    if (toggleThumb) toggleThumb.style.transform = quoteModeCheck.checked ? 'translateX(14px)' : 'translateX(0)';
+    var on = quoteModeCheck && quoteModeCheck.checked;
+    if (toggleTrack) toggleTrack.style.background = on ? 'var(--purple)' : 'var(--rule)';
+    if (toggleThumb) toggleThumb.style.transform = on ? 'translateX(14px)' : 'translateX(0)';
   }
   if (quoteModeCheck) {
     quoteModeCheck.addEventListener('change', function() {
